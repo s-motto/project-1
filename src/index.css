@@ -1,0 +1,20 @@
+@import url('https://fonts.googleapis.com/css2?family=Sono:wght@200..800&display=swap');
+@import "tailwindcss";
+
+@theme{
+  --font-display: 'Sono', sans-serif;
+}
+
+
+
+@utility background-gradient{
+  @apply bg-linear-150 from-[#f78154] to-[#f5f749] ;
+}
+
+@utility navbar-logo{
+  @apply h-15 w-auto;
+}
+
+@utility navbar-style{
+  @apply rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white;
+}
