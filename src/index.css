@@ -1,20 +1,46 @@
-@import url('https://fonts.googleapis.com/css2?family=Sono:wght@200..800&display=swap');
-@import "tailwindcss";
 
-@theme{
-  --font-display: 'Sono', sans-serif;
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap');
+
+html, body, #root {
+  font-family: 'Montserrat', Arial, Helvetica, sans-serif;
 }
 
-
-
-@utility background-gradient{
-  @apply bg-linear-150 from-[#f78154] to-[#f5f749] ;
+body, input, textarea, select, button, h1, h2, h3, h4, h5, h6, p, a, span, label, li, th, td, div {
+  font-family: 'Montserrat', Arial, Helvetica, sans-serif;
 }
 
-@utility navbar-logo{
-  @apply h-15 w-auto;
+.font-captivating {
+  font-family: 'Montserrat', 'Poppins', 'Arial', sans-serif;
+  font-weight: 900;
+  letter-spacing: -1px;
 }
 
-@utility navbar-style{
-  @apply rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/5 hover:text-white;
+.header-bg {
+  position: relative;
+  background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%);
+  background-image: url('./assets/boots.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  min-height: 45vh;
+}
+.header-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.45); /* semi-transparent overlay */
+  z-index: 1;
+}
+.header-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
