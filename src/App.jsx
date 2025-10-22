@@ -1,42 +1,34 @@
-import React, { useState } from 'react'
-import Search from './components/Search'
-import Navbar from './components/Navbar'
+import React from 'react'
+import BottomNav from './components/BottomNav'
+import RouteSearchForm from './components/RouteSearchForm'
+import Footer from './components/Footer'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faMusic } from '@fortawesome/free-solid-svg-icons'
 
-// Configurazione Geoapify API 
-const API_BASE_URL= 'https://maps.geoapify.com/v1/tile/carto/{z}/{x}/{y}.png?&apiKey=e6a5c6d10e194527a8e8783bee41290e';
+// Note: The API configuration is now handled directly in the RouteSearchForm component
 
-// Chiave API caricata dalle variabili d'ambiente
-const API_KEY= import.meta.env.VITE_GEOAPIFY_API_KEY;
-
-// Opzioni della richiesta API 
-const API_OPTIONS= {
-  method: 'GET',
-  headers: {
-    accept: 'application/json',
-    Authorization: `Bearer ${API_KEY}`
-  }
-}
-
-const App= () => {
-
-  const [searchTerm, setSearchTerm] = useState('');
-
+const App = () => {
   return (
-    <main>
-      
-        <div>
-          
-          <header className='background-gradient  tracking-wide font-bold font-display'>
-            <Navbar/>
-        
-            <h1 className='text-5xl text-center'>Let's Walk!</h1>
-            <h2 className='text-3xl text-center'>Trova il tuo percorso di trekking ideale </h2>
-          </header>
-          
+    <main className="min-h-screen bg-gray-50 flex flex-col">
+  {/* Top navbar removed for a cleaner app-like layout */}
+  <header id="top" className="header-bg tracking-wide font-bold font-display flex flex-col items-center justify-center min-h-[45vh] sm:min-h-[50vh] relative">
+        <div className="header-content w-full flex flex-col items-center justify-center px-4 py-6">
+          <h1 className="text-4xl sm:text-6xl text-center pt-4 sm:pt-8 text-white drop-shadow-lg font-captivating">Let's Walk!</h1>
+          <h2 className="text-xl sm:text-4xl text-center pb-4 sm:pb-8 text-white drop-shadow font-captivating font-bold">UserNAme dove vai? <FontAwesomeIcon icon={faMusic} />Quanti chilometri farai?<FontAwesomeIcon icon={faMusic} />
+          </h2>
         </div>
+      </header>
 
-      
+      {/* Main content section with the route search form */}
+      <section className="flex-1 flex flex-col items-center justify-start w-full px-2 sm:px-0 py-4 sm:py-8 pb-24">
+        <div className="w-full max-w-md sm:max-w-xl">
+          <RouteSearchForm />
+        </div>
+      </section>
+  <Footer/>
+      <BottomNav />
     </main>
+    
   )
 }
 
