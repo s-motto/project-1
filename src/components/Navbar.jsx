@@ -5,15 +5,15 @@ import Search from './Search'
 
 const Navbar = () => {
   return (
-    <div className='flex flex-1 items-center justify-center sm:items-stretch sm:justify-start'>
-      <img src={roadSigns} alt="road signs" className="navbar-logo" />
-       <a href="#" className="navbar-style">Dashboard</a>
-       <a href="#" className="navbar-style">Team</a>
-       <a href="#" className="navbar-style">Projects</a>
-       <a href="#" className="navbar-style">Calendar</a>
-       <Search />
-    </div>
-
+    <nav className="w-full flex items-center justify-between px-2 py-1 bg-white/80 shadow-sm border-b border-gray-200">
+      <img src={roadSigns} alt="road signs" className="h-7 w-7 mr-2" />
+      <div className="flex gap-3 text-xs sm:text-sm font-medium">
+        <a href="#" className="text-gray-700 hover:text-blue-600 transition">Dashboard</a>
+        <a href="#" className="text-gray-700 hover:text-blue-600 transition">Team</a>
+        <a href="#" className="text-gray-700 hover:text-blue-600 transition">Projects</a>
+        <a href="#" className="text-gray-700 hover:text-blue-600 transition">Calendar</a>
+      </div>
+    </nav>
   )
 }
 
