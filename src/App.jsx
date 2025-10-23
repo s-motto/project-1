@@ -2,6 +2,8 @@ import React from 'react'
 import BottomNav from './components/BottomNav'
 import RouteSearchForm from './components/RouteSearchForm'
 import Footer from './components/Footer'
+import SavedRoutes from './components/SavedRoutes'
+import { AuthProvider } from './contexts/AuthContext'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMusic } from '@fortawesome/free-solid-svg-icons'
 import { useEffect } from "react";
@@ -13,6 +15,7 @@ import { account } from "./appwrite";
 
 const App = () => {
   return (
+    <AuthProvider>
     <main className="min-h-screen bg-gray-50 flex flex-col">
   {/* Top navbar removed for a cleaner app-like layout */}
   <header id="top" className="header-bg tracking-wide font-bold font-display flex flex-col items-center justify-center min-h-[45vh] sm:min-h-[50vh] relative">
@@ -32,7 +35,7 @@ const App = () => {
   <Footer/>
       <BottomNav />
     </main>
-    
+   </AuthProvider> 
   )
 }
 
