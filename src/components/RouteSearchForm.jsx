@@ -374,36 +374,30 @@ const RouteSearchForm = () => {
         </div>
       )}
 
-     {/* Turn-by-turn Instructions */}
+{/* Turn-by-turn Instructions */}
 {instructions.length > 0 && (
   <div className="bg-white rounded-lg shadow-md p-4 w-full max-w-xl">
     <h3 className="text-lg font-bold mb-3 text-gray-800">Indicazioni Stradali</h3>
     <div className="space-y-2 max-h-60 overflow-y-auto">
-      {instructions.map((step, idx) => {
-        // Debug: log dello step
-        console.log(`Step ${idx}:`, step)
-        
-        // Prova diversi formati di distanza
-        const distance = step.distance || step.length || 0
-        const duration = step.duration || step.time || 0
-        
-        return (
-          <div key={idx} className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded">
-            <span className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
-              {idx + 1}
-            </span>
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-800">
-                {step.instruction || step.name || 'Continua'}
-              </p>
-              <p className="text-xs text-gray-500">
-                {distance > 0 ? `${(distance / 1000).toFixed(2)} km` : 'N/A'} · {' '}
-                {duration > 0 ? `${Math.round(duration / 60)} min` : 'N/A'}
-              </p>
-            </div>
+      {instructions.map((step, idx) => (
+        <div key={idx} className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded">
+          <span className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+            {idx + 1}
+          </span>
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-800">{step.instruction}</p>
+            <p className="text-xs text-gray-500">
+              
+              {step.distance > 0 
+                ? step.distance >= 1 
+                  ? `${step.distance.toFixed(2)} km` 
+                  : `${(step.distance * 1000).toFixed(0)} m`
+                : '0 m'
+              } · {Math.round(step.duration / 60)} min
+            </p>
           </div>
-        )
-      })}
+        </div>
+      ))}
     </div>
   </div>
 )}
