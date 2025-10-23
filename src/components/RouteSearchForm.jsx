@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react'
+import NavigationMode from './NavigationMode'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faLocationDot, faFlag, faWalking, faClock, faRoute } from '@fortawesome/free-solid-svg-icons'
+import { faLocationDot, faFlag, faWalking, faClock, faRoute, faLocationArrow } from '@fortawesome/free-solid-svg-icons'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
 const RouteSearchForm = () => {
   // Variabili di stato 
+  
   const [startPoint, setStartPoint] = useState(null)
   const [endPoint, setEndPoint] = useState(null)
   const [map, setMap] = useState(null)
@@ -29,6 +31,7 @@ const RouteSearchForm = () => {
   const endInputRef = useRef()
   const [startMarker, setStartMarker] = useState(null)
   const [endMarker, setEndMarker] = useState(null)
+  const [isNavigating, setIsNavigating] = useState(false)
 
   // Inizializza la mappa Leaflet
   
@@ -185,7 +188,7 @@ const RouteSearchForm = () => {
         const summary = props.summary || {}
         
         setRouteInfo({
-          distance: (summary.distance / 1000).toFixed(2),
+          distance: (summary.distance).toFixed(2),
           duration: Math.round(summary.duration / 60),
           ascent: props.ascent ? Math.round(props.ascent) : 0,
           descent: props.descent ? Math.round(props.descent) : 0
@@ -207,6 +210,8 @@ const RouteSearchForm = () => {
 
   return (
     <div className="flex flex-col space-y-4">
+       {!isNavigating ? (
+        <>
       <form onSubmit={handleSubmit} className="flex flex-col space-y-4 p-4 bg-white rounded-lg shadow-md w-full max-w-xl">
         {/* Start point input */}
         <div className="flex items-center space-x-2 relative">
@@ -371,6 +376,13 @@ const RouteSearchForm = () => {
               </div>
             </div>
           </div>
+           <button
+                onClick={() => setIsNavigating(true)}
+                className="mt-4 w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-md font-bold flex items-center justify-center space-x-2"
+              >
+                <FontAwesomeIcon icon={faLocationArrow} />
+                <span>Inizia Navigazione GPS</span>
+              </button>
         </div>
       )}
 
@@ -401,11 +413,25 @@ const RouteSearchForm = () => {
     </div>
   </div>
 )}
+</>
+       ) : (
+          <NavigationMode
+          map={map}
+          routeLayer={routeLayer}
+          instructions={instructions}
+          endPoint={endPoint}
+          onStop={() => setIsNavigating(false)}
+          />
+       )}
+
 
       {/* Map container */}
       <div id="map" className="w-full h-[400px] rounded-lg shadow-md" />
     </div>
   )
+
+  
+
 }
 
 export default RouteSearchForm
