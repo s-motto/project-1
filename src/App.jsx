@@ -4,8 +4,12 @@ import RouteSearchForm from './components/RouteSearchForm'
 import Footer from './components/Footer'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMusic } from '@fortawesome/free-solid-svg-icons'
+import { useEffect } from "react";
+import { account } from "./appwrite";
 
 // Note: The API configuration is now handled directly in the RouteSearchForm component
+
+
 
 const App = () => {
   return (
