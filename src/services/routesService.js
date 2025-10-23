@@ -1,7 +1,7 @@
-import { databases } from './appwrite'
+import { databases } from '../appwrite'
 import { ID, Query } from 'appwrite'
 
-// Configurazione database (dovrai creare questi su Appwrite Console)
+// Configurazione database 
 const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID || 'hiking_db'
 const ROUTES_COLLECTION_ID = import.meta.env.VITE_APPWRITE_ROUTES_COLLECTION_ID || 'routes'
 
