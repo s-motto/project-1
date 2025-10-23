@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBookmark, faCheck, faSpinner } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../contexts/AuthContext'
-import routesService from '../routesService'
+import routesService from '../services/routesService'
 
 const SaveRouteButton = ({ routeData }) => {
   const { user } = useAuth()
