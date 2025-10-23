@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react'
 import NavigationMode from './NavigationMode'
+import SaveRouteButton from './SaveRouteButton'  // ← AGGIUNTO
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faLocationDot, faFlag, faWalking, faClock, faRoute, faLocationArrow } from '@fortawesome/free-solid-svg-icons'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
 const RouteSearchForm = () => {
-  // Variabili di stato 
-  
   const [startPoint, setStartPoint] = useState(null)
   const [endPoint, setEndPoint] = useState(null)
   const [map, setMap] = useState(null)
@@ -16,10 +15,8 @@ const RouteSearchForm = () => {
   const [endText, setEndText] = useState('')
   const [loading, setLoading] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
-  // Info sul percorso 
   const [routeInfo, setRouteInfo] = useState(null)
   const [instructions, setInstructions] = useState([])
-  // Autocomplete state
   const [startSuggestions, setStartSuggestions] = useState([])
   const [endSuggestions, setEndSuggestions] = useState([])
   const [showStartDropdown, setShowStartDropdown] = useState(false)
@@ -32,9 +29,8 @@ const RouteSearchForm = () => {
   const [startMarker, setStartMarker] = useState(null)
   const [endMarker, setEndMarker] = useState(null)
   const [isNavigating, setIsNavigating] = useState(false)
+  const [fullRouteData, setFullRouteData] = useState(null) // ← AGGIUNTO per salvare tutti i dati
 
-  // Inizializza la mappa Leaflet
-  
   useEffect(() => {
     const mapInstance = L.map('map').setView([45.4642, 9.1900], 13)
     
@@ -52,7 +48,6 @@ const RouteSearchForm = () => {
     }
   }, [])
 
-  // Funzione di geocoding usando Nominatim
   const geocodeText = async (text) => {
     if (!text) return null
     try {
@@ -76,7 +71,6 @@ const RouteSearchForm = () => {
     }
   }
 
-  // Funzione per ottenere suggerimenti di autocompletamento
   const fetchSuggestions = async (text) => {
     if (!text || text.length < 2) return []
     try {
@@ -97,13 +91,13 @@ const RouteSearchForm = () => {
     }
   }
 
-  // Handle form submission to calculate route
   const handleSubmit = async (e) => {
     e.preventDefault()
     setErrorMsg('')
     setLoading(true)
     setRouteInfo(null)
     setInstructions([])
+    setFullRouteData(null) // ← RESET
 
     let sp = startPoint
     let ep = endPoint
@@ -125,12 +119,10 @@ const RouteSearchForm = () => {
     }
 
     try {
-      // Rimuovi il percorso e i marker esistenti
       if (routeLayer && map) map.removeLayer(routeLayer)
       if (startMarker) map.removeLayer(startMarker)
       if (endMarker) map.removeLayer(endMarker)
 
-      // Chiamata all'API di OpenRouteService
       const response = await fetch(
         'https://api.openrouteservice.org/v2/directions/foot-hiking/geojson',
         {
@@ -160,13 +152,11 @@ const RouteSearchForm = () => {
       if (data.features && data.features.length > 0) {
         const feature = data.features[0]
         
-        // Aggiungi il nuovo layer del percorso
         const newRouteLayer = L.geoJSON(feature, {
           style: { color: '#2563eb', weight: 4, opacity: 0.8 }
         }).addTo(map)
         setRouteLayer(newRouteLayer)
 
-        // Aggiungi marker di partenza e arrivo
         const startIcon = L.divIcon({
           html: '<div style="background-color: #10b981; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
           iconSize: [24, 24]
@@ -183,21 +173,33 @@ const RouteSearchForm = () => {
         
         map.fitBounds(newRouteLayer.getBounds(), { padding: [50, 50] })
 
-        // Estrai informazioni sul percorso
         const props = feature.properties
         const summary = props.summary || {}
         
-        setRouteInfo({
+        const routeData = {
           distance: (summary.distance).toFixed(2),
           duration: Math.round(summary.duration / 60),
           ascent: props.ascent ? Math.round(props.ascent) : 0,
           descent: props.descent ? Math.round(props.descent) : 0
-        })
+        }
+        
+        setRouteInfo(routeData)
 
-        // Estrai le istruzioni dettagliate
         if (props.segments && props.segments[0].steps) {
           setInstructions(props.segments[0].steps)
         }
+
+        // ← SALVA TUTTI I DATI DEL PERCORSO
+        setFullRouteData({
+          startPoint: sp,
+          endPoint: ep,
+          distance: routeData.distance,
+          duration: routeData.duration,
+          ascent: routeData.ascent,
+          descent: routeData.descent,
+          coordinates: feature.geometry.coordinates,
+          instructions: props.segments && props.segments[0].steps ? props.segments[0].steps : []
+        })
       } else {
         setErrorMsg('Non è stato possibile calcolare un percorso.')
       }
@@ -210,228 +212,226 @@ const RouteSearchForm = () => {
 
   return (
     <div className="flex flex-col space-y-4">
-       {!isNavigating ? (
+      {!isNavigating ? (
         <>
-      <form onSubmit={handleSubmit} className="flex flex-col space-y-4 p-4 bg-white rounded-lg shadow-md w-full max-w-xl">
-        {/* Start point input */}
-        <div className="flex items-center space-x-2 relative">
-          <FontAwesomeIcon icon={faLocationDot} className="text-green-600 absolute left-2 z-10" />
-          <div className="flex-1">
-            <div className="relative">
-              <input
-                ref={startInputRef}
-                placeholder="Punto di partenza"
-                value={startText}
-                autoComplete="off"
-                onFocus={() => { if (startText.length > 1) setShowStartDropdown(true) }}
-                onBlur={() => setTimeout(() => setShowStartDropdown(false), 150)}
-                onChange={async (e) => {
-                  const val = e.target.value
-                  setStartText(val)
-                  setStartPoint(null)
-                  if (val.length > 1) {
-                    setStartLoading(true)
-                    setShowStartDropdown(true)
-                    const suggestions = await fetchSuggestions(val)
-                    setStartSuggestions(suggestions)
-                    setStartLoading(false)
-                  } else {
-                    setStartSuggestions([])
-                    setShowStartDropdown(false)
-                  }
-                }}
-                className="pl-10 w-full py-3 h-12 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-              {showStartDropdown && (startSuggestions.length > 0 || startLoading) && (
-                <ul className="absolute z-20 left-0 right-0 bg-white border rounded shadow max-h-40 overflow-y-auto mt-1">
-                  {startLoading && <li className="p-2 text-xs text-gray-400">Caricamento…</li>}
-                  {startSuggestions.map((suggestion) => (
-                    <li
-                      key={suggestion.place_id}
-                      className="p-2 hover:bg-blue-100 cursor-pointer text-sm"
-                      onMouseDown={() => {
-                        setStartText(suggestion.display_name)
-                        setStartPoint({
-                          lat: suggestion.lat,
-                          lon: suggestion.lon,
-                          name: suggestion.display_name,
-                        })
-                        setShowStartDropdown(false)
+          <form onSubmit={handleSubmit} className="flex flex-col space-y-4 p-4 bg-white rounded-lg shadow-md w-full max-w-xl">
+            <div className="flex items-center space-x-2 relative">
+              <FontAwesomeIcon icon={faLocationDot} className="text-green-600 absolute left-2 z-10" />
+              <div className="flex-1">
+                <div className="relative">
+                  <input
+                    ref={startInputRef}
+                    placeholder="Punto di partenza"
+                    value={startText}
+                    autoComplete="off"
+                    onFocus={() => { if (startText.length > 1) setShowStartDropdown(true) }}
+                    onBlur={() => setTimeout(() => setShowStartDropdown(false), 150)}
+                    onChange={async (e) => {
+                      const val = e.target.value
+                      setStartText(val)
+                      setStartPoint(null)
+                      if (val.length > 1) {
+                        setStartLoading(true)
+                        setShowStartDropdown(true)
+                        const suggestions = await fetchSuggestions(val)
+                        setStartSuggestions(suggestions)
+                        setStartLoading(false)
+                      } else {
                         setStartSuggestions([])
-                        startInputRef.current.blur()
-                      }}
-                    >
-                      {suggestion.display_name}
-                    </li>
-                  ))}
-                </ul>
-              )}
+                        setShowStartDropdown(false)
+                      }
+                    }}
+                    className="pl-10 w-full py-3 h-12 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  />
+                  {showStartDropdown && (startSuggestions.length > 0 || startLoading) && (
+                    <ul className="absolute z-20 left-0 right-0 bg-white border rounded shadow max-h-40 overflow-y-auto mt-1">
+                      {startLoading && <li className="p-2 text-xs text-gray-400">Caricamento…</li>}
+                      {startSuggestions.map((suggestion) => (
+                        <li
+                          key={suggestion.place_id}
+                          className="p-2 hover:bg-blue-100 cursor-pointer text-sm"
+                          onMouseDown={() => {
+                            setStartText(suggestion.display_name)
+                            setStartPoint({
+                              lat: suggestion.lat,
+                              lon: suggestion.lon,
+                              name: suggestion.display_name,
+                            })
+                            setShowStartDropdown(false)
+                            setStartSuggestions([])
+                            startInputRef.current.blur()
+                          }}
+                        >
+                          {suggestion.display_name}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* End point input */}
-        <div className="flex items-center space-x-2 relative">
-          <FontAwesomeIcon icon={faFlag} className="text-red-600 absolute left-2 z-10" />
-          <div className="flex-1">
-            <div className="relative">
-              <input
-                ref={endInputRef}
-                placeholder="Punto di arrivo"
-                value={endText}
-                autoComplete="off"
-                onFocus={() => { if (endText.length > 1) setShowEndDropdown(true) }}
-                onBlur={() => setTimeout(() => setShowEndDropdown(false), 150)}
-                onChange={async (e) => {
-                  const val = e.target.value
-                  setEndText(val)
-                  setEndPoint(null)
-                  if (val.length > 1) {
-                    setEndLoading(true)
-                    setShowEndDropdown(true)
-                    const suggestions = await fetchSuggestions(val)
-                    setEndSuggestions(suggestions)
-                    setEndLoading(false)
-                  } else {
-                    setEndSuggestions([])
-                    setShowEndDropdown(false)
-                  }
-                }}
-                className="pl-10 w-full py-3 h-12 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-              />
-              {showEndDropdown && (endSuggestions.length > 0 || endLoading) && (
-                <ul className="absolute z-20 left-0 right-0 bg-white border rounded shadow max-h-40 overflow-y-auto mt-1">
-                  {endLoading && <li className="p-2 text-xs text-gray-400">Caricamento…</li>}
-                  {endSuggestions.map((suggestion) => (
-                    <li
-                      key={suggestion.place_id}
-                      className="p-2 hover:bg-blue-100 cursor-pointer text-sm"
-                      onMouseDown={() => {
-                        setEndText(suggestion.display_name)
-                        setEndPoint({
-                          lat: suggestion.lat,
-                          lon: suggestion.lon,
-                          name: suggestion.display_name,
-                        })
-                        setShowEndDropdown(false)
+            <div className="flex items-center space-x-2 relative">
+              <FontAwesomeIcon icon={faFlag} className="text-red-600 absolute left-2 z-10" />
+              <div className="flex-1">
+                <div className="relative">
+                  <input
+                    ref={endInputRef}
+                    placeholder="Punto di arrivo"
+                    value={endText}
+                    autoComplete="off"
+                    onFocus={() => { if (endText.length > 1) setShowEndDropdown(true) }}
+                    onBlur={() => setTimeout(() => setShowEndDropdown(false), 150)}
+                    onChange={async (e) => {
+                      const val = e.target.value
+                      setEndText(val)
+                      setEndPoint(null)
+                      if (val.length > 1) {
+                        setEndLoading(true)
+                        setShowEndDropdown(true)
+                        const suggestions = await fetchSuggestions(val)
+                        setEndSuggestions(suggestions)
+                        setEndLoading(false)
+                      } else {
                         setEndSuggestions([])
-                        endInputRef.current.blur()
-                      }}
-                    >
-                      {suggestion.display_name}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {errorMsg && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded text-sm">
-            {errorMsg}
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 font-medium"
-        >
-          {loading ? 'Calcolo percorso...' : 'Trova percorso'}
-        </button>
-      </form>
-
-      {/* Route Information Card */}
-      {routeInfo && (
-        <div className="bg-white rounded-lg shadow-md p-4 w-full max-w-xl">
-          <h3 className="text-lg font-bold mb-3 text-gray-800">Informazioni Percorso</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex items-center space-x-2">
-              <FontAwesomeIcon icon={faRoute} className="text-blue-600" />
-              <div>
-                <p className="text-xs text-gray-500">Distanza</p>
-                <p className="font-semibold">{routeInfo.distance} km</p>
+                        setShowEndDropdown(false)
+                      }
+                    }}
+                    className="pl-10 w-full py-3 h-12 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                  />
+                  {showEndDropdown && (endSuggestions.length > 0 || endLoading) && (
+                    <ul className="absolute z-20 left-0 right-0 bg-white border rounded shadow max-h-40 overflow-y-auto mt-1">
+                      {endLoading && <li className="p-2 text-xs text-gray-400">Caricamento…</li>}
+                      {endSuggestions.map((suggestion) => (
+                        <li
+                          key={suggestion.place_id}
+                          className="p-2 hover:bg-blue-100 cursor-pointer text-sm"
+                          onMouseDown={() => {
+                            setEndText(suggestion.display_name)
+                            setEndPoint({
+                              lat: suggestion.lat,
+                              lon: suggestion.lon,
+                              name: suggestion.display_name,
+                            })
+                            setShowEndDropdown(false)
+                            setEndSuggestions([])
+                            endInputRef.current.blur()
+                          }}
+                        >
+                          {suggestion.display_name}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <FontAwesomeIcon icon={faClock} className="text-blue-600" />
-              <div>
-                <p className="text-xs text-gray-500">Durata</p>
-                <p className="font-semibold">{routeInfo.duration} min</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <FontAwesomeIcon icon={faWalking} className="text-green-600" />
-              <div>
-                <p className="text-xs text-gray-500">Salita</p>
-                <p className="font-semibold">{routeInfo.ascent} m</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <FontAwesomeIcon icon={faWalking} className="text-red-600" />
-              <div>
-                <p className="text-xs text-gray-500">Discesa</p>
-                <p className="font-semibold">{routeInfo.descent} m</p>
-              </div>
-            </div>
-          </div>
-           <button
-                onClick={() => setIsNavigating(true)}
-                className="mt-4 w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-md font-bold flex items-center justify-center space-x-2"
-              >
-                <FontAwesomeIcon icon={faLocationArrow} />
-                <span>Inizia Navigazione GPS</span>
-              </button>
-        </div>
-      )}
 
-{/* Turn-by-turn Instructions */}
-{instructions.length > 0 && (
-  <div className="bg-white rounded-lg shadow-md p-4 w-full max-w-xl">
-    <h3 className="text-lg font-bold mb-3 text-gray-800">Indicazioni Stradali</h3>
-    <div className="space-y-2 max-h-60 overflow-y-auto">
-      {instructions.map((step, idx) => (
-        <div key={idx} className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded">
-          <span className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
-            {idx + 1}
-          </span>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-gray-800">{step.instruction}</p>
-            <p className="text-xs text-gray-500">
-              
-              {step.distance > 0 
-                ? step.distance >= 1 
-                  ? `${step.distance.toFixed(2)} km` 
-                  : `${(step.distance * 1000).toFixed(0)} m`
-                : '0 m'
-              } · {Math.round(step.duration / 60)} min
-            </p>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
-</>
-       ) : (
-          <NavigationMode
+            {errorMsg && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded text-sm">
+                {errorMsg}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 font-medium"
+            >
+              {loading ? 'Calcolo percorso...' : 'Trova percorso'}
+            </button>
+          </form>
+
+          {/* Route Information Card */}
+          {routeInfo && (
+            <div className="bg-white rounded-lg shadow-md p-4 w-full max-w-xl">
+              <h3 className="text-lg font-bold mb-3 text-gray-800">Informazioni Percorso</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex items-center space-x-2">
+                  <FontAwesomeIcon icon={faRoute} className="text-blue-600" />
+                  <div>
+                    <p className="text-xs text-gray-500">Distanza</p>
+                    <p className="font-semibold">{routeInfo.distance} km</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <FontAwesomeIcon icon={faClock} className="text-blue-600" />
+                  <div>
+                    <p className="text-xs text-gray-500">Durata</p>
+                    <p className="font-semibold">{routeInfo.duration} min</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <FontAwesomeIcon icon={faWalking} className="text-green-600" />
+                  <div>
+                    <p className="text-xs text-gray-500">Salita</p>
+                    <p className="font-semibold">{routeInfo.ascent} m</p>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <FontAwesomeIcon icon={faWalking} className="text-red-600" />
+                  <div>
+                    <p className="text-xs text-gray-500">Discesa</p>
+                    <p className="font-semibold">{routeInfo.descent} m</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* ← QUI AGGIUNGI IL BOTTONE PER SALVARE */}
+              <div className="mt-4 pt-4 border-t space-y-2">
+                {fullRouteData && <SaveRouteButton routeData={fullRouteData} />}
+                
+                <button
+                  onClick={() => setIsNavigating(true)}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-md font-bold flex items-center justify-center space-x-2"
+                >
+                  <FontAwesomeIcon icon={faLocationArrow} />
+                  <span>Inizia Navigazione GPS</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Turn-by-turn Instructions */}
+          {instructions.length > 0 && (
+            <div className="bg-white rounded-lg shadow-md p-4 w-full max-w-xl">
+              <h3 className="text-lg font-bold mb-3 text-gray-800">Indicazioni Stradali</h3>
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {instructions.map((step, idx) => (
+                  <div key={idx} className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded">
+                    <span className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                      {idx + 1}
+                    </span>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-800">{step.instruction}</p>
+                      <p className="text-xs text-gray-500">
+                        {step.distance > 0 
+                          ? step.distance >= 1 
+                            ? `${step.distance.toFixed(2)} km` 
+                            : `${(step.distance * 1000).toFixed(0)} m`
+                          : '0 m'
+                        } · {Math.round(step.duration / 60)} min
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <NavigationMode
           map={map}
           routeLayer={routeLayer}
           instructions={instructions}
           endPoint={endPoint}
           onStop={() => setIsNavigating(false)}
-          />
-       )}
+        />
+      )}
 
-
-      {/* Map container */}
       <div id="map" className="w-full h-[400px] rounded-lg shadow-md" />
     </div>
   )
-
-  
-
 }
 
 export default RouteSearchForm
