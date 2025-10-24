@@ -516,13 +516,15 @@ const RouteSearchForm = ({preloadedRoute}) => {
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 font-medium"
-            >
-              {loading ? 'Calcolo percorso...' : 'Trova percorso'}
-            </button>
+            {!isPreloaded && (
+  <button
+    type="submit"
+    disabled={loading}
+    className="bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 font-medium"
+  >
+    {loading ? 'Calcolo percorso...' : 'Trova percorso'}
+  </button>
+)}
           </form>
 
           {/* Route Information Card */}
