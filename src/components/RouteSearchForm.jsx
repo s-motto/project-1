@@ -407,6 +407,7 @@ const RouteSearchForm = ({preloadedRoute}) => {
                     placeholder="Punto di partenza"
                     value={startText}
                     autoComplete="off"
+                    disabled={isPreloaded}
                     onFocus={() => { if (startText.length > 1) setShowStartDropdown(true) }}
                     onBlur={() => setTimeout(() => setShowStartDropdown(false), 150)}
                     onChange={async (e) => {
@@ -424,7 +425,7 @@ const RouteSearchForm = ({preloadedRoute}) => {
                         setShowStartDropdown(false)
                       }
                     }}
-                    className="pl-10 w-full py-3 h-12 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="pl-10 w-full py-3 h-12 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                   {showStartDropdown && (startSuggestions.length > 0 || startLoading) && (
                     <ul className="absolute z-20 left-0 right-0 bg-white border rounded shadow max-h-40 overflow-y-auto mt-1">
@@ -463,6 +464,7 @@ const RouteSearchForm = ({preloadedRoute}) => {
                     placeholder="Punto di arrivo"
                     value={endText}
                     autoComplete="off"
+                    disabled={isPreloaded}
                     onFocus={() => { if (endText.length > 1) setShowEndDropdown(true) }}
                     onBlur={() => setTimeout(() => setShowEndDropdown(false), 150)}
                     onChange={async (e) => {
@@ -480,7 +482,7 @@ const RouteSearchForm = ({preloadedRoute}) => {
                         setShowEndDropdown(false)
                       }
                     }}
-                    className="pl-10 w-full py-3 h-12 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="pl-10 w-full py-3 h-12 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
                   {showEndDropdown && (endSuggestions.length > 0 || endLoading) && (
                     <ul className="absolute z-20 left-0 right-0 bg-white border rounded shadow max-h-40 overflow-y-auto mt-1">
