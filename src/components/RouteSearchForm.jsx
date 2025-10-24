@@ -237,8 +237,8 @@ const RouteSearchForm = () => {
         const summary = props.summary || {}
         
         //imposta le info del percorso
-        const routeData = {
-          distance: (summary.distance).toFixed(2),
+       const routeData = {
+          distance: parseFloat((summary.distance).toFixed(2)), // converto in float
           duration: Math.round(summary.duration / 60),
           ascent: props.ascent ? Math.round(props.ascent) : 0,
           descent: props.descent ? Math.round(props.descent) : 0
