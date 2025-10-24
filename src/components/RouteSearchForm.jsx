@@ -162,42 +162,42 @@ const RouteSearchForm = () => {
         setRouteLayer(newRouteLayer)
 
          // Aggiungi marcatore di partenza con DIV HTML normale (non Leaflet)
-        const startMarkerDiv = document.createElement('div')
-        startMarkerDiv.className = 'custom-html-marker start-marker'
-        startMarkerDiv.innerHTML = `
-          <div style="font-size: 32px; color: #10b981; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-            <i class="fa-solid fa-location-dot"></i>
-          </div>
-        `
-        
-        // Converti coordinate in pixel e posiziona
-        const startPoint = map.latLngToContainerPoint([sp.lat, sp.lon])
-        startMarkerDiv.style.position = 'absolute'
-        startMarkerDiv.style.left = `${startPoint.x}px`
-        startMarkerDiv.style.top = `${startPoint.y}px`
-        startMarkerDiv.style.transform = 'translate(-50%, -100%)'
-        startMarkerDiv.style.zIndex = '400'
-        startMarkerDiv.style.pointerEvents = 'none'
-        
-        document.getElementById('map').appendChild(startMarkerDiv)
-        setStartMarker({ element: startMarkerDiv, coords: [sp.lat, sp.lon] })
+               // Aggiungi marcatore di partenza con EMOJI (no FontAwesome!)
+        const startIcon = L.divIcon({
+          className: 'custom-map-marker start-marker',
+          html: `
+            <div style="font-size: 40px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+              📍
+            </div>
+          `,
+          iconSize: [40, 40],
+          iconAnchor: [20, 40],
+        })
 
-        // Aggiungi marcatore di arrivo con DIV HTML normale
-        const endMarkerDiv = document.createElement('div')
-        endMarkerDiv.className = 'custom-html-marker end-marker'
-        endMarkerDiv.innerHTML = `
-          <div style="font-size: 32px; color: #ef4444; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-            <i class="fa-solid fa-flag-checkered"></i>
-          </div>
-        `
+        const sMarker = L.marker([sp.lat, sp.lon], { 
+          icon: startIcon,
+          zIndexOffset: 100
+        }).addTo(map)
+        setStartMarker(sMarker)
+
+        // Aggiungi marcatore 
+        const endIcon = L.divIcon({
+          className: 'custom-map-marker end-marker',
+          html: `
+            <div style="font-size: 40px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+              🏁
+            </div>
+          `,
+          iconSize: [40, 40],
+          iconAnchor: [20, 40],
+        })
         
-        const endPoint = map.latLngToContainerPoint([ep.lat, ep.lon])
-        endMarkerDiv.style.position = 'absolute'
-        endMarkerDiv.style.left = `${endPoint.x}px`
-        endMarkerDiv.style.top = `${endPoint.y}px`
-        endMarkerDiv.style.transform = 'translate(-50%, -100%)'
-        endMarkerDiv.style.zIndex = '400'
-        endMarkerDiv.style.pointerEvents = 'none'
+        const eMarker = L.marker([ep.lat, ep.lon], { 
+          icon: endIcon,
+          zIndexOffset: 100
+        }).addTo(map)
+        setEndMarker(eMarker)
+      
         
         document.getElementById('map').appendChild(endMarkerDiv)
         setEndMarker({ element: endMarkerDiv, coords: [ep.lat, ep.lon] })
