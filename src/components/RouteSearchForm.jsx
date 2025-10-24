@@ -5,7 +5,7 @@ import { FaMapMarkerAlt, FaFlag, FaWalking, FaClock, FaRoute, FaLocationArrow } 
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-const RouteSearchForm = () => {
+const RouteSearchForm = ({preloadedRoute}) => {
   const [startPoint, setStartPoint] = useState(null) //latitudine e longitudine
   const [endPoint, setEndPoint] = useState(null) //latitudine e longitudine
   const [map, setMap] = useState(null) //istanza della mappa
@@ -52,7 +52,124 @@ const RouteSearchForm = () => {
     }
   }, [])
 
-  const geocodeText = async (text) => { //converte testo in coordinate
+  // useEffect per caricare percorsi salvati
+  useEffect(() => {
+    if (preloadedRoute && map) {
+      loadSavedRoute(preloadedRoute)
+    }
+  }, [preloadedRoute, map])
+
+  // Funzione per caricare e visualizzare un percorso salvato
+  const loadSavedRoute = (route) => {
+    try {
+      // Pulisco eventuali percorsi precedenti
+      if (routeLayer && map) map.removeLayer(routeLayer)
+      if (startMarkerRef.current) startMarkerRef.current.remove()
+      if (endMarkerRef.current) endMarkerRef.current.remove()
+      if (updateMarkersListenerRef.current && map) {
+        map.off('move zoom', updateMarkersListenerRef.current)
+      }
+
+      // Imposto i punti di partenza e arrivo
+      setStartPoint(route.startPoint)
+      setEndPoint(route.endPoint)
+      setStartText(route.startPoint.name || '')
+      setEndText(route.endPoint.name || '')
+
+      // Imposto le info del percorso
+      setRouteInfo({
+        distance: route.distance,
+        duration: route.duration,
+        ascent: route.ascent,
+        descent: route.descent
+      })
+
+      // Imposto le istruzioni
+      setInstructions(route.instructions || [])
+
+      // Creo il GeoJSON dal percorso salvato
+      const geojson = {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: route.coordinates
+        },
+        properties: {}
+      }
+
+      // Disegno il percorso sulla mappa
+      const newRouteLayer = L.geoJSON(geojson, {
+        style: { color: '#2563eb', weight: 4, opacity: 0.8 }
+      }).addTo(map)
+      setRouteLayer(newRouteLayer)
+
+      // Creo il marker di partenza
+      const startMarkerDiv = document.createElement('div')
+      startMarkerDiv.className = 'custom-html-marker start-marker'
+      startMarkerDiv.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="32" height="32" fill="#10b981" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+          <path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/>
+        </svg>
+      `
+      const startPointPixel = map.latLngToContainerPoint([route.startPoint.lat, route.startPoint.lon])
+      startMarkerDiv.style.position = 'absolute'
+      startMarkerDiv.style.left = `${startPointPixel.x}px`
+      startMarkerDiv.style.top = `${startPointPixel.y}px`
+      startMarkerDiv.style.transform = 'translate(-50%, -100%)'
+      startMarkerDiv.style.zIndex = '400'
+      startMarkerDiv.style.pointerEvents = 'none'
+      document.getElementById('map').appendChild(startMarkerDiv)
+      startMarkerRef.current = startMarkerDiv
+
+      // Creo il marker di arrivo
+      const endMarkerDiv = document.createElement('div')
+      endMarkerDiv.className = 'custom-html-marker end-marker'
+      endMarkerDiv.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="32" height="32" fill="#ef4444" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+          <path d="M32 0C49.7 0 64 14.3 64 32V48l69-17.2c38.1-9.5 78.3-5.1 113.5 12.5c46.3 23.2 100.8 23.2 147.1 0l9.6-4.8C423.8 28.1 448 43.1 448 66.1V345.8c0 13.3-8.3 25.3-20.8 30l-34.7 13c-46.2 17.3-97.6 14.6-141.7-7.4c-37.9-19-81.3-23.7-122.5-13.4L64 384v96c0 17.7-14.3 32-32 32s-32-14.3-32-32V400 334 64 32C0 14.3 14.3 0 32 0zM64 187.1l64-13.9v65.5L64 252.6V187.1zm0 96.8l64-13.9v65.5L64 349.4V283.9zM320 128c-13.3 0-24 10.7-24 24s10.7 24 24 24h32c13.3 0 24-10.7 24-24s-10.7-24-24-24H320z"/>
+        </svg>
+      `
+      const endPointPixel = map.latLngToContainerPoint([route.endPoint.lat, route.endPoint.lon])
+      endMarkerDiv.style.position = 'absolute'
+      endMarkerDiv.style.left = `${endPointPixel.x}px`
+      endMarkerDiv.style.top = `${endPointPixel.y}px`
+      endMarkerDiv.style.transform = 'translate(-50%, -100%)'
+      endMarkerDiv.style.zIndex = '400'
+      endMarkerDiv.style.pointerEvents = 'none'
+      document.getElementById('map').appendChild(endMarkerDiv)
+      endMarkerRef.current = endMarkerDiv
+
+      // Funzione per aggiornare la posizione del marker
+      const updateMarkerPositions = () => {
+        if (startMarkerRef.current) {
+          const newStartPoint = map.latLngToContainerPoint([route.startPoint.lat, route.startPoint.lon])
+          startMarkerRef.current.style.left = `${newStartPoint.x}px`
+          startMarkerRef.current.style.top = `${newStartPoint.y}px`
+        }
+        if (endMarkerRef.current) {
+          const newEndPoint = map.latLngToContainerPoint([route.endPoint.lat, route.endPoint.lon])
+          endMarkerRef.current.style.left = `${newEndPoint.x}px`
+          endMarkerRef.current.style.top = `${newEndPoint.y}px`
+        }
+      }
+
+      updateMarkersListenerRef.current = updateMarkerPositions
+      map.on('move zoom', updateMarkerPositions)
+
+      // Adatto la vista della mappa al percorso
+      map.fitBounds(newRouteLayer.getBounds(), { padding: [50, 50] })
+
+      // Salvo i dati completi del percorso
+      setFullRouteData(route)
+
+    } catch (error) {
+      console.error('Error loading saved route:', error)
+      setErrorMsg('Errore nel caricamento del percorso salvato')
+    }
+  }
+
+
+  const geocodeText = async (text) => { //converto testo in coordinate
     if (!text) return null
     // Chiamata a Nominatim per geocoding
     try {
@@ -76,7 +193,7 @@ const RouteSearchForm = () => {
     }
   }
 
-  const fetchSuggestions = async (text) => { //ottiene suggerimenti di località
+  const fetchSuggestions = async (text) => { //ottengo suggerimenti di località
     if (!text || text.length < 2) return []
     try {
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(text)}&limit=5&countrycodes=it`
@@ -96,7 +213,7 @@ const RouteSearchForm = () => {
     }
   }
 
-  const handleSubmit = async (e) => { //gestisce l'invio del form
+  const handleSubmit = async (e) => { //gestisco l'invio del form
     e.preventDefault()
     setErrorMsg('')
     setLoading(true)
@@ -104,21 +221,21 @@ const RouteSearchForm = () => {
     setInstructions([])
     setFullRouteData(null)
 
-    // Ottieni coordinate se non già fornite
+    // Ottengo coordinate se non già fornite
     let sp = startPoint
     let ep = endPoint
 
-    // Geocodifica se necessario il punto di partenza
+    // Geocodifico se necessario il punto di partenza
     if (!sp && startText) {
       sp = await geocodeText(startText)
       if (sp) setStartPoint(sp)
     }
-    // Geocodifica se necessario il punto di arrivo
+    // Geocodifico se necessario il punto di arrivo
     if (!ep && endText) {
       ep = await geocodeText(endText)
       if (ep) setEndPoint(ep)
     }
-    // Controlla che entrambi i punti siano disponibili
+    // Controllo che entrambi i punti siano disponibili
     if (!sp || !ep) {
       setLoading(false)
       setErrorMsg('Per favore inserisci sia il punto di partenza che quello di arrivo.')
@@ -126,11 +243,11 @@ const RouteSearchForm = () => {
     }
 
     try { // Chiamata a OpenRouteService per il calcolo del percorso
-      // Rimuovi layer e marker precedenti
+      // Rimuovo layer e marker precedenti
       if (routeLayer && map) map.removeLayer(routeLayer)
       if (startMarkerRef.current) startMarkerRef.current.remove()
       if (endMarkerRef.current) endMarkerRef.current.remove()
-      // Rimuovi listener precedente
+      // Rimuovo listener precedente
       if (updateMarkersListenerRef.current && map) {
         map.off('move zoom', updateMarkersListenerRef.current)
       }
@@ -159,9 +276,9 @@ const RouteSearchForm = () => {
         return
       }
 
-      const data = await response.json() // Processa la risposta
+      const data = await response.json() // Processo la risposta
 
-      if (data.features && data.features.length > 0) { // Disegna il percorso sulla mappa
+      if (data.features && data.features.length > 0) { // Disegno il percorso sulla mappa
         const feature = data.features[0]
         
         const newRouteLayer = L.geoJSON(feature, {
@@ -178,7 +295,7 @@ const RouteSearchForm = () => {
           </svg>
         `
         
-        // Converti coordinate in pixel e posiziona
+        // Converto coordinate in pixel e posiziono il marcatore
         const startPointPixel = map.latLngToContainerPoint([sp.lat, sp.lon])
         startMarkerDiv.style.position = 'absolute'
         startMarkerDiv.style.left = `${startPointPixel.x}px`
@@ -225,18 +342,18 @@ const RouteSearchForm = () => {
           }
         }
         
-        // Salva il listener in un ref
+        // Salvo il listener in un ref
         updateMarkersListenerRef.current = updateMarkerPositions
         map.on('move zoom', updateMarkerPositions)
         
-        // Adatta la vista della mappa al percorso
+        // Adatto la vista della mappa al percorso
         map.fitBounds(newRouteLayer.getBounds(), { padding: [50, 50] })
 
-        // Estrai e imposta le informazioni del percorso
+        // Estraggo e imposto le informazioni del percorso
         const props = feature.properties
         const summary = props.summary || {}
         
-        //imposta le info del percorso
+        //imposto le info del percorso
        const routeData = {
           distance: parseFloat((summary.distance).toFixed(2)), // converto in float
           duration: Math.round(summary.duration / 60),
@@ -244,15 +361,15 @@ const RouteSearchForm = () => {
           descent: props.descent ? Math.round(props.descent) : 0
         }
         
-        // Salva le info del percorso nello stato
+        // Salvo le info del percorso nello stato
         setRouteInfo(routeData)
 
-        // Estrai e imposta le istruzioni passo-passo
+        // Estraggo e imposto le istruzioni passo-passo
         if (props.segments && props.segments[0].steps) {
           setInstructions(props.segments[0].steps)
         }
 
-        // Salva tutti i dati del percorso 
+        // Salvo tutti i dati del percorso 
         setFullRouteData({
           startPoint: sp,
           endPoint: ep,
