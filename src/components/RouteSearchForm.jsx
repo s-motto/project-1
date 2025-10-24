@@ -399,7 +399,7 @@ const RouteSearchForm = ({preloadedRoute}) => {
         <>
           <form onSubmit={handleSubmit} className="flex flex-col space-y-4 p-4 bg-white rounded-lg shadow-md w-full max-w-xl">
             <div className="flex items-center space-x-2 relative">
-              <FaMapMarkerAlt className="text-green-600 absolute left-2" />
+              
               <div className="flex-1">
                 <div className="relative">
                   <input
@@ -455,7 +455,7 @@ const RouteSearchForm = ({preloadedRoute}) => {
             </div>
 
             <div className="flex items-center space-x-2 relative">
-              <FaFlag className="text-red-600 absolute left-2" />
+              
               <div className="flex-1">
                 <div className="relative">
                   <input
