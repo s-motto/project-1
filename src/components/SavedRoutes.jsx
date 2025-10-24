@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faRoute, faTrash, faMapMarkedAlt, faSpinner } from '@fortawesome/free-solid-svg-icons'
+import { FaRoute, FaTrash, FaMapMarkedAlt, FaSpinner } from 'react-icons/fa'
 import { useAuth } from '../contexts/AuthContext'
 import routesService from '../services/routesService'
 
@@ -49,7 +48,7 @@ const SavedRoutes = ({ onLoadRoute }) => {
   if (loading) {
     return (
       <div className="bg-white rounded-lg shadow-md p-6 text-center">
-        <FontAwesomeIcon icon={faSpinner} className="animate-spin text-2xl text-blue-600" />
+        <FaSpinner className="animate-spin text-2xl text-blue-600" />
         <p className="mt-2 text-gray-600">Caricamento percorsi...</p>
       </div>
     )
@@ -58,7 +57,7 @@ const SavedRoutes = ({ onLoadRoute }) => {
   if (routes.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-md p-6 text-center">
-        <FontAwesomeIcon icon={faRoute} className="text-4xl text-gray-300 mb-3" />
+        <FaRoute className="text-4xl text-gray-300 mb-3" />
         <p className="text-gray-600">Non hai ancora salvato nessun percorso</p>
       </div>
     )
@@ -92,7 +91,7 @@ const SavedRoutes = ({ onLoadRoute }) => {
                   className="text-blue-600 hover:text-blue-800"
                   title="Carica percorso"
                 >
-                  <FontAwesomeIcon icon={faMapMarkedAlt} />
+                  <FaMapMarkedAlt />
                 </button>
                 <button
                   onClick={() => handleDelete(route.$id)}
@@ -101,9 +100,9 @@ const SavedRoutes = ({ onLoadRoute }) => {
                   title="Elimina percorso"
                 >
                   {deleting === route.$id ? (
-                    <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+                    <FaSpinner className="animate-spin" />
                   ) : (
-                    <FontAwesomeIcon icon={faTrash} />
+                     <FaTrash />
                   )}
                 </button>
               </div>

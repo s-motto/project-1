@@ -1,13 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { 
-  faLocationArrow, 
-  faRoute, 
-  faFlag, 
-  faExclamationTriangle,
-  faStop,
-  faCompass
-} from '@fortawesome/free-solid-svg-icons'
+import { FaLocationArrow, FaRoute, FaFlag, FaExclamationTriangle, FaStop, FaCompass } from 'react-icons/fa'
 import L from 'leaflet'
 
 const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop }) => {
@@ -219,21 +211,21 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop }) => 
       <div className="bg-blue-600 text-white rounded-lg shadow-lg p-4 w-full max-w-xl">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-2">
-            <FontAwesomeIcon icon={faLocationArrow} className="text-lg animate-pulse" />
+           <FaLocationArrow className="text-lg animate-pulse" />
             <span className="font-bold">Navigazione attiva</span>
           </div>
           <button
             onClick={handleStop}
             className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded-md text-sm font-medium flex items-center space-x-1"
           >
-            <FontAwesomeIcon icon={faStop} />
+            <FaStop />
             <span>Stop</span>
           </button>
         </div>
         
         {distanceToEnd !== null && (
           <div className="flex items-center space-x-2 text-sm">
-            <FontAwesomeIcon icon={faFlag} />
+            <FaFlag />
             <span>
               Distanza destinazione: <strong>{(distanceToEnd * 1000).toFixed(0)} m</strong>
             </span>
@@ -245,7 +237,7 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop }) => 
       {isOffRoute && (
         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg shadow-md w-full max-w-xl">
           <div className="flex items-center space-x-2 text-yellow-800">
-            <FontAwesomeIcon icon={faExclamationTriangle} className="text-xl" />
+            <FaExclamationTriangle className="text-xl" />
             <div>
               <p className="font-bold">Fuori percorso!</p>
               <p className="text-sm">Torna sul tracciato consigliato</p>
@@ -266,13 +258,14 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop }) => 
               <p className="text-lg font-bold text-gray-900">{currentStep.instruction}</p>
               <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
                 <span>
-                  <FontAwesomeIcon icon={faRoute} className="mr-1" />
+                  <FaRoute className="mr-1" />
                   {currentStep.distance >= 1 
                     ? `${currentStep.distance.toFixed(2)} km` 
                     : `${(currentStep.distance * 1000).toFixed(0)} m`}
                 </span>
                 <span>
-                  <FontAwesomeIcon icon={faCompass} className="mr-1" />
+                 <FaCompass className="mr-1" />
+
                   {Math.round(currentStep.duration / 60)} min
                 </span>
               </div>

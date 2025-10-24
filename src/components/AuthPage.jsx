@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faUser, faLock, faEnvelope, faSpinner, faHiking } from '@fortawesome/free-solid-svg-icons'
+import { FaUser, FaLock, FaEnvelope, FaSpinner, FaHiking } from 'react-icons/fa'
 import { useAuth } from '../contexts/AuthContext'
 
 const AuthPage = ({ onClose }) => {
@@ -113,12 +112,12 @@ const AuthPage = ({ onClose }) => {
   return (
     //Overlay modale
     //Imposto z-index alto per essere sopra altri elementi
-    <div className="modal-overlay fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+    <div className="modal-overlay fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4" style={{isolation: 'isolate'}}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         {/* Header con icona e titolo */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-400 p-6 text-white">
           <div className="flex items-center justify-center mb-2">
-            <FontAwesomeIcon icon={faHiking} className="text-4xl" />
+            <FaHiking className="text-4xl" />
           </div>
           <h2 className="text-2xl font-bold text-center">
             {isLogin ? 'Bentornato!' : 'Crea Account'}
@@ -137,10 +136,7 @@ const AuthPage = ({ onClose }) => {
                 Nome
               </label>
               <div className="relative">
-                <FontAwesomeIcon 
-                  icon={faUser} 
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                />
+                 <FaUser className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
                   name="name"
@@ -159,10 +155,7 @@ const AuthPage = ({ onClose }) => {
               Email
             </label>
             <div className="relative">
-              <FontAwesomeIcon 
-                icon={faEnvelope} 
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              />
+              <FaEnvelope className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="email"
                 name="email"
@@ -180,10 +173,7 @@ const AuthPage = ({ onClose }) => {
               Password
             </label>
             <div className="relative">
-              <FontAwesomeIcon 
-                icon={faLock} 
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              />
+               <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="password"
                 name="password"
@@ -202,10 +192,7 @@ const AuthPage = ({ onClose }) => {
                 Conferma Password
               </label>
               <div className="relative">
-                <FontAwesomeIcon 
-                  icon={faLock} 
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                />
+                 <FaLock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type="password"
                   name="confirmPassword"
@@ -235,7 +222,7 @@ const AuthPage = ({ onClose }) => {
                 //Spinner di caricamento
               <>
               
-                <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+                <FaSpinner className="animate-spin" />
                 <span>Caricamento...</span>
               </>
             ) : (

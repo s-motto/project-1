@@ -4,8 +4,7 @@ import RouteSearchForm from './components/RouteSearchForm'
 import Footer from './components/Footer'
 import UserMenu from './components/UserMenu'
 import SavedRoutes from './components/SavedRoutes'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faMusic } from '@fortawesome/free-solid-svg-icons'
+import { FaMusic } from 'react-icons/fa'
 import { useAuth } from './contexts/AuthContext'
 
 const App = () => {
@@ -34,7 +33,7 @@ const App = () => {
             Let's Walk!
           </h1>
           <h2 className="text-xl sm:text-4xl text-center pb-4 sm:pb-8 text-white drop-shadow font-captivating font-bold">
-            {user ? `Ciao ${user.name}!` : 'Benvenuto!'} <FontAwesomeIcon icon={faMusic} /> Dove vai oggi?
+            {user ? `Ciao ${user.name}!` : 'Benvenuto!'} <FaMusic /> Dove vai oggi?
           </h2>
         </div>
       </header>

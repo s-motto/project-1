@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faBookmark, faCheck, faSpinner } from '@fortawesome/free-solid-svg-icons'
+import { FaBookmark, FaCheck, FaSpinner } from 'react-icons/fa'
 import { useAuth } from '../contexts/AuthContext'
 import routesService from '../services/routesService'
 
@@ -49,7 +48,7 @@ const SaveRouteButton = ({ routeData }) => {
         onClick={() => alert('Effettua il login per salvare i percorsi')}
         className="w-full bg-gray-400 text-white py-3 px-4 rounded-md font-medium flex items-center justify-center space-x-2"
       >
-        <FontAwesomeIcon icon={faBookmark} />
+        <FaBookmark />
         <span>Login per salvare</span>
       </button>
     )
@@ -61,7 +60,7 @@ const SaveRouteButton = ({ routeData }) => {
         disabled
         className="w-full bg-green-600 text-white py-3 px-4 rounded-md font-medium flex items-center justify-center space-x-2"
       >
-        <FontAwesomeIcon icon={faCheck} />
+        <FaCheck />
         <span>Percorso salvato!</span>
       </button>
     )
@@ -86,12 +85,12 @@ const SaveRouteButton = ({ routeData }) => {
       >
         {saving ? (
           <>
-            <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+            <FaSpinner className="animate-spin" />
             <span>Salvataggio...</span>
           </>
         ) : (
           <>
-            <FontAwesomeIcon icon={faBookmark} />
+            <FaBookmark />
             <span>{showNameInput ? 'Conferma salvataggio' : 'Salva percorso'}</span>
           </>
         )}

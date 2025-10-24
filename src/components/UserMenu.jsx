@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faUser, faSignOutAlt, faBookmark, faChevronDown } from '@fortawesome/free-solid-svg-icons'
+import { FaUser, FaSignOutAlt, FaBookmark, FaChevronDown } from 'react-icons/fa'
 import { useAuth } from '../contexts/AuthContext'
 import AuthPage from './AuthPage'
 
@@ -27,7 +26,7 @@ const UserMenu = ({ onShowSavedRoutes }) => {
           onClick={() => setShowAuthModal(true)}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center space-x-2 transition-colors"
         >
-          <FontAwesomeIcon icon={faUser} />
+          <FaUser />
           <span>Accedi</span>
         </button>
 {/* Modale di login/registrazione visibile solo se showAuthModal è true */}
@@ -52,7 +51,7 @@ const UserMenu = ({ onShowSavedRoutes }) => {
          {/* Nome utente (nascosto su mobile) */}
         <span className="hidden sm:inline">{user.name || user.email}</span>
         {/* Icona freccia */}
-        <FontAwesomeIcon icon={faChevronDown} className="text-sm" />
+        <FaChevronDown className="text-sm" />
       </button>
 
  {/* Menu a tendina (visibile solo se showMenu è true) */}
@@ -65,7 +64,7 @@ const UserMenu = ({ onShowSavedRoutes }) => {
           />
           
           {/* Card del menu a tendina con z-index aumentato in modo da farlo rimanere sopra il resto della pagina */}
-          <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-[9999]">
+          <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
             {/* Sezione info utente */}
             <div className="px-4 py-3 border-b border-gray-200">
               <p className="text-sm font-medium text-gray-900">{user.name}</p>
@@ -80,7 +79,7 @@ const UserMenu = ({ onShowSavedRoutes }) => {
               }}
               className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center space-x-2 text-gray-700"
             >
-              <FontAwesomeIcon icon={faBookmark} className="w-4" />
+              <FaBookmark className="w-4" />
               <span>Percorsi salvati</span>
             </button>
 
@@ -89,7 +88,7 @@ const UserMenu = ({ onShowSavedRoutes }) => {
               onClick={handleLogout}
               className="w-full px-4 py-2 text-left hover:bg-red-50 flex items-center space-x-2 text-red-600 border-t border-gray-200"
             >
-              <FontAwesomeIcon icon={faSignOutAlt} className="w-4" />
+              <FaSignOutAlt className="w-4" />
               <span>Esci</span>
             </button>
           </div>

@@ -1,11 +1,10 @@
 import React from 'react'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons'
+import { FaSearch } from 'react-icons/fa'
 
 const Search = ({searchTerm,setSearchTerm}) => {
   return (
     <div className="rounded-md bg-amber-100 text-black box-border p-1 mx-2 flex items-center h-8">
-      <FontAwesomeIcon icon={faMagnifyingGlass} className="mx-2 text-sm" />
+      <FaSearch className="mx-2 text-sm" />
       <input 
         type="text" 
         placeholder='Search'

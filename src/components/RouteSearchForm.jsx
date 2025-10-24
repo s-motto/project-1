@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import NavigationMode from './NavigationMode'
 import SaveRouteButton from './SaveRouteButton'  // ← AGGIUNTO
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faLocationDot, faFlag, faWalking, faClock, faRoute, faLocationArrow } from '@fortawesome/free-solid-svg-icons'
+import { FaMapMarkerAlt, FaFlag, FaWalking, FaClock, FaRoute, FaLocationArrow } from 'react-icons/fa'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -166,9 +165,11 @@ const RouteSearchForm = () => {
         const startIcon = L.divIcon({
           className: 'custom-map-marker start-marker',
           html: `
-            <div style="font-size: 40px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-              📍
-            </div>
+           <div style="font-size: 32px; color: #10b981; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="32" height="32" fill="currentColor">
+    <path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/>
+  </svg>
+</div>
           `,
           iconSize: [40, 40],
           iconAnchor: [20, 40],
@@ -184,9 +185,11 @@ const RouteSearchForm = () => {
         const endIcon = L.divIcon({
           className: 'custom-map-marker end-marker',
           html: `
-            <div style="font-size: 40px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-              🏁
-            </div>
+           <div style="font-size: 32px; color: #ef4444; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="32" height="32" fill="currentColor">
+    <path d="M32 0C49.7 0 64 14.3 64 32V48l69-17.2c38.1-9.5 78.3-5.1 113.5 12.5c46.3 23.2 100.8 23.2 147.1 0l9.6-4.8C423.8 28.1 448 43.1 448 66.1V345.8c0 13.3-8.3 25.3-20.8 30l-34.7 13c-46.2 17.3-97.6 14.6-141.7-7.4c-37.9-19-81.3-23.7-122.5-13.4L64 384v96c0 17.7-14.3 32-32 32s-32-14.3-32-32V400 334 64 32C0 14.3 14.3 0 32 0zM64 187.1l64-13.9v65.5L64 252.6V187.1zm0 96.8l64-13.9v65.5L64 349.4V283.9zM320 128c-13.3 0-24 10.7-24 24s10.7 24 24 24h32c13.3 0 24-10.7 24-24s-10.7-24-24-24H320z"/>
+  </svg>
+</div>
           `,
           iconSize: [40, 40],
           iconAnchor: [20, 40],
@@ -264,7 +267,7 @@ const RouteSearchForm = () => {
         <>
           <form onSubmit={handleSubmit} className="flex flex-col space-y-4 p-4 bg-white rounded-lg shadow-md w-full max-w-xl">
             <div className="flex items-center space-x-2 relative">
-              <FontAwesomeIcon icon={faLocationDot} className="text-green-600 absolute left-2 z-10" />
+              <FaMapMarkerAlt className="text-green-600 absolute left-2" />
               <div className="flex-1">
                 <div className="relative">
                   <input
@@ -320,7 +323,7 @@ const RouteSearchForm = () => {
             </div>
 
             <div className="flex items-center space-x-2 relative">
-              <FontAwesomeIcon icon={faFlag} className="text-red-600 absolute left-2 z-10" />
+              <FaFlag className="text-red-600 absolute left-2" />
               <div className="flex-1">
                 <div className="relative">
                   <input
@@ -396,28 +399,28 @@ const RouteSearchForm = () => {
               <h3 className="text-lg font-bold mb-3 text-gray-800">Informazioni Percorso</h3>
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex items-center space-x-2">
-                  <FontAwesomeIcon icon={faRoute} className="text-blue-600" />
+                  <FaRoute className="text-blue-600" />
                   <div>
                     <p className="text-xs text-gray-500">Distanza</p>
                     <p className="font-semibold">{routeInfo.distance} km</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <FontAwesomeIcon icon={faClock} className="text-blue-600" />
+                  <FaClock className="text-blue-600" />
                   <div>
                     <p className="text-xs text-gray-500">Durata</p>
                     <p className="font-semibold">{routeInfo.duration} min</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <FontAwesomeIcon icon={faWalking} className="text-green-600" />
+                  <FaWalking className="text-green-600" />
                   <div>
                     <p className="text-xs text-gray-500">Salita</p>
                     <p className="font-semibold">{routeInfo.ascent} m</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <FontAwesomeIcon icon={faWalking} className="text-red-600" />
+                  <FaWalking className="text-red-600" />
                   <div>
                     <p className="text-xs text-gray-500">Discesa</p>
                     <p className="font-semibold">{routeInfo.descent} m</p>
@@ -433,7 +436,7 @@ const RouteSearchForm = () => {
                   onClick={() => setIsNavigating(true)}
                   className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-md font-bold flex items-center justify-center space-x-2"
                 >
-                  <FontAwesomeIcon icon={faLocationArrow} />
+                   <FaLocationArrow />
                   <span>Inizia Navigazione GPS</span>
                 </button>
               </div>

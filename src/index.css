@@ -52,6 +52,9 @@ body, input, textarea, select, button, h1, h2, h3, h4, h5, h6, p, a, span, label
   position: fixed !important;
   inset: 0 !important;
 }
+.modal-overlay > * {
+  isolation: isolate;
+}
 
 /* ===== NASCONDI I MARKER QUANDO MODALE È APERTO ===== */
 body.modal-open .leaflet-marker-pane {
