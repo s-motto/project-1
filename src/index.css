@@ -44,3 +44,57 @@ body, input, textarea, select, button, h1, h2, h3, h4, h5, h6, p, a, span, label
   align-items: center;
   justify-content: center;
 }
+
+/* ===== LEAFLET MAP Z-INDEX FIX ===== */
+.leaflet-container {
+  z-index: 1 !important;
+}
+
+.leaflet-pane {
+  z-index: 1 !important;
+}
+
+.leaflet-marker-pane {
+  z-index: 1 !important;
+}
+
+.leaflet-shadow-pane {
+  z-index: 1 !important;
+}
+
+/* ===== MODAL OVERLAY ===== */
+.modal-overlay {
+  z-index: 9999 !important;
+  position: fixed !important;
+}
+
+/* ===== HIDE MAP MARKERS WHEN MODAL IS OPEN ===== */
+body.modal-open .leaflet-marker-pane {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  display: none !important;
+}
+
+body.modal-open .leaflet-shadow-pane {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  display: none !important;
+}
+
+body.modal-open .leaflet-tooltip-pane {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  display: none !important;
+}
+
+body.modal-open .leaflet-popup-pane {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  display: none !important;
+}
+
+/* Blur e disabilita interazione con la mappa */
+body.modal-open .leaflet-container {
+  filter: blur(3px) !important;
+  pointer-events: none !important;
+}
