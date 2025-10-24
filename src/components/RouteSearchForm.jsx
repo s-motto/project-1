@@ -7,55 +7,57 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
 const RouteSearchForm = () => {
-  const [startPoint, setStartPoint] = useState(null)
-  const [endPoint, setEndPoint] = useState(null)
-  const [map, setMap] = useState(null)
-  const [routeLayer, setRouteLayer] = useState(null)
-  const [startText, setStartText] = useState('')
-  const [endText, setEndText] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [errorMsg, setErrorMsg] = useState('')
-  const [routeInfo, setRouteInfo] = useState(null)
-  const [instructions, setInstructions] = useState([])
-  const [startSuggestions, setStartSuggestions] = useState([])
-  const [endSuggestions, setEndSuggestions] = useState([])
-  const [showStartDropdown, setShowStartDropdown] = useState(false)
-  const [showEndDropdown, setShowEndDropdown] = useState(false)
-  const [startLoading, setStartLoading] = useState(false)
-  const [endLoading, setEndLoading] = useState(false)
-  const ORS_KEY = import.meta.env.VITE_OPENROUTE_API_KEY || ''
-  const startInputRef = useRef()
-  const endInputRef = useRef()
-  const [startMarker, setStartMarker] = useState(null)
-  const [endMarker, setEndMarker] = useState(null)
-  const [isNavigating, setIsNavigating] = useState(false)
-  const [fullRouteData, setFullRouteData] = useState(null) // ← AGGIUNTO per salvare tutti i dati
+  const [startPoint, setStartPoint] = useState(null) //latitudine e longitudine
+  const [endPoint, setEndPoint] = useState(null) //latitudine e longitudine
+  const [map, setMap] = useState(null) //istanza della mappa
+  const [routeLayer, setRouteLayer] = useState(null) //layer del percorso
+  const [startText, setStartText] = useState('') //testo input partenza
+  const [endText, setEndText] = useState('') //testo input arrivo
+  const [loading, setLoading] = useState(false) //stato di caricamento
+  const [errorMsg, setErrorMsg] = useState('') //messaggi di errore
+  const [routeInfo, setRouteInfo] = useState(null) //info del percorso
+  const [instructions, setInstructions] = useState([]) //istruzioni passo-passo
+  const [startSuggestions, setStartSuggestions] = useState([]) //suggerimenti partenza
+  const [endSuggestions, setEndSuggestions] = useState([]) //suggerimenti arrivo
+  const [showStartDropdown, setShowStartDropdown] = useState(false) //mostra dropdown partenza
+  const [showEndDropdown, setShowEndDropdown] = useState(false) //mostra dropdown arrivo
+  const [startLoading, setStartLoading] = useState(false) //caricamento suggerimenti partenza
+  const [endLoading, setEndLoading] = useState(false) //caricamento suggerimenti arrivo
+  const ORS_KEY = import.meta.env.VITE_OPENROUTE_API_KEY || '' //chiave API OpenRouteService
+  const startInputRef = useRef() //riferimento input partenza
+  const endInputRef = useRef() //riferimento input arrivo
+  const [startMarker, setStartMarker] = useState(null) //marcatore partenza
+  const [endMarker, setEndMarker] = useState(null) //marcatore arrivo
+  const [isNavigating, setIsNavigating] = useState(false) //stato modalità navigazione
+  const [fullRouteData, setFullRouteData] = useState(null) // salva tutti i dati del percorso
 
   useEffect(() => {
-    const mapInstance = L.map('map').setView([45.4642, 9.1900], 13)
+    const mapInstance = L.map('map').setView([45.4642, 9.1900], 13) //Centro su Milano di default
     
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '© OpenStreetMap contributors'
     }).addTo(mapInstance)
     
-    setMap(mapInstance)
+    setMap(mapInstance) //Salva l'istanza della mappa nello stato
 
     return () => {
+      //quando il componente viene smontato, rimuovi la mappa
       if (mapInstance) {
         mapInstance.remove()
       }
     }
   }, [])
 
-  const geocodeText = async (text) => {
+  const geocodeText = async (text) => { //converte testo in coordinate
     if (!text) return null
+    // Chiamata a Nominatim per geocoding
     try {
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(text)}&limit=1&countrycodes=it`
       const resp = await fetch(url, {
         headers: { 'User-Agent': 'HikingApp/1.0' }
       })
-      if (!resp.ok) return null
+      if (!resp.ok) return null // Controlla se la risposta è valida
       const json = await resp.json()
       if (json.length > 0) {
         return { 
@@ -71,7 +73,7 @@ const RouteSearchForm = () => {
     }
   }
 
-  const fetchSuggestions = async (text) => {
+  const fetchSuggestions = async (text) => { //ottiene suggerimenti di località
     if (!text || text.length < 2) return []
     try {
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(text)}&limit=5&countrycodes=it`
@@ -91,7 +93,7 @@ const RouteSearchForm = () => {
     }
   }
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => { //gestisce l'invio del form
     e.preventDefault()
     setErrorMsg('')
     setLoading(true)
@@ -99,31 +101,33 @@ const RouteSearchForm = () => {
     setInstructions([])
     setFullRouteData(null) // ← RESET
 
+    // Ottieni coordinate se non già fornite
     let sp = startPoint
     let ep = endPoint
 
+    // Geocodifica se necessario il punto di partenza
     if (!sp && startText) {
       sp = await geocodeText(startText)
       if (sp) setStartPoint(sp)
     }
-
+// Geocodifica se necessario il punto di arrivo
     if (!ep && endText) {
       ep = await geocodeText(endText)
       if (ep) setEndPoint(ep)
     }
-
+// Controlla che entrambi i punti siano disponibili
     if (!sp || !ep) {
       setLoading(false)
       setErrorMsg('Per favore inserisci sia il punto di partenza che quello di arrivo.')
       return
     }
 
-    try {
+    try { // Chiamata a OpenRouteService per il calcolo del percorso
       if (routeLayer && map) map.removeLayer(routeLayer)
       if (startMarker) map.removeLayer(startMarker)
       if (endMarker) map.removeLayer(endMarker)
 
-      const response = await fetch(
+      const response = await fetch( 
         'https://api.openrouteservice.org/v2/directions/foot-hiking/geojson',
         {
           method: 'POST',
@@ -140,16 +144,16 @@ const RouteSearchForm = () => {
         }
       )
 
-      if (!response.ok) {
+      if (!response.ok) {// Gestione errori dalla API
         console.error('ORS API error:', response.status)
         setErrorMsg('Errore nel calcolo del percorso. Verifica la tua API key.')
         setLoading(false)
         return
       }
 
-      const data = await response.json()
+      const data = await response.json() // Processa la risposta
 
-      if (data.features && data.features.length > 0) {
+      if (data.features && data.features.length > 0) { // Disegna il percorso sulla mappa
         const feature = data.features[0]
         
         const newRouteLayer = L.geoJSON(feature, {
@@ -157,25 +161,50 @@ const RouteSearchForm = () => {
         }).addTo(map)
         setRouteLayer(newRouteLayer)
 
+        // Aggiungi marcatore di partenza 
         const startIcon = L.divIcon({
-          html: '<div style="background-color: #10b981; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
-          iconSize: [24, 24]
+          className: 'custom-map-marker start-marker',
+          html: `
+            <div style="font-size: 32px; color: #10b981; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+              <i class="fa-solid fa-location-dot"></i>
+            </div>
+          `,
+          iconSize: [32, 32],
+          iconAnchor: [16, 32],
         })
-        const sMarker = L.marker([sp.lat, sp.lon], { icon: startIcon }).addTo(map)
+
+        const sMarker = L.marker([sp.lat, sp.lon], { 
+          icon: startIcon,
+          zIndexOffset: -1000 // Z-index BASSO
+        }).addTo(map)
         setStartMarker(sMarker)
 
-        const endIcon = L.divIcon({
-          html: '<div style="background-color: #ef4444; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>',
-          iconSize: [24, 24]
+        // Aggiungi marcatore di arrivo
+       const endIcon = L.divIcon({
+          className: 'custom-map-marker end-marker',
+          html: `
+            <div style="font-size: 32px; color: #ef4444; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+              <i class="fa-solid fa-flag-checkered"></i>
+            </div>
+          `,
+          iconSize: [32, 32],
+          iconAnchor: [16, 32],
         })
-        const eMarker = L.marker([ep.lat, ep.lon], { icon: endIcon }).addTo(map)
+        
+        const eMarker = L.marker([ep.lat, ep.lon], { 
+          icon: endIcon,
+          zIndexOffset: -1000 // Z-index BASSO
+        }).addTo(map)
         setEndMarker(eMarker)
         
+        // Adatta la vista della mappa al percorso
         map.fitBounds(newRouteLayer.getBounds(), { padding: [50, 50] })
 
+        // Estrai e imposta le informazioni del percorso
         const props = feature.properties
         const summary = props.summary || {}
         
+        //imposta le info del percorso
         const routeData = {
           distance: (summary.distance).toFixed(2),
           duration: Math.round(summary.duration / 60),
@@ -183,13 +212,15 @@ const RouteSearchForm = () => {
           descent: props.descent ? Math.round(props.descent) : 0
         }
         
+        // Salva le info del percorso nello stato
         setRouteInfo(routeData)
 
+        // Estrai e imposta le istruzioni passo-passo
         if (props.segments && props.segments[0].steps) {
           setInstructions(props.segments[0].steps)
         }
 
-        // ← SALVA TUTTI I DATI DEL PERCORSO
+        // Salva tutti i dati del percorso 
         setFullRouteData({
           startPoint: sp,
           endPoint: ep,
@@ -200,10 +231,10 @@ const RouteSearchForm = () => {
           coordinates: feature.geometry.coordinates,
           instructions: props.segments && props.segments[0].steps ? props.segments[0].steps : []
         })
-      } else {
+      } else { // Nessun percorso trovato
         setErrorMsg('Non è stato possibile calcolare un percorso.')
       }
-    } catch (error) {
+    } catch (error) { // Gestione errori generali
       console.error('Error:', error)
       setErrorMsg('Errore nel calcolo del percorso.')
     }
