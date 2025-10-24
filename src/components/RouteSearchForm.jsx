@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import NavigationMode from './NavigationMode'
-import SaveRouteButton from './SaveRouteButton'  // ← AGGIUNTO
+import SaveRouteButton from './SaveRouteButton'
 import { FaMapMarkerAlt, FaFlag, FaWalking, FaClock, FaRoute, FaLocationArrow } from 'react-icons/fa'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -25,8 +25,12 @@ const RouteSearchForm = () => {
   const ORS_KEY = import.meta.env.VITE_OPENROUTE_API_KEY || '' //chiave API OpenRouteService
   const startInputRef = useRef() //riferimento input partenza
   const endInputRef = useRef() //riferimento input arrivo
-  const [startMarker, setStartMarker] = useState(null) //marcatore partenza
-  const [endMarker, setEndMarker] = useState(null) //marcatore arrivo
+  
+ 
+  const startMarkerRef = useRef(null) //marcatore partenza
+  const endMarkerRef = useRef(null) //marcatore arrivo
+  const updateMarkersListenerRef = useRef(null) // riferimento al listener
+  
   const [isNavigating, setIsNavigating] = useState(false) //stato modalità navigazione
   const [fullRouteData, setFullRouteData] = useState(null) // salva tutti i dati del percorso
 
@@ -98,7 +102,7 @@ const RouteSearchForm = () => {
     setLoading(true)
     setRouteInfo(null)
     setInstructions([])
-    setFullRouteData(null) // ← RESET
+    setFullRouteData(null)
 
     // Ottieni coordinate se non già fornite
     let sp = startPoint
@@ -109,12 +113,12 @@ const RouteSearchForm = () => {
       sp = await geocodeText(startText)
       if (sp) setStartPoint(sp)
     }
-// Geocodifica se necessario il punto di arrivo
+    // Geocodifica se necessario il punto di arrivo
     if (!ep && endText) {
       ep = await geocodeText(endText)
       if (ep) setEndPoint(ep)
     }
-// Controlla che entrambi i punti siano disponibili
+    // Controlla che entrambi i punti siano disponibili
     if (!sp || !ep) {
       setLoading(false)
       setErrorMsg('Per favore inserisci sia il punto di partenza che quello di arrivo.')
@@ -122,9 +126,14 @@ const RouteSearchForm = () => {
     }
 
     try { // Chiamata a OpenRouteService per il calcolo del percorso
-       if (routeLayer && map) map.removeLayer(routeLayer)
-      if (startMarker && startMarker.element) startMarker.element.remove()
-      if (endMarker && endMarker.element) endMarker.element.remove()
+      // Rimuovi layer e marker precedenti
+      if (routeLayer && map) map.removeLayer(routeLayer)
+      if (startMarkerRef.current) startMarkerRef.current.remove()
+      if (endMarkerRef.current) endMarkerRef.current.remove()
+      // Rimuovi listener precedente
+      if (updateMarkersListenerRef.current && map) {
+        map.off('move zoom', updateMarkersListenerRef.current)
+      }
 
       const response = await fetch( 
         'https://api.openrouteservice.org/v2/directions/foot-hiking/geojson',
@@ -160,63 +169,66 @@ const RouteSearchForm = () => {
         }).addTo(map)
         setRouteLayer(newRouteLayer)
 
-         // Aggiungi marcatore di partenza con DIV HTML normale (non Leaflet)
-               // Aggiungi marcatore di partenza con EMOJI (no FontAwesome!)
-        const startIcon = L.divIcon({
-          className: 'custom-map-marker start-marker',
-          html: `
-           <div style="font-size: 32px; color: #10b981; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="32" height="32" fill="currentColor">
-    <path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/>
-  </svg>
-</div>
-          `,
-          iconSize: [40, 40],
-          iconAnchor: [20, 40],
-        })
-
-        const sMarker = L.marker([sp.lat, sp.lon], { 
-          icon: startIcon,
-          zIndexOffset: 100
-        }).addTo(map)
-        setStartMarker(sMarker)
-
-        // Aggiungi marcatore 
-        const endIcon = L.divIcon({
-          className: 'custom-map-marker end-marker',
-          html: `
-           <div style="font-size: 32px; color: #ef4444; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="32" height="32" fill="currentColor">
-    <path d="M32 0C49.7 0 64 14.3 64 32V48l69-17.2c38.1-9.5 78.3-5.1 113.5 12.5c46.3 23.2 100.8 23.2 147.1 0l9.6-4.8C423.8 28.1 448 43.1 448 66.1V345.8c0 13.3-8.3 25.3-20.8 30l-34.7 13c-46.2 17.3-97.6 14.6-141.7-7.4c-37.9-19-81.3-23.7-122.5-13.4L64 384v96c0 17.7-14.3 32-32 32s-32-14.3-32-32V400 334 64 32C0 14.3 14.3 0 32 0zM64 187.1l64-13.9v65.5L64 252.6V187.1zm0 96.8l64-13.9v65.5L64 349.4V283.9zM320 128c-13.3 0-24 10.7-24 24s10.7 24 24 24h32c13.3 0 24-10.7 24-24s-10.7-24-24-24H320z"/>
-  </svg>
-</div>
-          `,
-          iconSize: [40, 40],
-          iconAnchor: [20, 40],
-        })
         
-        const eMarker = L.marker([ep.lat, ep.lon], { 
-          icon: endIcon,
-          zIndexOffset: 100
-        }).addTo(map)
-        setEndMarker(eMarker)
-      
+        const startMarkerDiv = document.createElement('div')
+        startMarkerDiv.className = 'custom-html-marker start-marker'
+        startMarkerDiv.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="32" height="32" fill="#10b981" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+            <path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/>
+          </svg>
+        `
+        
+        // Converti coordinate in pixel e posiziona
+        const startPointPixel = map.latLngToContainerPoint([sp.lat, sp.lon])
+        startMarkerDiv.style.position = 'absolute'
+        startMarkerDiv.style.left = `${startPointPixel.x}px`
+        startMarkerDiv.style.top = `${startPointPixel.y}px`
+        startMarkerDiv.style.transform = 'translate(-50%, -100%)'
+        startMarkerDiv.style.zIndex = '400'
+        startMarkerDiv.style.pointerEvents = 'none'
+        
+        document.getElementById('map').appendChild(startMarkerDiv)
+        startMarkerRef.current = startMarkerDiv
+
+        
+        const endMarkerDiv = document.createElement('div')
+        endMarkerDiv.className = 'custom-html-marker end-marker'
+        endMarkerDiv.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="32" height="32" fill="#ef4444" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+            <path d="M32 0C49.7 0 64 14.3 64 32V48l69-17.2c38.1-9.5 78.3-5.1 113.5 12.5c46.3 23.2 100.8 23.2 147.1 0l9.6-4.8C423.8 28.1 448 43.1 448 66.1V345.8c0 13.3-8.3 25.3-20.8 30l-34.7 13c-46.2 17.3-97.6 14.6-141.7-7.4c-37.9-19-81.3-23.7-122.5-13.4L64 384v96c0 17.7-14.3 32-32 32s-32-14.3-32-32V400 334 64 32C0 14.3 14.3 0 32 0zM64 187.1l64-13.9v65.5L64 252.6V187.1zm0 96.8l64-13.9v65.5L64 349.4V283.9zM320 128c-13.3 0-24 10.7-24 24s10.7 24 24 24h32c13.3 0 24-10.7 24-24s-10.7-24-24-24H320z"/>
+          </svg>
+        `
+        
+        const endPointPixel = map.latLngToContainerPoint([ep.lat, ep.lon])
+        endMarkerDiv.style.position = 'absolute'
+        endMarkerDiv.style.left = `${endPointPixel.x}px`
+        endMarkerDiv.style.top = `${endPointPixel.y}px`
+        endMarkerDiv.style.transform = 'translate(-50%, -100%)'
+        endMarkerDiv.style.zIndex = '400'
+        endMarkerDiv.style.pointerEvents = 'none'
         
         document.getElementById('map').appendChild(endMarkerDiv)
-        setEndMarker({ element: endMarkerDiv, coords: [ep.lat, ep.lon] })
+        endMarkerRef.current = endMarkerDiv
         
-        // Aggiorna posizione marker quando si muove/zooma la mappa
+        
         const updateMarkerPositions = () => {
-          const newStartPoint = map.latLngToContainerPoint([sp.lat, sp.lon])
-          startMarkerDiv.style.left = `${newStartPoint.x}px`
-          startMarkerDiv.style.top = `${newStartPoint.y}px`
+          if (startMarkerRef.current) {
+            const newStartPoint = map.latLngToContainerPoint([sp.lat, sp.lon])
+            startMarkerRef.current.style.left = `${newStartPoint.x}px`
+            startMarkerRef.current.style.top = `${newStartPoint.y}px`
+          }
           
-          const newEndPoint = map.latLngToContainerPoint([ep.lat, ep.lon])
-          endMarkerDiv.style.left = `${newEndPoint.x}px`
-          endMarkerDiv.style.top = `${newEndPoint.y}px`
+          if (endMarkerRef.current) {
+            const newEndPoint = map.latLngToContainerPoint([ep.lat, ep.lon])
+            endMarkerRef.current.style.left = `${newEndPoint.x}px`
+            endMarkerRef.current.style.top = `${newEndPoint.y}px`
+          }
         }
         
+        // Salva il listener in un ref
+        updateMarkersListenerRef.current = updateMarkerPositions
         map.on('move zoom', updateMarkerPositions)
+        
         // Adatta la vista della mappa al percorso
         map.fitBounds(newRouteLayer.getBounds(), { padding: [50, 50] })
 
@@ -428,7 +440,6 @@ const RouteSearchForm = () => {
                 </div>
               </div>
 
-              {/* ← QUI AGGIUNGI IL BOTTONE PER SALVARE */}
               <div className="mt-4 pt-4 border-t space-y-2">
                 {fullRouteData && <SaveRouteButton routeData={fullRouteData} />}
                 
@@ -436,7 +447,7 @@ const RouteSearchForm = () => {
                   onClick={() => setIsNavigating(true)}
                   className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-md font-bold flex items-center justify-center space-x-2"
                 >
-                   <FaLocationArrow />
+                  <FaLocationArrow />
                   <span>Inizia Navigazione GPS</span>
                 </button>
               </div>
