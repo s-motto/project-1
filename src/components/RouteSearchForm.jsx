@@ -33,6 +33,7 @@ const RouteSearchForm = ({preloadedRoute}) => {
   
   const [isNavigating, setIsNavigating] = useState(false) //stato modalità navigazione
   const [fullRouteData, setFullRouteData] = useState(null) // salva tutti i dati del percorso
+  const [isPreloaded, setIsPreloaded] = useState(false) //indica se il percorso è pre-caricato
 
   useEffect(() => {
     const mapInstance = L.map('map').setView([45.4642, 9.1900], 13) //Centro su Milano di default
@@ -161,6 +162,7 @@ const RouteSearchForm = ({preloadedRoute}) => {
 
       // Salvo i dati completi del percorso
       setFullRouteData(route)
+      setIsPreloaded(true) //indico che il percorso è pre-caricato
 
     } catch (error) {
       console.error('Error loading saved route:', error)
@@ -220,6 +222,7 @@ const RouteSearchForm = ({preloadedRoute}) => {
     setRouteInfo(null)
     setInstructions([])
     setFullRouteData(null)
+    setIsPreloaded(false) //resetto lo stato di pre-caricamento
 
     // Ottengo coordinate se non già fornite
     let sp = startPoint
@@ -558,7 +561,7 @@ const RouteSearchForm = ({preloadedRoute}) => {
               </div>
 
               <div className="mt-4 pt-4 border-t space-y-2">
-                {fullRouteData && <SaveRouteButton routeData={fullRouteData} />}
+                 {fullRouteData && !isPreloaded && <SaveRouteButton routeData={fullRouteData} />} 
                 
                 <button
                   onClick={() => setIsNavigating(true)}
