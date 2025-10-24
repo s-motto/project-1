@@ -28,13 +28,15 @@ body, input, textarea, select, button, h1, h2, h3, h4, h5, h6, p, a, span, label
   background-repeat: no-repeat;
   min-height: 45vh;
 }
+
 .header-bg::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: rgba(0,0,0,0.45); /* semi-transparent overlay */
+  background: rgba(0,0,0,0.45);
   z-index: 1;
 }
+
 .header-content {
   position: relative;
   z-index: 2;
@@ -45,7 +47,7 @@ body, input, textarea, select, button, h1, h2, h3, h4, h5, h6, p, a, span, label
   justify-content: center;
 }
 
-/* ===== LEAFLET MAP Z-INDEX FIX ===== */
+/* ===== LEAFLET MAP BASE Z-INDEX ===== */
 .leaflet-container {
   z-index: 1 !important;
 }
@@ -62,39 +64,64 @@ body, input, textarea, select, button, h1, h2, h3, h4, h5, h6, p, a, span, label
   z-index: 1 !important;
 }
 
-/* ===== MODAL OVERLAY ===== */
+.leaflet-overlay-pane {
+  z-index: 1 !important;
+}
+
+/* Forza tutti i marker a z-index basso */
+.leaflet-marker-icon,
+.leaflet-marker-shadow {
+  z-index: 1 !important;
+}
+
+/* ===== MODAL OVERLAY ALTO Z-INDEX ===== */
 .modal-overlay {
   z-index: 9999 !important;
   position: fixed !important;
+  inset: 0 !important;
 }
 
-/* ===== HIDE MAP MARKERS WHEN MODAL IS OPEN ===== */
-body.modal-open .leaflet-marker-pane {
+/* ===== NASCONDI COMPLETAMENTE GLI ELEMENTI MAPPA QUANDO MODALE APERTO ===== */
+body.modal-open .leaflet-pane,
+body.modal-open .leaflet-marker-pane,
+body.modal-open .leaflet-shadow-pane,
+body.modal-open .leaflet-tooltip-pane,
+body.modal-open .leaflet-popup-pane,
+body.modal-open .leaflet-overlay-pane {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  display: none !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+}
+
+/* Nascondi tutti i marker */
+body.modal-open .leaflet-marker-icon,
+body.modal-open .leaflet-marker-shadow,
+body.modal-open .user-location-marker,
+body.modal-open [class*="-marker"] {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  display: none !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+}
+
+/* Nascondi anche i div con inline styles */
+body.modal-open [style*="background-color: #10b981"],
+body.modal-open [style*="background-color: #ef4444"] {
   opacity: 0 !important;
   visibility: hidden !important;
   display: none !important;
 }
 
-body.modal-open .leaflet-shadow-pane {
-  opacity: 0 !important;
-  visibility: hidden !important;
-  display: none !important;
-}
-
-body.modal-open .leaflet-tooltip-pane {
-  opacity: 0 !important;
-  visibility: hidden !important;
-  display: none !important;
-}
-
-body.modal-open .leaflet-popup-pane {
-  opacity: 0 !important;
-  visibility: hidden !important;
-  display: none !important;
-}
-
-/* Blur e disabilita interazione con la mappa */
+/* Sfoca la mappa di sfondo */
 body.modal-open .leaflet-container {
-  filter: blur(3px) !important;
+  filter: blur(5px) !important;
+  pointer-events: none !important;
+}
+
+body.modal-open #map {
+  opacity: 0.2 !important;
   pointer-events: none !important;
 }
