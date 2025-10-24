@@ -4,37 +4,41 @@ import { faUser, faLock, faEnvelope, faSpinner, faHiking } from '@fortawesome/fr
 import { useAuth } from '../contexts/AuthContext'
 
 const AuthPage = ({ onClose }) => {
-  const { login, register } = useAuth()
-  const [isLogin, setIsLogin] = useState(true)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const { login, register } = useAuth() //Recupera le funzioni di login e registrazione dal contesto
+  const [isLogin, setIsLogin] = useState(true) //Stato per alternare tra login e registrazione
+  const [loading, setLoading] = useState(false) //Stato di caricamento durante l'invio del form
+  const [error, setError] = useState('') //Stato per memorizzare eventuali messaggi di errore
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState({ //Stato per i dati del form
     name: '',
     email: '',
     password: '',
     confirmPassword: ''
   })
 
+  //Gestore per aggiornare i dati del form
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     })
-    setError('') // Reset error on change
+    setError('') // Reset errore quando l'utente modifica i campi
   }
 
+  //Controlla che email e password siano valide
   const validateForm = () => {
     if (!formData.email || !formData.password) {
       setError('Email e password sono obbligatori')
       return false
     }
-
+// Ulteriori controlli per la registrazione
     if (!isLogin) {
+        // Controllo che il nome non sia vuoto
       if (!formData.name) {
         setError('Il nome è obbligatorio')
         return false
       }
+      // Controllo che le password corrispondano e abbiano una lunghezza minima
       if (formData.password !== formData.confirmPassword) {
         setError('Le password non corrispondono')
         return false
@@ -45,42 +49,49 @@ const AuthPage = ({ onClose }) => {
       }
     }
 
-    return true
+    return true // Tutti i controlli sono passati
   }
 
+  //Prevengo il comportamento di default del form e gestisco l'invio
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+    //Valido i dati del form
     if (!validateForm()) return
 
-    setLoading(true)
-    setError('')
+    setLoading(true) //Mostro lo stato di caricamento
+    setError('') //Resetto eventuali errori precedenti
 
     try {
       let result
       if (isLogin) {
+        //chiamo la funzione di login
         result = await login(formData.email, formData.password)
       } else {
+        //chiamo la funzione di registrazione
         result = await register(formData.email, formData.password, formData.name)
       }
 
       if (result.success) {
-        // Chiudi il modale o reindirizza
+        //Se l'operazione ha successo, chiudo la modale
         if (onClose) onClose()
       } else {
+    //se c'è un errore, lo mostro all'utente
         setError(result.error || 'Errore durante l\'autenticazione')
       }
     } catch (err) {
+        //gestisco gli errori imprevisti
       setError('Si è verificato un errore imprevisto')
     }
 
-    setLoading(false)
+    setLoading(false) //Nascondo lo spinner
   }
 
+  //Funzione per alternare tra login e registrazione
   const toggleMode = () => {
-    setIsLogin(!isLogin)
-    setError('')
+    setIsLogin(!isLogin) //cambio modalità
+    setError('') //resetto errori
     setFormData({
+        //resetto i dati del form
       name: '',
       email: '',
       password: '',
@@ -89,9 +100,11 @@ const AuthPage = ({ onClose }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    //Overlay modale
+    //Imposto z-index alto per essere sopra altri elementi
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        {/* Header */}
+        {/* Header con icona e titolo */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-400 p-6 text-white">
           <div className="flex items-center justify-center mb-2">
             <FontAwesomeIcon icon={faHiking} className="text-4xl" />
@@ -104,9 +117,9 @@ const AuthPage = ({ onClose }) => {
           </p>
         </div>
 
-        {/* Form */}
+        {/* Form di login/registrazione*/}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Name field (only for registration) */}
+          {/* Campo nome visibile solo in registrazione */}
           {!isLogin && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -129,7 +142,7 @@ const AuthPage = ({ onClose }) => {
             </div>
           )}
 
-          {/* Email field */}
+          {/* Campo email */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Email
@@ -150,7 +163,7 @@ const AuthPage = ({ onClose }) => {
             </div>
           </div>
 
-          {/* Password field */}
+          {/* Campo password*/}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Password
@@ -171,7 +184,7 @@ const AuthPage = ({ onClose }) => {
             </div>
           </div>
 
-          {/* Confirm Password (only for registration) */}
+          {/* Conferma della password-visibile solo in registrazione */}
           {!isLogin && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -194,21 +207,23 @@ const AuthPage = ({ onClose }) => {
             </div>
           )}
 
-          {/* Error message */}
+          {/* Messaggio di errore (solo se esiste un errore) */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
               {error}
             </div>
           )}
 
-          {/* Submit button */}
+          {/* Button per l'invio del form*/}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading} //Disabilito il button durante il caricamento
             className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center space-x-2"
           >
             {loading ? (
+                //Spinner di caricamento
               <>
+              
                 <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
                 <span>Caricamento...</span>
               </>
@@ -217,7 +232,7 @@ const AuthPage = ({ onClose }) => {
             )}
           </button>
 
-          {/* Toggle between login/register */}
+          {/* Link per alternare tra login e registrazione */}
           <div className="text-center">
             <button
               type="button"
@@ -230,7 +245,7 @@ const AuthPage = ({ onClose }) => {
             </button>
           </div>
 
-          {/* Close button */}
+          {/* Button di chiusura della modale */}
           {onClose && (
             <button
               type="button"
