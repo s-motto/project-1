@@ -46,29 +46,6 @@ body, input, textarea, select, button, h1, h2, h3, h4, h5, h6, p, a, span, label
   justify-content: center;
 }
 
-/* ===== MARKER CUSTOM FONTAWESOME - Z-INDEX SUPER BASSO ===== */
-.custom-map-marker {
-  z-index: 1 !important;
-}
-
-.custom-map-marker.start-marker,
-.custom-map-marker.end-marker {
-  z-index: 1 !important;
-}
-
-/* ===== LEAFLET MAP BASE Z-INDEX ===== */
-.leaflet-container {
-  z-index: 1 !important;
-}
-
-.leaflet-pane {
-  z-index: 1 !important;
-}
-
-.leaflet-marker-pane {
-  z-index: 1 !important;
-}
-
 /* ===== MODAL OVERLAY - Z-INDEX ALTISSIMO ===== */
 .modal-overlay {
   z-index: 9999 !important;
@@ -76,19 +53,16 @@ body, input, textarea, select, button, h1, h2, h3, h4, h5, h6, p, a, span, label
   inset: 0 !important;
 }
 
-/* ===== NASCONDI TUTTI I MARKER QUANDO MODALE È APERTO ===== */
-body.modal-open .custom-map-marker {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
+/* ===== MARKER HTML CUSTOM ===== */
+.custom-html-marker {
+  position: absolute;
+  z-index: 400;
+  pointer-events: none;
 }
 
-body.modal-open .leaflet-marker-pane,
-body.modal-open .leaflet-marker-pane > * {
+/* NASCONDI i marker quando il modale è aperto */
+body.modal-open .custom-html-marker {
   display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
 }
 
 /* Sfoca la mappa quando il modale è aperto */

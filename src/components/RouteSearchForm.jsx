@@ -123,9 +123,9 @@ const RouteSearchForm = () => {
     }
 
     try { // Chiamata a OpenRouteService per il calcolo del percorso
-      if (routeLayer && map) map.removeLayer(routeLayer)
-      if (startMarker) map.removeLayer(startMarker)
-      if (endMarker) map.removeLayer(endMarker)
+       if (routeLayer && map) map.removeLayer(routeLayer)
+      if (startMarker && startMarker.element) startMarker.element.remove()
+      if (endMarker && endMarker.element) endMarker.element.remove()
 
       const response = await fetch( 
         'https://api.openrouteservice.org/v2/directions/foot-hiking/geojson',
@@ -161,42 +161,59 @@ const RouteSearchForm = () => {
         }).addTo(map)
         setRouteLayer(newRouteLayer)
 
-        // Aggiungi marcatore di partenza 
-        const startIcon = L.divIcon({
-          className: 'custom-map-marker start-marker',
-          html: `
-            <div style="font-size: 32px; color: #10b981; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-              <i class="fa-solid fa-location-dot"></i>
-            </div>
-          `,
-          iconSize: [32, 32],
-          iconAnchor: [16, 32],
-        })
-
-        const sMarker = L.marker([sp.lat, sp.lon], { 
-          icon: startIcon,
-          zIndexOffset: -1000 // Z-index BASSO
-        }).addTo(map)
-        setStartMarker(sMarker)
-
-        // Aggiungi marcatore di arrivo
-       const endIcon = L.divIcon({
-          className: 'custom-map-marker end-marker',
-          html: `
-            <div style="font-size: 32px; color: #ef4444; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-              <i class="fa-solid fa-flag-checkered"></i>
-            </div>
-          `,
-          iconSize: [32, 32],
-          iconAnchor: [16, 32],
-        })
+         // Aggiungi marcatore di partenza con DIV HTML normale (non Leaflet)
+        const startMarkerDiv = document.createElement('div')
+        startMarkerDiv.className = 'custom-html-marker start-marker'
+        startMarkerDiv.innerHTML = `
+          <div style="font-size: 32px; color: #10b981; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+            <i class="fa-solid fa-location-dot"></i>
+          </div>
+        `
         
-        const eMarker = L.marker([ep.lat, ep.lon], { 
-          icon: endIcon,
-          zIndexOffset: -1000 // Z-index BASSO
-        }).addTo(map)
-        setEndMarker(eMarker)
+        // Converti coordinate in pixel e posiziona
+        const startPoint = map.latLngToContainerPoint([sp.lat, sp.lon])
+        startMarkerDiv.style.position = 'absolute'
+        startMarkerDiv.style.left = `${startPoint.x}px`
+        startMarkerDiv.style.top = `${startPoint.y}px`
+        startMarkerDiv.style.transform = 'translate(-50%, -100%)'
+        startMarkerDiv.style.zIndex = '400'
+        startMarkerDiv.style.pointerEvents = 'none'
         
+        document.getElementById('map').appendChild(startMarkerDiv)
+        setStartMarker({ element: startMarkerDiv, coords: [sp.lat, sp.lon] })
+
+        // Aggiungi marcatore di arrivo con DIV HTML normale
+        const endMarkerDiv = document.createElement('div')
+        endMarkerDiv.className = 'custom-html-marker end-marker'
+        endMarkerDiv.innerHTML = `
+          <div style="font-size: 32px; color: #ef4444; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+            <i class="fa-solid fa-flag-checkered"></i>
+          </div>
+        `
+        
+        const endPoint = map.latLngToContainerPoint([ep.lat, ep.lon])
+        endMarkerDiv.style.position = 'absolute'
+        endMarkerDiv.style.left = `${endPoint.x}px`
+        endMarkerDiv.style.top = `${endPoint.y}px`
+        endMarkerDiv.style.transform = 'translate(-50%, -100%)'
+        endMarkerDiv.style.zIndex = '400'
+        endMarkerDiv.style.pointerEvents = 'none'
+        
+        document.getElementById('map').appendChild(endMarkerDiv)
+        setEndMarker({ element: endMarkerDiv, coords: [ep.lat, ep.lon] })
+        
+        // Aggiorna posizione marker quando si muove/zooma la mappa
+        const updateMarkerPositions = () => {
+          const newStartPoint = map.latLngToContainerPoint([sp.lat, sp.lon])
+          startMarkerDiv.style.left = `${newStartPoint.x}px`
+          startMarkerDiv.style.top = `${newStartPoint.y}px`
+          
+          const newEndPoint = map.latLngToContainerPoint([ep.lat, ep.lon])
+          endMarkerDiv.style.left = `${newEndPoint.x}px`
+          endMarkerDiv.style.top = `${newEndPoint.y}px`
+        }
+        
+        map.on('move zoom', updateMarkerPositions)
         // Adatta la vista della mappa al percorso
         map.fitBounds(newRouteLayer.getBounds(), { padding: [50, 50] })
 
