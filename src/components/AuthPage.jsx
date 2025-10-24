@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faUser, faLock, faEnvelope, faSpinner, faHiking } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../contexts/AuthContext'
@@ -15,6 +15,17 @@ const AuthPage = ({ onClose }) => {
     password: '',
     confirmPassword: ''
   })
+
+   // Effetto per nascondere i marker della mappa quando il modale è aperto
+  useEffect(() => {
+    // Aggiungi una classe al body per nascondere i marker
+    document.body.classList.add('modal-open')
+    
+    // Cleanup: rimuovi la classe quando il componente viene smontato
+    return () => {
+      document.body.classList.remove('modal-open')
+    }
+  }, [])
 
   //Gestore per aggiornare i dati del form
   const handleChange = (e) => {
@@ -102,7 +113,7 @@ const AuthPage = ({ onClose }) => {
   return (
     //Overlay modale
     //Imposto z-index alto per essere sopra altri elementi
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+    <div className="modal-overlay fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         {/* Header con icona e titolo */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-400 p-6 text-white">
