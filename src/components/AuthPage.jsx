@@ -18,34 +18,12 @@ const AuthPage = ({ onClose }) => {
 
    // Effetto per nascondere i marker della mappa quando il modale è aperto
  useEffect(() => {
-  // Aggiungi classe al body
+  // Aggiungi classe al body 
   document.body.classList.add('modal-open')
   
-  // Nascondi tutti i marker leaflet
-  const hideMarkers = () => {
-    const markers = document.querySelectorAll('.leaflet-marker-icon, .leaflet-marker-shadow, [style*="background-color"]')
-    markers.forEach(marker => {
-      marker.style.display = 'none'
-      marker.style.visibility = 'hidden'
-      marker.style.opacity = '0'
-      marker.style.zIndex = '-9999'
-    })
-  }
-  
-  hideMarkers()
-  
-  // Cleanup
+  //  rimuovi la classe quando la modale si chiude
   return () => {
     document.body.classList.remove('modal-open')
-    
-    // Ripristina i marker
-    const markers = document.querySelectorAll('.leaflet-marker-icon, .leaflet-marker-shadow, [style*="background-color"]')
-    markers.forEach(marker => {
-      marker.style.display = ''
-      marker.style.visibility = ''
-      marker.style.opacity = ''
-      marker.style.zIndex = ''
-    })
   }
 }, [])
 

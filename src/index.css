@@ -83,9 +83,12 @@ body.modal-open .custom-map-marker {
   opacity: 0 !important;
 }
 
-body.modal-open .leaflet-marker-pane {
+body.modal-open .leaflet-marker-pane,
+body.modal-open .leaflet-marker-pane > * {
   display: none !important;
   visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
 /* Sfoca la mappa quando il modale è aperto */
