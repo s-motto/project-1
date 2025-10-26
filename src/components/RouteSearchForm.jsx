@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
 import NavigationMode from './NavigationMode'
 import SaveRouteButton from './SaveRouteButton'
 import { FaMapMarkerAlt, FaFlag, FaWalking, FaClock, FaRoute, FaLocationArrow } from 'react-icons/fa'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-const RouteSearchForm = ({preloadedRoute}) => {
+const RouteSearchForm = forwardRef(({preloadedRoute}, ref) => {
   const [startPoint, setStartPoint] = useState(null) //latitudine e longitudine
   const [endPoint, setEndPoint] = useState(null) //latitudine e longitudine
   const [map, setMap] = useState(null) //istanza della mappa
@@ -59,6 +59,11 @@ const RouteSearchForm = ({preloadedRoute}) => {
       loadSavedRoute(preloadedRoute)
     }
   }, [preloadedRoute, map])
+
+  // Espongo la funzione di reset al componente genitore
+  useImperativeHandle(ref, () => ({
+  reset: handleReset
+  }))
 
   // Funzione per caricare e visualizzare un percorso salvato
   const loadSavedRoute = (route) => {
@@ -211,6 +216,37 @@ const fetchSuggestions = async (text) => {
     return []
   }
 }
+
+//Resetto tutto il form e la mappa
+const handleReset = () => {
+  // Pulisco la mappa
+  if (routeLayer && map) map.removeLayer(routeLayer)
+  if (startMarkerRef.current) startMarkerRef.current.remove()
+  if (endMarkerRef.current) endMarkerRef.current.remove()
+  if (updateMarkersListenerRef.current && map) {
+    map.off('move zoom', updateMarkersListenerRef.current)
+  }
+
+  // Reset degli stati
+  setStartPoint(null)
+  setEndPoint(null)
+  setStartText('')
+  setEndText('')
+  setRouteLayer(null)
+  setRouteInfo(null)
+  setInstructions([])
+  setFullRouteData(null)
+  setIsPreloaded(false)
+  setErrorMsg('')
+
+  // Resetto la vista della mappa
+  if (map) {
+    map.setView([45.4642, 9.1900], 13)
+  }
+}
+
+
+
 
   const handleSubmit = async (e) => { //gestisco l'invio del form
     e.preventDefault()
@@ -514,8 +550,7 @@ const fetchSuggestions = async (text) => {
                 {errorMsg}
               </div>
             )}
-
-            {!isPreloaded && (
+{!isPreloaded && (
   <button
     type="submit"
     disabled={loading}
@@ -615,6 +650,6 @@ const fetchSuggestions = async (text) => {
       <div id="map" className="w-full h-[400px] rounded-lg shadow-md" />
     </div>
   )
-}
+})
 
 export default RouteSearchForm

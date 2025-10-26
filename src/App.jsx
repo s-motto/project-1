@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import BottomNav from './components/BottomNav'
 import RouteSearchForm from './components/RouteSearchForm'
 import Footer from './components/Footer'
@@ -11,6 +11,7 @@ const App = () => {
   const { user } = useAuth()
   const [showSavedRoutes, setShowSavedRoutes] = useState(false)
   const [selectedRoute, setSelectedRoute] = useState(null)
+  const routeFormRef = useRef(null)
 
   const handleLoadRoute = (route) => {
     setSelectedRoute(route)
@@ -18,6 +19,14 @@ const App = () => {
     // Scroll to route form
     document.querySelector('#route-section')?.scrollIntoView({ behavior: 'smooth' })
   }
+
+  const handleHomeClick = () => {
+  setShowSavedRoutes(false)
+  if (routeFormRef.current) {
+    routeFormRef.current.reset()
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
 
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col">
@@ -56,13 +65,13 @@ const App = () => {
               <SavedRoutes onLoadRoute={handleLoadRoute} />
             </>
           ) : (
-            <RouteSearchForm preloadedRoute={selectedRoute} />
+            <RouteSearchForm ref={routeFormRef} preloadedRoute={selectedRoute} />
           )}
         </div>
       </section>
 
       <Footer />
-      <BottomNav />
+      <BottomNav onHomeClick={handleHomeClick} />
     </main>
   )
 }
