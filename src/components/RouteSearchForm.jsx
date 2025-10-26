@@ -171,49 +171,46 @@ const RouteSearchForm = ({preloadedRoute}) => {
   }
 
 
-  const geocodeText = async (text) => { //converto testo in coordinate
-    if (!text) return null
-    // Chiamata a Nominatim per geocoding
-    try {
-      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(text)}&limit=1&countrycodes=it`
-      const resp = await fetch(url, {
-        headers: { 'User-Agent': 'HikingApp/1.0' }
-      })
-      if (!resp.ok) return null // Controlla se la risposta è valida
-      const json = await resp.json()
-      if (json.length > 0) {
-        return { 
-          lat: parseFloat(json[0].lat), 
-          lon: parseFloat(json[0].lon), 
-          name: json[0].display_name 
-        }
+ const geocodeText = async (text) => {
+  if (!text) return null
+  try {
+    const url = `https://api.openrouteservice.org/geocode/search?api_key=${ORS_KEY}&text=${encodeURIComponent(text)}&boundary.country=IT&size=1`
+    const resp = await fetch(url)
+    if (!resp.ok) return null
+    const json = await resp.json()
+    if (json.features && json.features.length > 0) {
+      const coords = json.features[0].geometry.coordinates
+      return { 
+        lat: coords[1], 
+        lon: coords[0], 
+        name: json.features[0].properties.label 
       }
-      return null
-    } catch (err) {
-      console.error('Geocoding error:', err)
-      return null
     }
+    return null
+  } catch (err) {
+    console.error('Geocoding error:', err)
+    return null
   }
+}
 
-  const fetchSuggestions = async (text) => { //ottengo suggerimenti di località
-    if (!text || text.length < 2) return []
-    try {
-      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(text)}&limit=5&countrycodes=it`
-      const resp = await fetch(url, {
-        headers: { 'User-Agent': 'HikingApp/1.0' }
-      })
-      if (!resp.ok) return []
-      const json = await resp.json()
-      return json.map(item => ({
-        lat: parseFloat(item.lat),
-        lon: parseFloat(item.lon),
-        display_name: item.display_name,
-        place_id: item.place_id
-      }))
-    } catch (err) {
-      return []
-    }
+const fetchSuggestions = async (text) => {
+  if (!text || text.length < 2) return []
+  try {
+    const url = `https://api.openrouteservice.org/geocode/autocomplete?api_key=${ORS_KEY}&text=${encodeURIComponent(text)}&boundary.country=IT&size=5`
+    const resp = await fetch(url)
+    if (!resp.ok) return []
+    const json = await resp.json()
+    return json.features.map(feature => ({
+      lat: feature.geometry.coordinates[1],
+      lon: feature.geometry.coordinates[0],
+      display_name: feature.properties.label,
+      place_id: feature.properties.id
+    }))
+  } catch (err) {
+    console.error('Suggestions error:', err)
+    return []
   }
+}
 
   const handleSubmit = async (e) => { //gestisco l'invio del form
     e.preventDefault()
