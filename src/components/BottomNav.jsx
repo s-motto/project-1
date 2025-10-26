@@ -2,7 +2,7 @@
 import React from 'react'
 import { FaHome, FaRoute, FaBookmark, FaCog } from 'react-icons/fa'
 
-const BottomNav = ({ onHomeClick }) => {
+const BottomNav = ({ onHomeClick, onSavedClick }) => {
 
   const focusRouteStart = () => {
     const startInput = document.querySelector('input[placeholder="Punto di partenza"]')
@@ -12,11 +12,7 @@ const BottomNav = ({ onHomeClick }) => {
     }
   }
 
-  const scrollToFooter = () => {
-    const footer = document.querySelector('footer')
-    if (footer) footer.scrollIntoView({ behavior: 'smooth', block: 'end' })
-  }
-
+  
   const openSettings = () => alert('Settings placeholder — implement settings or profile actions here.')
 
   return (
@@ -29,10 +25,10 @@ const BottomNav = ({ onHomeClick }) => {
         <FaRoute className="text-lg" />
         <span className="text-[10px]">Route</span>
       </button>
-      <button onClick={scrollToFooter} aria-label="Saved" className="flex flex-col items-center text-sm text-gray-700 hover:text-blue-600">
-        <FaBookmark className="text-lg" />
-        <span className="text-[10px]">Saved</span>
-      </button>
+     <button onClick={onSavedClick} aria-label="Saved" className="flex flex-col items-center text-sm text-gray-700 hover:text-blue-600">
+  <FaBookmark className="text-lg" />
+  <span className="text-[10px]">Saved</span>
+</button>
       <button onClick={openSettings} aria-label="More" className="flex flex-col items-center text-sm text-gray-700 hover:text-blue-600">
         <FaCog className="text-lg" />
         <span className="text-[10px]">More</span>

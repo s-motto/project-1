@@ -71,7 +71,8 @@ const App = () => {
       </section>
 
       <Footer />
-      <BottomNav onHomeClick={handleHomeClick} />
+      <BottomNav onHomeClick={handleHomeClick} 
+      onSavedClick={() => setShowSavedRoutes(!showSavedRoutes)}/>
     </main>
   )
 }
