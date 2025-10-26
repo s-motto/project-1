@@ -182,9 +182,11 @@ useEffect(() => {
     }
   }
 
-  // Funzione per caricare e visualizzare un percorso di hiking da Overpass
+  // Funzione per caricare e visualizzare un percorso di hiking da Overpass con elevazione
 const loadHikingRoute = (hike) => {
   try {
+    console.log('Loading hike with elevation data:', hike) // Debug
+    
     // Pulisco eventuali percorsi precedenti
     if (routeLayer && map) map.removeLayer(routeLayer)
     if (startMarkerRef.current) startMarkerRef.current.remove()
@@ -198,7 +200,6 @@ const loadHikingRoute = (hike) => {
     setEndPoint(null)
     setStartText('')
     setEndText('')
-    setRouteInfo(null)
     setInstructions([])
     setIsPreloaded(true)
 
@@ -220,20 +221,24 @@ const loadHikingRoute = (hike) => {
     }).addTo(map)
     setRouteLayer(newRouteLayer)
 
-    // Calcolo lunghezza approssimativa del percorso
-    let totalDistance = 0
-    for (let i = 0; i < hike.coordinates.length - 1; i++) {
-      const [lon1, lat1] = hike.coordinates[i]
-      const [lon2, lat2] = hike.coordinates[i + 1]
-      totalDistance += calculateDistance(lat1, lon1, lat2, lon2)
+    // Usa i dati di elevazione se disponibili, altrimenti calcola distanza
+    let totalDistance = hike.length || 0
+    
+    // Se length non è presente, calcola dalla geometria
+    if (!totalDistance) {
+      for (let i = 0; i < hike.coordinates.length - 1; i++) {
+        const [lon1, lat1] = hike.coordinates[i]
+        const [lon2, lat2] = hike.coordinates[i + 1]
+        totalDistance += calculateDistance(lat1, lon1, lat2, lon2)
+      }
     }
 
-    // Imposto info del percorso
+    // ✅ FIXED: Usa ascent e descent da NearbyHikes se disponibili
     setRouteInfo({
       distance: parseFloat(totalDistance.toFixed(2)),
-      duration: Math.round(totalDistance * 20), // ~20 min per km (stima)
-      ascent: 0, // Non disponibile da Overpass
-      descent: 0 // Non disponibile da Overpass
+      duration: hike.duration || Math.round(totalDistance * 20), // Usa duration se disponibile, altrimenti stima
+      ascent: hike.ascent || 0, // ✅ USA I DATI CALCOLATI!
+      descent: hike.descent || 0 // ✅ USA I DATI CALCOLATI!
     })
 
     // Marker di inizio (primo punto)
