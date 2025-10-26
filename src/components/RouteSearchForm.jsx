@@ -5,7 +5,7 @@ import { FaMapMarkerAlt, FaFlag, FaWalking, FaClock, FaRoute, FaLocationArrow } 
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-const RouteSearchForm = forwardRef(({preloadedRoute}, ref) => {
+const RouteSearchForm = forwardRef(({preloadedRoute, preloadedHike}, ref) => {
   const [startPoint, setStartPoint] = useState(null) //latitudine e longitudine
   const [endPoint, setEndPoint] = useState(null) //latitudine e longitudine
   const [map, setMap] = useState(null) //istanza della mappa
@@ -59,6 +59,13 @@ const RouteSearchForm = forwardRef(({preloadedRoute}, ref) => {
       loadSavedRoute(preloadedRoute)
     }
   }, [preloadedRoute, map])
+
+  // useEffect per caricare percorsi hiking
+useEffect(() => {
+  if (preloadedHike && map) {
+    loadHikingRoute(preloadedHike)
+  }
+}, [preloadedHike, map])
 
   // Espongo la funzione di reset al componente genitore
   useImperativeHandle(ref, () => ({
@@ -174,6 +181,137 @@ const RouteSearchForm = forwardRef(({preloadedRoute}, ref) => {
       setErrorMsg('Errore nel caricamento del percorso salvato')
     }
   }
+
+  // Funzione per caricare e visualizzare un percorso di hiking da Overpass
+const loadHikingRoute = (hike) => {
+  try {
+    // Pulisco eventuali percorsi precedenti
+    if (routeLayer && map) map.removeLayer(routeLayer)
+    if (startMarkerRef.current) startMarkerRef.current.remove()
+    if (endMarkerRef.current) endMarkerRef.current.remove()
+    if (updateMarkersListenerRef.current && map) {
+      map.off('move zoom', updateMarkersListenerRef.current)
+    }
+
+    // Reset degli stati
+    setStartPoint(null)
+    setEndPoint(null)
+    setStartText('')
+    setEndText('')
+    setRouteInfo(null)
+    setInstructions([])
+    setIsPreloaded(true)
+
+    // Creo il GeoJSON dal percorso hiking
+    const geojson = {
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        coordinates: hike.coordinates
+      },
+      properties: {
+        name: hike.name
+      }
+    }
+
+    // Disegno il percorso sulla mappa
+    const newRouteLayer = L.geoJSON(geojson, {
+      style: { color: '#10b981', weight: 4, opacity: 0.8 }
+    }).addTo(map)
+    setRouteLayer(newRouteLayer)
+
+    // Calcolo lunghezza approssimativa del percorso
+    let totalDistance = 0
+    for (let i = 0; i < hike.coordinates.length - 1; i++) {
+      const [lon1, lat1] = hike.coordinates[i]
+      const [lon2, lat2] = hike.coordinates[i + 1]
+      totalDistance += calculateDistance(lat1, lon1, lat2, lon2)
+    }
+
+    // Imposto info del percorso
+    setRouteInfo({
+      distance: parseFloat(totalDistance.toFixed(2)),
+      duration: Math.round(totalDistance * 20), // ~20 min per km (stima)
+      ascent: 0, // Non disponibile da Overpass
+      descent: 0 // Non disponibile da Overpass
+    })
+
+    // Marker di inizio (primo punto)
+    const startCoord = hike.coordinates[0]
+    const startMarkerDiv = document.createElement('div')
+    startMarkerDiv.className = 'custom-html-marker start-marker'
+    startMarkerDiv.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="32" height="32" fill="#10b981" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+        <path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/>
+      </svg>
+    `
+    const startPointPixel = map.latLngToContainerPoint([startCoord[1], startCoord[0]])
+    startMarkerDiv.style.position = 'absolute'
+    startMarkerDiv.style.left = `${startPointPixel.x}px`
+    startMarkerDiv.style.top = `${startPointPixel.y}px`
+    startMarkerDiv.style.transform = 'translate(-50%, -100%)'
+    startMarkerDiv.style.zIndex = '400'
+    startMarkerDiv.style.pointerEvents = 'none'
+    document.getElementById('map').appendChild(startMarkerDiv)
+    startMarkerRef.current = startMarkerDiv
+
+    // Marker di fine (ultimo punto)
+    const endCoord = hike.coordinates[hike.coordinates.length - 1]
+    const endMarkerDiv = document.createElement('div')
+    endMarkerDiv.className = 'custom-html-marker end-marker'
+    endMarkerDiv.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="32" height="32" fill="#ef4444" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+        <path d="M32 0C49.7 0 64 14.3 64 32V48l69-17.2c38.1-9.5 78.3-5.1 113.5 12.5c46.3 23.2 100.8 23.2 147.1 0l9.6-4.8C423.8 28.1 448 43.1 448 66.1V345.8c0 13.3-8.3 25.3-20.8 30l-34.7 13c-46.2 17.3-97.6 14.6-141.7-7.4c-37.9-19-81.3-23.7-122.5-13.4L64 384v96c0 17.7-14.3 32-32 32s-32-14.3-32-32V400 334 64 32C0 14.3 14.3 0 32 0zM64 187.1l64-13.9v65.5L64 252.6V187.1zm0 96.8l64-13.9v65.5L64 349.4V283.9zM320 128c-13.3 0-24 10.7-24 24s10.7 24 24 24h32c13.3 0 24-10.7 24-24s-10.7-24-24-24H320z"/>
+      </svg>
+    `
+    const endPointPixel = map.latLngToContainerPoint([endCoord[1], endCoord[0]])
+    endMarkerDiv.style.position = 'absolute'
+    endMarkerDiv.style.left = `${endPointPixel.x}px`
+    endMarkerDiv.style.top = `${endPointPixel.y}px`
+    endMarkerDiv.style.transform = 'translate(-50%, -100%)'
+    endMarkerDiv.style.zIndex = '400'
+    endMarkerDiv.style.pointerEvents = 'none'
+    document.getElementById('map').appendChild(endMarkerDiv)
+    endMarkerRef.current = endMarkerDiv
+
+    // Funzione per aggiornare la posizione dei marker
+    const updateMarkerPositions = () => {
+      if (startMarkerRef.current) {
+        const newStartPoint = map.latLngToContainerPoint([startCoord[1], startCoord[0]])
+        startMarkerRef.current.style.left = `${newStartPoint.x}px`
+        startMarkerRef.current.style.top = `${newStartPoint.y}px`
+      }
+      if (endMarkerRef.current) {
+        const newEndPoint = map.latLngToContainerPoint([endCoord[1], endCoord[0]])
+        endMarkerRef.current.style.left = `${newEndPoint.x}px`
+        endMarkerRef.current.style.top = `${newEndPoint.y}px`
+      }
+    }
+
+    updateMarkersListenerRef.current = updateMarkerPositions
+    map.on('move zoom', updateMarkerPositions)
+
+    // Adatto la vista della mappa al percorso
+    map.fitBounds(newRouteLayer.getBounds(), { padding: [50, 50] })
+
+  } catch (error) {
+    console.error('Error loading hiking route:', error)
+    setErrorMsg('Errore nel caricamento del percorso di hiking')
+  }
+}
+
+// Funzione helper per calcolare distanza (se non esiste già)
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371 // Raggio della Terra in km
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLon = (lon2 - lon1) * Math.PI / 180
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+  return R * c
+}
 
 
  const geocodeText = async (text) => {

@@ -3,9 +3,19 @@ import React from 'react'
 import { FaHome, FaRoute, FaBookmark, FaInfoCircle } from 'react-icons/fa'
 import InfoModal from './InfoModal'
 import { useState } from 'react'
+import NearbyHikes from './NearbyHikes'
 
-const BottomNav = ({ onHomeClick, onSavedClick }) => {
+const BottomNav = ({ onHomeClick, onSavedClick, onRouteSelected }) => { 
 const [showInfo, setShowInfo] = useState(false)
+const [showNearbyHikes, setShowNearbyHikes] = useState(false)
+
+const handleSelectHike = (hike) => {
+  setShowNearbyHikes(false)
+  if (onRouteSelected) {
+    onRouteSelected(hike)
+  }
+}
+
   const focusRouteStart = () => {
     const startInput = document.querySelector('input[placeholder="Punto di partenza"]')
     if (startInput) {
@@ -24,7 +34,7 @@ const [showInfo, setShowInfo] = useState(false)
         <FaHome className="text-lg" />
         <span className="text-[10px]">Home</span>
       </button>
-      <button onClick={focusRouteStart} aria-label="Route" className="flex flex-col items-center text-sm text-gray-700 hover:text-blue-600">
+      <button onClick={() => setShowNearbyHikes(true)} aria-label="Route" className="flex flex-col items-center text-sm text-gray-700 hover:text-blue-600">
         <FaRoute className="text-lg" />
         <span className="text-[10px]">Route</span>
       </button>
@@ -38,6 +48,7 @@ const [showInfo, setShowInfo] = useState(false)
 </button>
  </nav>
     {showInfo && <InfoModal onClose={() => setShowInfo(false)} />}
+      {showNearbyHikes && <NearbyHikes onClose={() => setShowNearbyHikes(false)} onSelectHike={handleSelectHike} />}
   </>
    
   )

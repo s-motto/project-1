@@ -4,13 +4,14 @@ import RouteSearchForm from './components/RouteSearchForm'
 import Footer from './components/Footer'
 import UserMenu from './components/UserMenu'
 import SavedRoutes from './components/SavedRoutes'
-import { FaMusic } from 'react-icons/fa'
+
 import { useAuth } from './contexts/AuthContext'
 
 const App = () => {
   const { user } = useAuth()
   const [showSavedRoutes, setShowSavedRoutes] = useState(false)
   const [selectedRoute, setSelectedRoute] = useState(null)
+  const [selectedHike, setSelectedHike] = useState(null)
   const routeFormRef = useRef(null)
 
   const handleLoadRoute = (route) => {
@@ -28,6 +29,13 @@ const App = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
+const handleRouteSelected = (hike) => {
+  setSelectedHike(hike)
+  setShowSavedRoutes(false)
+  // Scroll alla mappa
+  document.querySelector('#route-section')?.scrollIntoView({ behavior: 'smooth' })
+}
+
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header con UserMenu */}
@@ -42,7 +50,7 @@ const App = () => {
             Let's Walk!
           </h1>
           <h2 className="text-xl sm:text-4xl text-center pb-4 sm:pb-8 text-white drop-shadow font-captivating font-bold">
-            {user ? `Ciao ${user.name}!` : 'Benvenuto!'} <FaMusic /> Dove vai oggi?
+            {user ? `Ciao ${user.name}!` : 'Benvenuto!'}  <br/> Dove andiamo oggi?
           </h2>
         </div>
       </header>
@@ -65,14 +73,15 @@ const App = () => {
               <SavedRoutes onLoadRoute={handleLoadRoute} />
             </>
           ) : (
-            <RouteSearchForm ref={routeFormRef} preloadedRoute={selectedRoute} />
+            <RouteSearchForm ref={routeFormRef} preloadedRoute={selectedRoute} preloadedHike={selectedHike}/>
           )}
         </div>
       </section>
 
       <Footer />
       <BottomNav onHomeClick={handleHomeClick} 
-      onSavedClick={() => setShowSavedRoutes(!showSavedRoutes)}/>
+      onSavedClick={() => setShowSavedRoutes(!showSavedRoutes)}
+      onRouteSelected={handleRouteSelected}/>
     </main>
   )
 }
