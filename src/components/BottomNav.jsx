@@ -1,6 +1,6 @@
 
 import React from 'react'
-import { FaHome, FaRoute, FaBookmark, FaCog } from 'react-icons/fa'
+import { FaHome, FaRoute, FaBookmark, FaInfoCircle } from 'react-icons/fa'
 
 const BottomNav = ({ onHomeClick, onSavedClick }) => {
 
@@ -29,10 +29,10 @@ const BottomNav = ({ onHomeClick, onSavedClick }) => {
   <FaBookmark className="text-lg" />
   <span className="text-[10px]">Saved</span>
 </button>
-      <button onClick={openSettings} aria-label="More" className="flex flex-col items-center text-sm text-gray-700 hover:text-blue-600">
-        <FaCog className="text-lg" />
-        <span className="text-[10px]">More</span>
-      </button>
+      <button onClick={openSettings} aria-label="Info" className="flex flex-col items-center text-sm text-gray-700 hover:text-blue-600">
+  <FaInfoCircle className="text-lg" />
+  <span className="text-[10px]">Info</span>
+</button>
     </nav>
   )
 }
