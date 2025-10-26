@@ -1,9 +1,11 @@
 
 import React from 'react'
 import { FaHome, FaRoute, FaBookmark, FaInfoCircle } from 'react-icons/fa'
+import InfoModal from './InfoModal'
+import { useState } from 'react'
 
 const BottomNav = ({ onHomeClick, onSavedClick }) => {
-
+const [showInfo, setShowInfo] = useState(false)
   const focusRouteStart = () => {
     const startInput = document.querySelector('input[placeholder="Punto di partenza"]')
     if (startInput) {
@@ -13,9 +15,10 @@ const BottomNav = ({ onHomeClick, onSavedClick }) => {
   }
 
   
-  const openSettings = () => alert('Settings placeholder — implement settings or profile actions here.')
+  
 
   return (
+    <>
     <nav className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-md shadow-lg rounded-xl px-4 py-2 flex items-center gap-6 z-40">
       <button onClick={onHomeClick} aria-label="Home" className="flex flex-col items-center text-sm text-gray-700 hover:text-blue-600">
         <FaHome className="text-lg" />
@@ -29,11 +32,14 @@ const BottomNav = ({ onHomeClick, onSavedClick }) => {
   <FaBookmark className="text-lg" />
   <span className="text-[10px]">Saved</span>
 </button>
-      <button onClick={openSettings} aria-label="Info" className="flex flex-col items-center text-sm text-gray-700 hover:text-blue-600">
+      <button onClick={() => setShowInfo(true)} aria-label="Info" className="flex flex-col items-center text-sm text-gray-700 hover:text-blue-600">
   <FaInfoCircle className="text-lg" />
   <span className="text-[10px]">Info</span>
 </button>
-    </nav>
+ </nav>
+    {showInfo && <InfoModal onClose={() => setShowInfo(false)} />}
+  </>
+   
   )
 }
 
