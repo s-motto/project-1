@@ -443,7 +443,8 @@ const handleReset = () => {
             coordinates: [[sp.lon, sp.lat], [ep.lon, ep.lat]],
             instructions: true,
             language: 'it',
-            units: 'km'
+            units: 'km',
+            elevation: true
           })
         }
       )

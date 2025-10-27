@@ -1,88 +1,95 @@
-import React, { useState, useRef } from 'react'
+import { useState, useRef, lazy, Suspense } from 'react'
+import './App.css'
+import { AuthProvider } from './contexts/AuthContext'
 import BottomNav from './components/BottomNav'
-import RouteSearchForm from './components/RouteSearchForm'
-import Footer from './components/Footer'
 import UserMenu from './components/UserMenu'
-import SavedRoutes from './components/SavedRoutes'
 
-import { useAuth } from './contexts/AuthContext'
+// LAZY LOADING dei componenti pesanti
+const RouteSearchForm = lazy(() => import('./components/RouteSearchForm'))
+const SavedRoutes = lazy(() => import('./components/SavedRoutes'))
 
-const App = () => {
-  const { user } = useAuth()
-  const [showSavedRoutes, setShowSavedRoutes] = useState(false)
-  const [selectedRoute, setSelectedRoute] = useState(null)
-  const [selectedHike, setSelectedHike] = useState(null)
-  const routeFormRef = useRef(null)
-
-  const handleLoadRoute = (route) => {
-    setSelectedRoute(route)
-    setShowSavedRoutes(false)
-    // Scroll to route form
-    document.querySelector('#route-section')?.scrollIntoView({ behavior: 'smooth' })
-  }
-
+// Componente di caricamento
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center py-12">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  </div>
+)
+// Componente principale App
+function App() {
+  const [showSaved, setShowSaved] = useState(false)
+  const [preloadedRoute, setPreloadedRoute] = useState(null)
+  const [preloadedHike, setPreloadedHike] = useState(null)
+  const routeFormRef = useRef()
+// Gestori eventi per la navigazione
   const handleHomeClick = () => {
-  setShowSavedRoutes(false)
-  if (routeFormRef.current) {
-    routeFormRef.current.reset()
+    setShowSaved(false)
+    setPreloadedRoute(null)
+    setPreloadedHike(null)
+    if (routeFormRef.current?.reset) {
+      routeFormRef.current.reset()
+    }
   }
-  window.scrollTo({ top: 0, behavior: 'smooth' })
-}
-
-const handleRouteSelected = (hike) => {
-  setSelectedHike(hike)
-  setShowSavedRoutes(false)
-  // Scroll alla mappa
-  document.querySelector('#route-section')?.scrollIntoView({ behavior: 'smooth' })
-}
-
+// Mostra le rotte salvate
+  const handleSavedClick = () => {
+    setShowSaved(true)
+    setPreloadedRoute(null)
+    setPreloadedHike(null)
+  }
+// Carica una rotta salvata
+  const handleLoadRoute = (route) => {
+    setPreloadedRoute(route)
+    setPreloadedHike(null)
+    setShowSaved(false)
+  }
+// Carica un percorso di hiking selezionato
+  const handleRouteSelected = (hike) => {
+    setPreloadedHike(hike)
+    setPreloadedRoute(null)
+    setShowSaved(false)
+  }
+// Render del componente
   return (
-    <main className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Header con UserMenu */}
-      <header id="top" className="header-bg tracking-wide font-bold font-display flex flex-col items-center justify-center min-h-[45vh] sm:min-h-[50vh] relative">
-        {/* User menu in alto a destra */}
-        <div className="absolute top-4 right-4 z-10">
-          <UserMenu onShowSavedRoutes={() => setShowSavedRoutes(!showSavedRoutes)} />
-        </div>
-
-        <div className="header-content w-full flex flex-col items-center justify-center px-4 py-6">
-          <h1 className="text-4xl sm:text-6xl text-center pt-4 sm:pt-8 text-white drop-shadow-lg font-captivating">
-            Let's Walk!
-          </h1>
-          <h2 className="text-xl sm:text-4xl text-center pb-4 sm:pb-8 text-white drop-shadow font-captivating font-bold">
-            {user ? `Ciao ${user.name}!` : 'Benvenuto!'}  <br/> Dove andiamo oggi?
-          </h2>
-        </div>
-      </header>
-
-      {/* Main content */}
-      <section id="route-section" className="flex-1 flex flex-col items-center justify-start w-full px-2 sm:px-0 py-4 sm:py-8 pb-24">
-        <div className="w-full max-w-md sm:max-w-xl space-y-4">
-          {/* Mostra percorsi salvati se richiesto */}
-          {showSavedRoutes ? (
-            <>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-gray-800">Percorsi Salvati</h2>
-                <button
-                  onClick={() => setShowSavedRoutes(false)}
-                  className="text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  ← Torna alla ricerca
-                </button>
+    <AuthProvider>
+      <div className="min-h-screen bg-gray-50 pb-20">
+        {/* Header */}
+        <header className="bg-white shadow-sm sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                🚶
               </div>
-              <SavedRoutes onLoadRoute={handleLoadRoute} />
-            </>
-          ) : (
-            <RouteSearchForm ref={routeFormRef} preloadedRoute={selectedRoute} preloadedHike={selectedHike}/>
-          )}
-        </div>
-      </section>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Let's Walk!</h1>
+                <p className="text-xs text-gray-500">Pianifica i tuoi percorsi</p>
+              </div>
+            </div>
+            <UserMenu onShowSavedRoutes={handleSavedClick} />
+          </div>
+        </header>
 
-      <Footer />
-      <BottomNav onHomeClick={handleHomeClick} 
-      onSavedClick={() => setShowSavedRoutes(!showSavedRoutes)}
-      onRouteSelected={handleRouteSelected}/>
-    </main>
+        {/* Main Content con Suspense per lazy loading */}
+        <main className="max-w-7xl mx-auto px-4 py-6">
+          <Suspense fallback={<LoadingSpinner />}>
+            {showSaved ? (
+              <SavedRoutes onLoadRoute={handleLoadRoute} />
+            ) : (
+              <RouteSearchForm
+                ref={routeFormRef}
+                preloadedRoute={preloadedRoute}
+                preloadedHike={preloadedHike}
+              />
+            )}
+          </Suspense>
+        </main>
+
+        {/* Bottom Navigation */}
+        <BottomNav
+          onHomeClick={handleHomeClick}
+          onSavedClick={handleSavedClick}
+          onRouteSelected={handleRouteSelected}
+        />
+      </div>
+    </AuthProvider>
   )
 }
 
