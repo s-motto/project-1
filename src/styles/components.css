@@ -1,191 +1,172 @@
 @layer components {
   
-  /* ============================================
-     LAYOUT & CONTAINERS
-  ============================================ */
-  
-  .page-container {
-    @apply min-h-screen bg-gray-50 pb-20;
-  }
-
-  .content-wrapper {
-    @apply max-w-7xl mx-auto px-4 py-6;
-  }
-
-  .card {
-    @apply bg-white rounded-lg shadow-md p-4 w-full max-w-xl;
-  }
-
-  .card-hover {
-    @apply card hover:shadow-lg transition-shadow cursor-pointer;
-  }
-
-  /* ============================================
-     HEADER & NAVIGATION
-  ============================================ */
-  
-  .app-header {
-    @apply bg-white shadow-sm sticky top-0 z-50;
-  }
-
-  .header-container {
-    @apply max-w-7xl mx-auto px-4 py-4 flex items-center justify-between;
-  }
-
-  .logo-container {
-    @apply flex items-center space-x-3;
-  }
-
-  .logo-icon {
-    @apply w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 
-           rounded-xl flex items-center justify-center text-white 
-           font-bold text-xl shadow-lg;
-  }
-
-  .logo-text-container {
-    @apply flex flex-col;
-  }
-
-  .logo-title {
-    @apply text-xl font-bold text-gray-900;
-  }
-
-  .logo-subtitle {
-    @apply text-xs text-gray-500;
-  }
-
-  /* Bottom Navigation */
-  .bottom-nav {
-    @apply fixed bottom-4 left-1/2 transform -translate-x-1/2 
-           bg-white/90 backdrop-blur-md shadow-lg rounded-xl 
-           px-4 py-2 flex items-center gap-6 z-40;
-  }
-
-  .nav-button {
-    @apply flex flex-col items-center text-sm text-gray-700 
-           hover:text-blue-600 transition-colors;
-  }
-
-  .nav-icon {
-    @apply text-lg;
-  }
-
-  .nav-label {
-    @apply text-[10px];
-  }
-
-  /* ============================================
-     BUTTONS
-  ============================================ */
+  /* ===== BUTTONS ===== */
   
   .btn {
-    @apply px-4 py-3 rounded-md font-medium transition-colors 
+    @apply px-4 py-3 rounded-lg font-medium transition-colors 
+           disabled:opacity-50 disabled:cursor-not-allowed
            flex items-center justify-center space-x-2;
   }
-
+  
   .btn-primary {
     @apply btn bg-blue-600 text-white hover:bg-blue-700 
-           disabled:bg-gray-400;
+           disabled:bg-blue-400;
   }
-
+  
   .btn-secondary {
     @apply btn bg-gray-200 text-gray-800 hover:bg-gray-300;
   }
-
+  
   .btn-success {
     @apply btn bg-green-600 text-white hover:bg-green-700 
            disabled:bg-green-400;
   }
-
+  
   .btn-danger {
-    @apply btn bg-red-600 text-white hover:bg-red-700;
+    @apply btn bg-red-600 text-white hover:bg-red-700 
+           disabled:bg-red-400;
   }
-
-  .btn-full {
-    @apply w-full;
+  
+  .btn-ghost {
+    @apply btn bg-transparent text-gray-700 hover:bg-gray-100;
   }
 
   .btn-icon {
-    @apply p-2 rounded-full hover:bg-white/20 transition-colors;
+    @apply p-2 rounded-full hover:bg-gray-100 transition-colors;
   }
 
-  /* ============================================
-     FORMS & INPUTS
-  ============================================ */
   
-  .input-wrapper {
-    @apply relative;
-  }
-
+  /* ===== INPUTS & FORMS ===== */
+  
   .input {
-    @apply w-full py-3 px-4 border border-gray-300 rounded-md 
-           focus:outline-none focus:ring-2 focus:ring-blue-500 
-           focus:border-transparent disabled:bg-gray-100 
-           disabled:cursor-not-allowed;
+    @apply w-full px-4 py-3 border border-gray-300 rounded-lg
+           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+           disabled:bg-gray-100 disabled:cursor-not-allowed
+           text-base;
   }
-
+  
   .input-with-icon {
     @apply input pl-10;
   }
-
-  .input-icon {
-    @apply absolute left-3 top-1/2 transform -translate-y-1/2 
-           text-gray-400;
+  
+  .input-error {
+    @apply input border-red-500 focus:ring-red-500;
   }
-
+  
   .label {
     @apply block text-sm font-medium text-gray-700 mb-1;
   }
 
-  /* Dropdown/Suggestions */
-  .suggestions-dropdown {
-    @apply absolute z-20 left-0 right-0 bg-white border 
-           rounded shadow max-h-40 overflow-y-auto mt-1;
+  .form-group {
+    @apply space-y-1;
   }
 
-  .suggestion-item {
-    @apply p-2 hover:bg-blue-100 cursor-pointer text-sm;
+  
+  /* ===== CARDS ===== */
+  
+  .card {
+    @apply bg-white rounded-lg shadow-md p-4;
+  }
+  
+  .card-lg {
+    @apply card p-6;
+  }
+  
+  .card-hover {
+    @apply card hover:shadow-lg transition-shadow cursor-pointer;
   }
 
-  /* ============================================
-     MODALS
-  ============================================ */
+  .card-interactive {
+    @apply card-hover border border-gray-200 hover:border-blue-300;
+  }
+
+  
+  /* ===== ROUTE INFO CARDS ===== */
+  
+  .route-info-card {
+    @apply card w-full max-w-xl;
+  }
+  
+  .route-stat {
+    @apply flex items-center space-x-2;
+  }
+  
+  .route-stat-icon {
+    @apply text-blue-600 flex-shrink-0;
+  }
+  
+  .route-stat-label {
+    @apply text-xs text-gray-500;
+  }
+  
+  .route-stat-value {
+    @apply font-semibold text-gray-900;
+  }
+
+  
+  /* ===== DROPDOWN & SUGGESTIONS ===== */
+  
+  .dropdown {
+    @apply absolute z-dropdown left-0 right-0 
+           bg-white border border-gray-200 rounded-lg shadow-lg 
+           max-h-40 overflow-y-auto mt-1;
+  }
+  
+  .dropdown-item {
+    @apply p-2 hover:bg-blue-50 cursor-pointer text-sm
+           transition-colors;
+  }
+
+  .dropdown-item-active {
+    @apply dropdown-item bg-blue-100;
+  }
+
+  
+  /* ===== NAVIGATION ===== */
+  
+  .bottom-nav {
+    @apply fixed bottom-4 left-1/2 transform -translate-x-1/2
+           bg-white/90 backdrop-blur-md shadow-lg rounded-xl
+           px-4 py-2 flex items-center gap-6 z-nav;
+  }
+  
+  .nav-item {
+    @apply flex flex-col items-center text-sm text-gray-700 
+           hover:text-blue-600 transition-colors;
+  }
+  
+  .nav-item-label {
+    @apply text-[10px];
+  }
+
+  
+  /* ===== MODAL ===== */
   
   .modal-overlay {
     @apply fixed inset-0 bg-black/50 backdrop-blur-sm 
-           flex items-center justify-center z-[9999] p-4;
-    isolation: isolate;
+           flex items-center justify-center z-modal p-4;
   }
-
-  .modal {
-    @apply bg-white rounded-2xl shadow-2xl w-full 
-           max-w-md overflow-hidden;
-  }
-
-  .modal-lg {
-    @apply modal max-w-2xl max-h-[90vh] overflow-y-auto;
-  }
-
-  .modal-header {
-    @apply bg-gradient-to-r from-blue-600 to-blue-400 
-           p-6 text-white flex items-center justify-between;
-  }
-
-  .modal-header-green {
-    @apply bg-gradient-to-r from-green-600 to-green-400 
-           p-6 text-white flex-shrink-0;
-  }
-
-  .modal-title {
-    @apply text-2xl font-bold;
-  }
-
-  .modal-subtitle {
-    @apply text-sm text-blue-100 mt-1;
-  }
-
+  
   .modal-content {
-    @apply p-6 space-y-4;
+    @apply bg-white rounded-2xl shadow-2xl 
+           w-full max-w-2xl max-h-[90vh] overflow-hidden
+           flex flex-col;
+  }
+  
+  .modal-header {
+    @apply p-6 text-white flex-shrink-0;
+  }
+  
+  .modal-header-primary {
+    @apply modal-header bg-gradient-to-r from-blue-600 to-blue-400;
+  }
+  
+  .modal-header-success {
+    @apply modal-header bg-gradient-to-r from-green-600 to-green-400;
+  }
+  
+  .modal-body {
+    @apply p-6 space-y-6 overflow-y-auto flex-1;
   }
 
   .modal-close-btn {
@@ -193,361 +174,284 @@
            transition-colors;
   }
 
-  /* ============================================
-     AUTHENTICATION
-  ============================================ */
   
-  .auth-modal {
-    @apply modal-overlay;
-  }
-
-  .auth-card {
-    @apply modal;
-  }
-
-  .auth-header {
-    @apply modal-header;
-  }
-
-  .auth-icon {
-    @apply text-4xl mb-2;
-  }
-
-  .auth-form {
-    @apply p-6 space-y-4;
-  }
-
-  .auth-input {
-    @apply input-with-icon;
-  }
-
-  .auth-error {
-    @apply bg-red-50 border border-red-200 text-red-700 
-           px-4 py-3 rounded-lg text-sm;
-  }
-
-  .auth-submit {
-    @apply btn-primary btn-full;
-  }
-
-  .auth-toggle {
-    @apply text-blue-600 hover:text-blue-700 text-sm font-medium;
-  }
-
-  /* ============================================
-     USER MENU
-  ============================================ */
+  /* ===== BADGES & PILLS ===== */
   
-  .user-menu-button {
-    @apply bg-white hover:bg-gray-50 border border-gray-300 
-           px-4 py-2 rounded-lg font-medium flex items-center 
-           space-x-2 transition-colors;
+  .badge {
+    @apply px-2 py-0.5 rounded text-xs font-medium;
   }
-
-  .user-avatar {
-    @apply w-8 h-8 bg-blue-600 text-white rounded-full 
-           flex items-center justify-center font-bold;
-  }
-
-  .user-menu-dropdown {
-    @apply absolute right-0 mt-2 w-56 bg-white rounded-lg 
-           shadow-lg border border-gray-200 py-2 z-50;
-  }
-
-  .user-menu-info {
-    @apply px-4 py-3 border-b border-gray-200;
-  }
-
-  .user-menu-item {
-    @apply w-full px-4 py-2 text-left hover:bg-gray-50 
-           flex items-center space-x-2 text-gray-700;
-  }
-
-  .user-menu-logout {
-    @apply user-menu-item hover:bg-red-50 text-red-600 
-           border-t border-gray-200;
-  }
-
-  /* ============================================
-     ROUTE SEARCH
-  ============================================ */
   
-  .route-form {
-    @apply card space-y-4;
+  .badge-primary {
+    @apply badge bg-blue-100 text-blue-800;
+  }
+  
+  .badge-success {
+    @apply badge bg-green-100 text-green-800;
+  }
+  
+  .badge-warning {
+    @apply badge bg-yellow-100 text-yellow-800;
+  }
+  
+  .badge-danger {
+    @apply badge bg-red-100 text-red-800;
+  }
+  
+  .badge-gray {
+    @apply badge bg-gray-100 text-gray-800;
   }
 
-  .route-input-group {
-    @apply flex items-center space-x-2 relative;
+  
+  /* ===== DIFFICULTY BADGES (per hiking) ===== */
+  
+  .difficulty-badge {
+    @apply badge text-white;
+  }
+  
+  .difficulty-easy {
+    @apply difficulty-badge bg-green-500;
+  }
+  
+  .difficulty-medium {
+    @apply difficulty-badge bg-blue-500;
+  }
+  
+  .difficulty-hard {
+    @apply difficulty-badge bg-orange-500;
+  }
+  
+  .difficulty-expert {
+    @apply difficulty-badge bg-red-500;
   }
 
-  .route-input {
-    @apply input h-12 text-base;
+  
+  /* ===== ALERTS & MESSAGES ===== */
+  
+  .alert {
+    @apply px-4 py-3 rounded-lg text-sm;
+  }
+  
+  .alert-error {
+    @apply alert bg-red-50 border border-red-200 text-red-700;
+  }
+  
+  .alert-success {
+    @apply alert bg-green-50 border border-green-200 text-green-700;
+  }
+  
+  .alert-warning {
+    @apply alert bg-yellow-50 border border-yellow-200 text-yellow-800;
+  }
+  
+  .alert-info {
+    @apply alert bg-blue-50 border border-blue-200 text-blue-700;
   }
 
-  .route-submit {
-    @apply btn-primary btn-full;
+  
+  /* ===== LOADING ===== */
+  
+  .loading-spinner {
+    @apply flex items-center justify-center py-12;
+  }
+  
+  .spinner {
+    @apply animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600;
   }
 
-  /* Route Info Card */
-  .route-info-card {
-    @apply card;
+  .spinner-sm {
+    @apply animate-spin rounded-full h-4 w-4 border-b-2 border-current;
   }
 
-  .route-info-title {
-    @apply text-lg font-bold mb-3 text-gray-800;
-  }
-
-  .route-info-grid {
-    @apply grid grid-cols-2 gap-3;
-  }
-
-  .route-stat {
-    @apply flex items-center space-x-2;
-  }
-
-  .route-stat-label {
-    @apply text-xs text-gray-500;
-  }
-
-  .route-stat-value {
-    @apply font-semibold;
-  }
-
-  .route-actions {
-    @apply mt-4 pt-4 border-t space-y-2;
-  }
-
-  /* Instructions */
-  .instructions-card {
-    @apply card;
-  }
-
-  .instructions-title {
-    @apply text-lg font-bold mb-3 text-gray-800;
-  }
-
-  .instructions-list {
-    @apply space-y-2 max-h-60 overflow-y-auto;
-  }
-
+  
+  /* ===== INSTRUCTIONS LIST ===== */
+  
   .instruction-item {
     @apply flex items-start space-x-3 p-2 hover:bg-gray-50 rounded;
   }
-
+  
   .instruction-number {
     @apply flex-shrink-0 w-6 h-6 bg-blue-600 text-white 
            rounded-full flex items-center justify-center 
            text-xs font-bold;
   }
-
+  
   .instruction-text {
     @apply text-sm font-medium text-gray-800;
   }
-
+  
   .instruction-details {
     @apply text-xs text-gray-500;
   }
 
-  /* ============================================
-     NEARBY HIKES
-  ============================================ */
   
-  .hike-modal {
-    @apply modal-lg;
+  /* ===== HEADER ===== */
+  
+  .app-header {
+    @apply bg-white shadow-sm sticky top-0 z-50;
+  }
+  
+  .app-header-content {
+    @apply max-w-7xl mx-auto px-4 py-4 
+           flex items-center justify-between;
+  }
+  
+  .app-logo {
+    @apply w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 
+           rounded-xl flex items-center justify-center 
+           text-white font-bold text-xl shadow-lg;
+  }
+  
+  .app-title {
+    @apply text-xl font-bold text-gray-900;
+  }
+  
+  .app-subtitle {
+    @apply text-xs text-gray-500;
   }
 
-  .hike-header {
-    @apply modal-header-green;
+  
+  /* ===== USER MENU ===== */
+  
+  .user-menu-button {
+    @apply bg-white hover:bg-gray-50 border border-gray-300 
+           px-4 py-2 rounded-lg font-medium 
+           flex items-center space-x-2 transition-colors;
   }
-
-  .hike-radius-selector {
-    @apply flex space-x-2 mt-4;
+  
+  .user-avatar {
+    @apply w-8 h-8 bg-blue-600 text-white rounded-full 
+           flex items-center justify-center font-bold;
   }
-
-  .radius-button {
-    @apply px-3 py-1 rounded-md text-sm font-medium 
+  
+  .user-dropdown {
+    @apply absolute right-0 mt-2 w-56 
+           bg-white rounded-lg shadow-lg border border-gray-200 
+           py-2 z-dropdown;
+  }
+  
+  .user-dropdown-item {
+    @apply w-full px-4 py-2 text-left hover:bg-gray-50 
+           flex items-center space-x-2 text-gray-700
            transition-colors;
   }
 
-  .radius-button-active {
-    @apply radius-button bg-white text-green-600;
+  
+  /* ===== SAVED ROUTES LIST ===== */
+  
+  .saved-route-card {
+    @apply border rounded-lg p-3 hover:bg-gray-50 transition-colors;
+  }
+  
+  .saved-route-title {
+    @apply font-bold text-gray-800 mb-1;
+  }
+  
+  .saved-route-info {
+    @apply text-xs text-gray-500 space-y-1;
+  }
+  
+  .saved-route-stats {
+    @apply flex space-x-3 mt-2;
   }
 
-  .radius-button-inactive {
-    @apply radius-button bg-green-700 text-white hover:bg-green-800;
-  }
-
-  .hike-list {
-    @apply space-y-3;
-  }
-
+  
+  /* ===== NEARBY HIKES ===== */
+  
   .hike-card {
-    @apply border rounded-lg p-4 hover:bg-gray-50 
-           cursor-pointer transition;
+    @apply border rounded-lg p-4 
+           hover:bg-gray-50 cursor-pointer transition-colors;
   }
-
+  
   .hike-card-loading {
     @apply hike-card bg-green-50 cursor-wait;
   }
-
+  
   .hike-title {
     @apply font-bold text-gray-800 mb-1;
   }
-
-  .hike-meta {
-    @apply flex items-center flex-wrap gap-3 text-sm 
-           text-gray-600 mb-2;
-  }
-
-  .hike-description {
-    @apply text-sm text-gray-600 mb-2;
-  }
-
-  .difficulty-badge {
-    @apply px-2 py-0.5 rounded text-xs text-white;
-  }
-
-  /* ============================================
-     SAVED ROUTES
-  ============================================ */
   
-  .saved-routes-card {
-    @apply card;
+  .hike-details {
+    @apply flex items-center flex-wrap gap-3 text-sm text-gray-600 mb-2;
   }
 
-  .saved-routes-title {
-    @apply text-lg font-bold mb-4 text-gray-800;
-  }
-
-  .saved-routes-list {
-    @apply space-y-3 max-h-96 overflow-y-auto;
-  }
-
-  .saved-route-item {
-    @apply border rounded-lg p-3 hover:bg-gray-50 transition;
-  }
-
-  .saved-route-title {
-    @apply font-bold text-gray-800;
-  }
-
-  .saved-route-details {
-    @apply text-xs text-gray-500 mt-1 space-y-1;
-  }
-
-  .saved-route-actions {
-    @apply flex flex-col space-y-2 ml-3;
-  }
-
-  /* ============================================
-     NAVIGATION MODE
-  ============================================ */
+  
+  /* ===== NAVIGATION MODE ===== */
   
   .nav-status-bar {
-    @apply bg-blue-600 text-white rounded-lg shadow-lg 
-           p-4 w-full max-w-xl;
+    @apply bg-blue-600 text-white rounded-lg shadow-lg p-4 
+           w-full max-w-xl;
   }
-
+  
+  .nav-instruction-card {
+    @apply bg-white rounded-lg shadow-lg p-4 
+           w-full max-w-xl border-l-4 border-blue-600;
+  }
+  
   .nav-warning {
     @apply bg-yellow-50 border-l-4 border-yellow-400 
            p-4 rounded-lg shadow-md w-full max-w-xl;
   }
 
-  .nav-instruction {
-    @apply bg-white rounded-lg shadow-lg p-4 w-full max-w-xl 
-           border-l-4 border-blue-600;
-  }
-
-  .nav-instruction-icon {
-    @apply flex-shrink-0 w-12 h-12 bg-blue-600 text-white 
-           rounded-full flex items-center justify-center 
-           text-xl font-bold;
-  }
-
-  /* ============================================
-     INFO MODAL
-  ============================================ */
+  
+  /* ===== INFO MODAL SECTIONS ===== */
   
   .info-section {
-    @apply mb-6;
+    @apply space-y-3;
   }
-
-  .info-title {
-    @apply text-lg font-bold text-gray-800 mb-2;
+  
+  .info-section-title {
+    @apply text-lg font-bold text-gray-800 mb-3;
   }
-
-  .info-text {
-    @apply text-gray-600 leading-relaxed;
-  }
-
+  
   .info-step {
-    @apply flex items-start space-x-3 mb-3;
+    @apply flex items-start space-x-3;
   }
-
+  
   .info-step-icon {
     @apply flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 
            rounded-full flex items-center justify-center;
   }
-
+  
   .info-step-title {
     @apply font-semibold text-gray-800;
   }
-
+  
   .info-step-description {
     @apply text-sm text-gray-600;
   }
 
-  /* ============================================
-     LOADING STATES
-  ============================================ */
   
-  .loading-spinner {
-    @apply flex items-center justify-center py-12;
-  }
-
-  .spinner {
-    @apply animate-spin rounded-full h-12 w-12 border-b-2 
-           border-blue-600;
-  }
-
-  .spinner-sm {
-    @apply animate-spin;
-  }
-
-  /* ============================================
-     ALERTS & MESSAGES
-  ============================================ */
+  /* ===== FOOTER ===== */
   
-  .alert {
-    @apply px-4 py-3 rounded-lg text-sm;
+  .footer {
+    @apply text-center py-4 text-sm text-gray-600;
   }
-
-  .alert-error {
-    @apply alert bg-red-50 border border-red-200 text-red-700;
-  }
-
-  .alert-warning {
-    @apply alert bg-yellow-50 border border-yellow-200 text-yellow-800;
-  }
-
-  .alert-success {
-    @apply alert bg-green-50 border border-green-200 text-green-700;
-  }
-
-  .alert-info {
-    @apply alert bg-blue-50 border border-blue-200 text-blue-700;
-  }
-
-  /* ============================================
-     MAP RELATED
-  ============================================ */
   
-  .map-container {
-    @apply w-full h-[400px] rounded-lg shadow-md;
+  .footer-link {
+    @apply text-blue-600 hover:underline;
   }
 
-  .custom-html-marker {
-    @apply pointer-events-none;
+  
+  /* ===== UTILITIES CUSTOM ===== */
+  
+  .container-app {
+    @apply max-w-7xl mx-auto px-4;
+  }
+  
+  .page-section {
+    @apply py-6 space-y-4;
   }
 
+  .divider {
+    @apply border-t border-gray-200 my-4;
+  }
+
+  .text-muted {
+    @apply text-gray-500 text-sm;
+  }
+
+  .text-link {
+    @apply text-blue-600 hover:text-blue-700 hover:underline 
+           cursor-pointer transition-colors;
+  }
 }
