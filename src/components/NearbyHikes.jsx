@@ -380,28 +380,17 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
     return R * c
   }
-// Funzione per ottenere il colore in base alla difficoltà
-  const getDifficultyColor = (difficulty) => {
-    if (!difficulty || difficulty === 'Non specificata') return 'bg-gray-500'
-    const lower = difficulty.toLowerCase()
-    if (lower.includes('hiking') || lower === 't1') return 'bg-green-500'
-    if (lower.includes('mountain_hiking') || lower === 't2') return 'bg-blue-500'
-    if (lower.includes('demanding') || lower === 't3') return 'bg-orange-500'
-    if (lower.includes('alpine') || lower === 't4' || lower === 't5' || lower === 't6') return 'bg-red-500'
-    return 'bg-gray-500'
-  }
-// Funzione per ottenere l'etichetta della difficoltà
-  const getDifficultyLabel = (difficulty) => {
-    if (!difficulty || difficulty === 'Non specificata') return 'Non specificata'
-    const lower = difficulty.toLowerCase()
-    if (lower === 't1' || lower.includes('hiking')) return 'Escursionismo (T1)'
-    if (lower === 't2' || lower.includes('mountain_hiking')) return 'Montagna (T2)'
-    if (lower === 't3' || lower.includes('demanding')) return 'Impegnativo (T3)'
-    if (lower === 't4') return 'Alpinismo (T4)'
-    if (lower === 't5' || lower === 't6') return 'Alpinismo esperto (T5+)'
-    return difficulty
-  }
 
+// Funzione per ottenere l'etichetta della difficoltà
+  const getDifficultyColor = (difficulty) => {
+  if (!difficulty || difficulty === 'Non specificata') return 'hike-difficulty-gray'
+  const lower = difficulty.toLowerCase()
+  if (lower.includes('hiking') || lower === 't1') return 'hike-difficulty-green'
+  if (lower.includes('mountain_hiking') || lower === 't2') return 'hike-difficulty-blue'
+  if (lower.includes('demanding') || lower === 't3') return 'hike-difficulty-orange'
+  if (lower.includes('alpine') || lower === 't4' || lower === 't5' || lower === 't6') return 'hike-difficulty-red'
+  return 'hike-difficulty-gray'
+}
   return (
     <div className="hikes-modal-overlay">
   <div className="hikes-modal-content">
@@ -478,21 +467,22 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
             <h3 className="hike-title">{hike.name}</h3>
                         
                         <div className="flex items-center flex-wrap gap-3 text-sm text-gray-600 mb-2">
-                          <span className="flex items-center space-x-1">
-                            <FaMapMarkerAlt className="text-green-600" />
-                            <span>{hike.distance.toFixed(1)} km da te</span>
-                          </span>
+                          <span className="hike-detail-item">
+  <FaMapMarkerAlt className="hike-detail-icon-location" />
+  <span>{hike.distance.toFixed(1)} km da te</span>
+</span>
                           
                           {hike.length > 0 && (
-                            <span className="flex items-center space-x-1">
-                              <FaRulerCombined className="text-blue-600" />
-                              <span>{hike.length.toFixed(1)} km</span>
-                            </span>
-                          )}
+  <span className="hike-detail-item">
+    <FaRulerCombined className="hike-detail-icon-length" />
+    <span>{hike.length.toFixed(1)} km</span>
+  </span>
+)}
                           
-                          <span className={`px-2 py-0.5 rounded text-xs text-white ${getDifficultyColor(hike.difficulty)}`}>
-                            {getDifficultyLabel(hike.difficulty)}
-                          </span>
+                          
+                          <span className={getDifficultyColor(hike.difficulty)}>
+  {getDifficultyLabel(hike.difficulty)}
+</span>
                         </div>
 
                         {hike.description && (

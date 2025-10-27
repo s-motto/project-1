@@ -1,15 +1,10 @@
-/* ===================================================================
-   🚀 CLASSI AGGIUNTIVE PER I COMPONENTI CONVERTITI
-   ===================================================================
-   
+/*
    Questo file contiene le classi @apply per:
    - RouteSearchForm
    - NearbyHikes  
    - NavigationMode
-   
-   Aggiungi queste classi al tuo components-alba.css oppure importalo
-   come file separato dopo components-alba.css
-   ===================================================================*/
+  
+  */
 
 @layer components {
 
@@ -163,6 +158,54 @@
 
   .route-map-container {
     @apply w-full h-[400px] rounded-lg shadow-md;
+  }
+
+  .route-info-container {
+    @apply bg-white rounded-lg shadow-md p-4 w-full max-w-xl;
+  }
+
+  .route-info-header {
+    @apply text-lg font-bold mb-3;
+    color: #5E565A;
+  }
+
+  .route-info-stats-grid {
+    @apply grid grid-cols-2 gap-3;
+  }
+
+  .route-stat-card {
+    @apply flex items-center space-x-2;
+  }
+
+  .route-stat-icon-distance {
+    @apply text-blue-600;
+  }
+
+  .route-stat-icon-duration {
+    @apply text-blue-600;
+  }
+
+  .route-stat-icon-ascent {
+    @apply text-green-600;
+  }
+
+  .route-stat-icon-descent {
+    @apply text-red-600;
+  }
+
+  .route-stat-details {
+    @apply flex flex-col;
+  }
+
+  .route-stat-label {
+    @apply text-xs;
+    color: #5E565A;
+    opacity: 0.7;
+  }
+
+  .route-stat-value {
+    @apply font-semibold;
+    color: #5E565A;
   }
 
 
@@ -344,6 +387,43 @@
     @apply ml-4;
     color: #5E565A;
     opacity: 0.4;
+  }
+
+  .hike-detail-icon-location {
+    @apply text-green-600;
+  }
+
+  .hike-detail-icon-length {
+    @apply text-blue-600;
+  }
+
+  .hike-difficulty-badge {
+    @apply px-2 py-0.5 rounded text-xs text-white;
+  }
+
+  .hike-difficulty-green {
+    @apply hike-difficulty-badge;
+    background-color: #10b981;
+  }
+
+  .hike-difficulty-blue {
+    @apply hike-difficulty-badge;
+    background-color: #3b82f6;
+  }
+
+  .hike-difficulty-orange {
+    @apply hike-difficulty-badge;
+    background-color: #f97316;
+  }
+
+  .hike-difficulty-red {
+    @apply hike-difficulty-badge;
+    background-color: #ef4444;
+  }
+
+  .hike-difficulty-gray {
+    @apply hike-difficulty-badge;
+    background-color: #6b7280;
   }
 
 

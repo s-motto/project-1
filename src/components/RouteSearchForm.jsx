@@ -233,12 +233,12 @@ const loadHikingRoute = (hike) => {
       }
     }
 
-    // ✅ FIXED: Usa ascent e descent da NearbyHikes se disponibili
+    //  Usa ascent e descent da NearbyHikes se disponibili
     setRouteInfo({
       distance: parseFloat(totalDistance.toFixed(2)),
       duration: hike.duration || Math.round(totalDistance * 20), // Usa duration se disponibile, altrimenti stima
-      ascent: hike.ascent || 0, // ✅ USA I DATI CALCOLATI!
-      descent: hike.descent || 0 // ✅ USA I DATI CALCOLATI!
+      ascent: hike.ascent || 0, 
+      descent: hike.descent || 0 
     })
 
     // Marker di inizio (primo punto)
@@ -707,37 +707,37 @@ const handleReset = () => {
 
           {/* Route Information Card */}
           {routeInfo && (
-            <div className="bg-white rounded-lg shadow-md p-4 w-full max-w-xl">
-              <h3 className="text-lg font-bold mb-3 text-gray-800">Informazioni Percorso</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex items-center space-x-2">
-                  <FaRoute className="text-blue-600" />
-                  <div>
-                    <p className="text-xs text-gray-500">Distanza</p>
-                    <p className="font-semibold">{routeInfo.distance} km</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <FaClock className="text-blue-600" />
-                  <div>
-                    <p className="text-xs text-gray-500">Durata</p>
-                    <p className="font-semibold">{routeInfo.duration} min</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <FaWalking className="text-green-600" />
-                  <div>
-                    <p className="text-xs text-gray-500">Salita</p>
-                    <p className="font-semibold">{routeInfo.ascent} m</p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <FaWalking className="text-red-600" />
-                  <div>
-                    <p className="text-xs text-gray-500">Discesa</p>
-                    <p className="font-semibold">{routeInfo.descent} m</p>
-                  </div>
-                </div>
+            <div className="route-info-container">
+  <h3 className="route-info-header">Informazioni Percorso</h3>
+  <div className="route-info-stats-grid">
+                <div className="route-stat-card">
+  <FaRoute className="route-stat-icon-distance" />
+  <div className="route-stat-details">
+    <p className="route-stat-label">Distanza</p>
+    <p className="route-stat-value">{routeInfo.distance} km</p>
+  </div>
+</div>
+                <div className="route-stat-card">
+  <FaClock className="route-stat-icon-duration" />
+  <div className="route-stat-details">
+    <p className="route-stat-label">Durata</p>
+    <p className="route-stat-value">{routeInfo.duration} min</p>
+  </div>
+</div>
+                <div className="route-stat-card">
+  <FaWalking className="route-stat-icon-ascent" />
+  <div className="route-stat-details">
+    <p className="route-stat-label">Salita</p>
+    <p className="route-stat-value">{routeInfo.ascent} m</p>
+  </div>
+</div>
+                <div className="route-stat-card">
+  <FaWalking className="route-stat-icon-descent" />
+  <div className="route-stat-details">
+    <p className="route-stat-label">Discesa</p>
+    <p className="route-stat-value">{routeInfo.descent} m</p>
+  </div>
+</div>
               </div>
 
               <div className="mt-4 pt-4 border-t space-y-2">
