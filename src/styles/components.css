@@ -284,48 +284,69 @@
   }
 
   
-  /* ===== HEADER ===== */
+  /* ===== HEADER - NUOVO DESIGN ===== */
   
   .app-header {
-    @apply bg-white shadow-sm sticky top-0 z-50;
+    @apply sticky top-0 z-50 shadow-lg;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   }
   
-  .app-header-content {
-    @apply max-w-7xl mx-auto px-4 py-4 
+  /* Container principale header */
+  .header-container {
+    @apply max-w-7xl mx-auto px-4 py-4
            flex items-center justify-between;
   }
   
-  .app-logo {
-    @apply w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 
-           rounded-xl flex items-center justify-center 
-           text-white font-bold text-xl shadow-lg;
+  /* Container logo + testo */
+  .logo-container {
+    @apply flex items-center space-x-3;
   }
   
-  .app-title {
-    @apply text-xl font-bold text-gray-900;
+  /* Icona logo */
+  .logo-icon {
+    @apply w-12 h-12 bg-white/20 backdrop-blur-sm
+           rounded-2xl flex items-center justify-center 
+           text-white font-bold text-2xl shadow-xl
+           border border-white/30;
   }
   
-  .app-subtitle {
-    @apply text-xs text-gray-500;
+  /* Container del testo */
+  .logo-text-container {
+    @apply flex flex-col;
+  }
+  
+  /* Titolo principale */
+  .logo-title {
+    @apply text-2xl font-black text-white drop-shadow-md;
+    font-family: 'Montserrat', sans-serif;
+    letter-spacing: -0.5px;
+  }
+  
+  /* Sottotitolo */
+  .logo-subtitle {
+    @apply text-xs text-white/90 font-medium;
   }
 
   
   /* ===== USER MENU ===== */
   
   .user-menu-button {
-    @apply bg-white hover:bg-gray-50 border border-gray-300 
+    @apply bg-white/10 hover:bg-white/20 backdrop-blur-sm
+           border border-white/30
            px-4 py-2 rounded-lg font-medium 
-           flex items-center space-x-2 transition-colors;
+           flex items-center space-x-2 transition-all
+           text-white shadow-md hover:shadow-lg;
   }
   
   .user-avatar {
-    @apply w-8 h-8 bg-blue-600 text-white rounded-full 
-           flex items-center justify-center font-bold;
+    @apply w-8 h-8 bg-white/30 text-white rounded-full 
+           flex items-center justify-center font-bold
+           border border-white/50;
   }
   
   .user-dropdown {
     @apply absolute right-0 mt-2 w-56 
-           bg-white rounded-lg shadow-lg border border-gray-200 
+           bg-white rounded-lg shadow-xl border border-gray-200 
            py-2 z-dropdown;
   }
   
