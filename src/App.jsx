@@ -10,17 +10,19 @@ const SavedRoutes = lazy(() => import('./components/SavedRoutes'))
 
 // Componente di caricamento
 const LoadingSpinner = () => (
-  <div className="flex items-center justify-center py-12">
-    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  <div className="loading-spinner">
+    <div className="spinner"></div>
   </div>
 )
+
 // Componente principale App
 function App() {
   const [showSaved, setShowSaved] = useState(false)
   const [preloadedRoute, setPreloadedRoute] = useState(null)
   const [preloadedHike, setPreloadedHike] = useState(null)
   const routeFormRef = useRef()
-// Gestori eventi per la navigazione
+
+  // Gestori eventi per la navigazione
   const handleHomeClick = () => {
     setShowSaved(false)
     setPreloadedRoute(null)
@@ -29,38 +31,42 @@ function App() {
       routeFormRef.current.reset()
     }
   }
-// Mostra le rotte salvate
+
+  // Mostra le rotte salvate
   const handleSavedClick = () => {
     setShowSaved(true)
     setPreloadedRoute(null)
     setPreloadedHike(null)
   }
-// Carica una rotta salvata
+
+  // Carica una rotta salvata
   const handleLoadRoute = (route) => {
     setPreloadedRoute(route)
     setPreloadedHike(null)
     setShowSaved(false)
   }
-// Carica un percorso di hiking selezionato
+
+  // Carica un percorso di hiking selezionato
   const handleRouteSelected = (hike) => {
     setPreloadedHike(hike)
     setPreloadedRoute(null)
     setShowSaved(false)
   }
-// Render del componente
+
+  // Render del componente
   return (
     <AuthProvider>
-      <div className="min-h-screen bg-gray-50 pb-20">
+      <div className="page-container">
         {/* Header */}
-        <header className="bg-white shadow-sm sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
+        <header className="app-header">
+          <div className="header-container">
+            <div className="logo-container">
+              <div className="logo-icon">
                 🚶
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Let's Walk!</h1>
-                <p className="text-xs text-gray-500">Pianifica i tuoi percorsi</p>
+              <div className="logo-text-container">
+                <h1 className="logo-title">Let's Walk!</h1>
+                <p className="logo-subtitle">Pianifica i tuoi percorsi</p>
               </div>
             </div>
             <UserMenu onShowSavedRoutes={handleSavedClick} />
@@ -68,7 +74,7 @@ function App() {
         </header>
 
         {/* Main Content con Suspense per lazy loading */}
-        <main className="max-w-7xl mx-auto px-4 py-6">
+        <main className="content-wrapper">
           <Suspense fallback={<LoadingSpinner />}>
             {showSaved ? (
               <SavedRoutes onLoadRoute={handleLoadRoute} />

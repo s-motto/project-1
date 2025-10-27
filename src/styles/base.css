@@ -1,0 +1,32 @@
+@layer base {
+  /* Header Background */
+  .header-bg {
+    @apply relative bg-gradient-to-r from-blue-400 to-cyan-400 min-h-[45vh];
+    background-image: url('../assets/boots.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  .header-bg::before {
+    content: '';
+    @apply absolute inset-0 bg-black/45 z-[1];
+  }
+
+  .header-content {
+    @apply relative z-[2] w-full flex flex-col items-center justify-center;
+  }
+
+  /* Font Weight Helper */
+  .font-captivating {
+    font-family: 'Montserrat', 'Poppins', 'Arial', sans-serif;
+    @apply font-black;
+    letter-spacing: -1px;
+  }
+}
+
+
+
+
+
+

@@ -1,0 +1,19 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap');
+
+/* Import dei nostri file custom */
+@import './base.css';
+@import './components.css';
+@import './utilities.css';
+
+/* Font globale */
+html, body, #root {
+  font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+}
+
+body, input, textarea, select, button, h1, h2, h3, h4, h5, h6, p, a, span, label, li, th, td, div {
+  font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+}

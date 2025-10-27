@@ -1,0 +1,96 @@
+@layer utilities {
+  
+  /* Text Balance */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Hide Scrollbar */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Custom Scrollbar (sottile e elegante) */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
+
+  /* Glassmorphism effect */
+  .glass {
+    @apply bg-white/90 backdrop-blur-md;
+  }
+
+  .glass-dark {
+    @apply bg-black/50 backdrop-blur-sm;
+  }
+
+  /* Truncate text with ellipsis */
+  .truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .truncate-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Hide elements when modal is open */
+  body.modal-open .leaflet-marker-pane {
+    display: none !important;
+  }
+
+  body.modal-open .custom-map-marker {
+    display: none !important;
+  }
+
+  /* Blur map when modal is open */
+  body.modal-open #map {
+    filter: blur(3px);
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  /* Safe area paddings (per notch iPhone) */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Smooth gradient text */
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r 
+           from-blue-600 to-cyan-600;
+  }
+
+}
