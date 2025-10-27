@@ -403,23 +403,23 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="hikes-modal-overlay">
+  <div className="hikes-modal-content">
         {/* Header */}
-        <div className="bg-gradient-to-r from-green-600 to-green-400 p-6 text-white flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <FaHiking className="text-3xl" />
-              <div>
-                <h2 className="text-2xl font-bold">Percorsi nelle vicinanze</h2>
-                <p className="text-sm text-green-100">
+        <div className="hikes-modal-header">
+  <div className="hikes-header-row">
+    <div className="hikes-header-content">
+      <FaHiking className="hikes-header-icon" />
+      <div className="hikes-header-text-container">
+        <h2 className="hikes-header-title">Percorsi nelle vicinanze</h2>
+        <p className="hikes-header-subtitle">
                   {userLocation ? `📍 Entro ${radiusKm} km da te` : 'Ricerca in corso...'}
                 </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+              className="hikes-close-btn"
               aria-label="Chiudi"
             >
               <FaTimes className="text-xl" />
@@ -435,11 +435,8 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
                   <button
                     key={km}
                     onClick={() => setRadiusKm(km)}
-                    className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                      radiusKm === km 
-                        ? 'bg-white text-green-600' 
-                        : 'bg-green-700 text-white hover:bg-green-800'
-                    }`}
+                    className={radiusKm === km ? 'hikes-radius-btn-active' : 'hikes-radius-btn-inactive'}
+                    
                   >
                     {km} km
                   </button>
@@ -450,39 +447,35 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="hikes-modal-body">
           {loading && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <FaSpinner className="text-4xl text-green-600 animate-spin mb-4" />
-              <p className="text-gray-600">Ricerca percorsi in corso...</p>
-              <p className="text-sm text-gray-400 mt-2">Può richiedere alcuni secondi</p>
-            </div>
+           <div className="hikes-loading-container">
+  <FaSpinner className="hikes-loading-icon" />
+  <p className="text-gray-600">Ricerca percorsi in corso...</p>
+  <p className="hikes-loading-text">Può richiedere alcuni secondi</p>
+</div>
           )}
 
           {error && !loading && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800">
-              <p className="font-medium">⚠️ {error}</p>
-            </div>
+            <div className="hikes-error-message">
+  <p>⚠️ {error}</p>
+</div>
           )}
 
           {!loading && !error && hikes.length > 0 && (
-            <div className="space-y-3">
-              {hikes.map((hike) => {
-                const isLoadingThis = loadingElevation === `${hike.type}-${hike.id}`
-                
-                return (
-                  <div
-                    key={`${hike.type}-${hike.id}`}
-                    className={`border rounded-lg p-4 transition ${
-                      isLoadingThis 
-                        ? 'bg-green-50 cursor-wait' 
-                        : 'hover:bg-gray-50 cursor-pointer'
-                    }`}
-                    onClick={() => !isLoadingThis && handleSelectHike(hike)}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h3 className="font-bold text-gray-800 mb-1">{hike.name}</h3>
+           <div className="hikes-list">
+  {hikes.map((hike) => {
+    const isLoadingThis = loadingElevation === `${hike.type}-${hike.id}`
+    
+    return (
+      <div
+        key={`${hike.type}-${hike.id}`}
+        className={isLoadingThis ? 'hike-card-loading' : 'hike-card'}
+        onClick={() => !isLoadingThis && handleSelectHike(hike)}
+      >
+        <div className="hike-card-content">
+          <div className="hike-card-main">
+            <h3 className="hike-title">{hike.name}</h3>
                         
                         <div className="flex items-center flex-wrap gap-3 text-sm text-gray-600 mb-2">
                           <span className="flex items-center space-x-1">

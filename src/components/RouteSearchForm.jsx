@@ -602,15 +602,15 @@ const handleReset = () => {
                         setShowStartDropdown(false)
                       }
                     }}
-                    className="pl-10 w-full py-3 h-12 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    className="route-input"
                   />
                   {showStartDropdown && (startSuggestions.length > 0 || startLoading) && (
-                    <ul className="absolute z-20 left-0 right-0 bg-white border rounded shadow max-h-40 overflow-y-auto mt-1">
-                      {startLoading && <li className="p-2 text-xs text-gray-400">Caricamento…</li>}
+                    <ul className="route-suggestions-dropdown">
+                      {startLoading && <li className="route-suggestion-loading">Caricamento…</li>}
                       {startSuggestions.map((suggestion) => (
                         <li
                           key={suggestion.place_id}
-                          className="p-2 hover:bg-blue-100 cursor-pointer text-sm"
+                          className="route-suggestion-item"
                           onMouseDown={() => {
                             setStartText(suggestion.display_name)
                             setStartPoint({
@@ -659,15 +659,15 @@ const handleReset = () => {
                         setShowEndDropdown(false)
                       }
                     }}
-                    className="pl-10 w-full py-3 h-12 text-base border rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                   className="route-input"
                   />
                   {showEndDropdown && (endSuggestions.length > 0 || endLoading) && (
-                    <ul className="absolute z-20 left-0 right-0 bg-white border rounded shadow max-h-40 overflow-y-auto mt-1">
-                      {endLoading && <li className="p-2 text-xs text-gray-400">Caricamento…</li>}
+                    <ul className="route-suggestions-dropdown">
+                      {endLoading && <li className="route-suggestion-loading">Caricamento…</li>}
                       {endSuggestions.map((suggestion) => (
                         <li
                           key={suggestion.place_id}
-                          className="p-2 hover:bg-blue-100 cursor-pointer text-sm"
+                          className="route-suggestion-item"
                           onMouseDown={() => {
                             setEndText(suggestion.display_name)
                             setEndPoint({
@@ -690,7 +690,7 @@ const handleReset = () => {
             </div>
 
             {errorMsg && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded text-sm">
+              <div className="route-error-message">
                 {errorMsg}
               </div>
             )}
@@ -698,7 +698,7 @@ const handleReset = () => {
   <button
     type="submit"
     disabled={loading}
-    className="bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-400 font-medium"
+    className="route-submit-btn"
   >
     {loading ? 'Calcolo percorso...' : 'Trova percorso'}
   </button>
@@ -745,7 +745,7 @@ const handleReset = () => {
                 
                 <button
                   onClick={() => setIsNavigating(true)}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-md font-bold flex items-center justify-center space-x-2"
+                  className="route-gps-btn"
                 >
                   <FaLocationArrow />
                   <span>Inizia Navigazione GPS</span>
@@ -756,17 +756,17 @@ const handleReset = () => {
 
           {/* Turn-by-turn Instructions */}
           {instructions.length > 0 && (
-            <div className="bg-white rounded-lg shadow-md p-4 w-full max-w-xl">
-              <h3 className="text-lg font-bold mb-3 text-gray-800">Indicazioni Stradali</h3>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {instructions.map((step, idx) => (
-                  <div key={idx} className="flex items-start space-x-3 p-2 hover:bg-gray-50 rounded">
-                    <span className="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
-                      {idx + 1}
-                    </span>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-800">{step.instruction}</p>
-                      <p className="text-xs text-gray-500">
+            <div className="route-instructions-container">
+  <h3 className="route-instructions-title">Indicazioni Stradali</h3>
+  <div className="route-instructions-list">
+    {instructions.map((step, idx) => (
+      <div key={idx} className="route-instruction-step">
+        <span className="route-instruction-badge">
+          {idx + 1}
+        </span>
+        <div className="route-instruction-content">
+          <p className="route-instruction-text">{step.instruction}</p>
+          <p className="route-instruction-meta">
                         {step.distance > 0 
                           ? step.distance >= 1 
                             ? `${step.distance.toFixed(2)} km` 

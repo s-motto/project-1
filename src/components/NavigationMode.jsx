@@ -206,18 +206,18 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop }) => 
   const nextStep = instructions[currentStepIndex + 1]
 
   return (
-    <div className="flex flex-col space-y-3">
+    <div className="navigation-container">
       {/* Status Bar */}
-      <div className="bg-blue-600 text-white rounded-lg shadow-lg p-4 w-full max-w-xl">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center space-x-2">
-           <FaLocationArrow className="text-lg animate-pulse" />
-            <span className="font-bold">Navigazione attiva</span>
-          </div>
-          <button
-            onClick={handleStop}
-            className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded-md text-sm font-medium flex items-center space-x-1"
-          >
+      <div className="nav-status-card">
+  <div className="nav-status-header">
+    <div className="nav-status-title">
+      <FaLocationArrow className="nav-status-icon" />
+      <span className="nav-status-text">Navigazione attiva</span>
+    </div>
+    <button
+      onClick={handleStop}
+      className="nav-stop-btn"
+    >
             <FaStop />
             <span>Stop</span>
           </button>
@@ -235,28 +235,28 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop }) => 
 
       {/* Off Route Warning */}
       {isOffRoute && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg shadow-md w-full max-w-xl">
-          <div className="flex items-center space-x-2 text-yellow-800">
-            <FaExclamationTriangle className="text-xl" />
-            <div>
-              <p className="font-bold">Fuori percorso!</p>
-              <p className="text-sm">Torna sul tracciato consigliato</p>
-            </div>
-          </div>
-        </div>
+        <div className="nav-off-route-warning">
+  <div className="nav-warning-content">
+    <FaExclamationTriangle className="nav-warning-icon" />
+    <div className="nav-warning-text-container">
+      <p className="nav-warning-title">Fuori percorso!</p>
+      <p className="nav-warning-description">Torna sul tracciato consigliato</p>
+    </div>
+  </div>
+</div>
       )}
 
       {/* Current Instruction */}
       {currentStep && (
-        <div className="bg-white rounded-lg shadow-lg p-4 w-full max-w-xl border-l-4 border-blue-600">
-          <div className="flex items-start space-x-3">
-            <div className="flex-shrink-0 w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold">
-              {currentStepIndex + 1}
-            </div>
-            <div className="flex-1">
-              <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Prossima indicazione</p>
-              <p className="text-lg font-bold text-gray-900">{currentStep.instruction}</p>
-              <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
+        <div className="nav-current-instruction">
+  <div className="nav-instruction-content">
+    <div className="nav-instruction-number">
+      {currentStepIndex + 1}
+    </div>
+    <div className="nav-instruction-details">
+      <p className="nav-instruction-label">Prossima indicazione</p>
+      <p className="nav-instruction-text">{currentStep.instruction}</p>
+      <div className="nav-instruction-meta">
                 <span>
                   <FaRoute className="mr-1" />
                   {currentStep.distance >= 1 
@@ -276,21 +276,21 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop }) => 
 
       {/* Next Instruction Preview */}
       {nextStep && (
-        <div className="bg-gray-50 rounded-lg shadow p-3 w-full max-w-xl">
-          <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Poi</p>
-          <p className="text-sm font-medium text-gray-700">{nextStep.instruction}</p>
-        </div>
+        <div className="nav-next-instruction">
+  <p className="nav-next-label">Poi</p>
+  <p className="nav-next-text">{nextStep.instruction}</p>
+</div>
       )}
 
       {/* Remaining Steps Counter */}
-      <div className="bg-white rounded-lg shadow p-3 w-full max-w-xl">
-        <div className="flex items-center justify-between text-sm text-gray-600">
-          <span>Indicazioni rimanenti</span>
-          <span className="font-bold text-blue-600">
-            {instructions.length - currentStepIndex - 1}
-          </span>
-        </div>
-      </div>
+      <div className="nav-remaining-card">
+  <div className="nav-remaining-content">
+    <span>Indicazioni rimanenti</span>
+    <span className="nav-remaining-count">
+      {instructions.length - currentStepIndex - 1}
+    </span>
+  </div>
+</div>
     </div>
   )
 }

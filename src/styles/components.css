@@ -1,48 +1,80 @@
 @layer components {
   
+  /*
+     Beige:            #EFECCA
+     Cambridge blue:   #A9CBB7
+     Icterine:         #F7FF58
+     Atomic tangerine: #FF934F
+     Wenge:            #5E565A
+    */
+  
   /* ===== BUTTONS ===== */
   
   .btn {
-    @apply px-4 py-3 rounded-lg font-medium transition-colors 
+    @apply px-4 py-3 rounded-lg font-medium transition-all
            disabled:opacity-50 disabled:cursor-not-allowed
            flex items-center justify-center space-x-2;
   }
   
   .btn-primary {
-    @apply btn bg-blue-600 text-white hover:bg-blue-700 
-           disabled:bg-blue-400;
+    @apply btn text-white hover:brightness-110
+           disabled:opacity-50;
+    background-color: #A9CBB7;
+  }
+  
+  .btn-primary:hover:not(:disabled) {
+    background-color: #98baa7;
   }
   
   .btn-secondary {
-    @apply btn bg-gray-200 text-gray-800 hover:bg-gray-300;
+    @apply btn text-gray-800 hover:bg-opacity-80;
+    background-color: #EFECCA;
   }
   
   .btn-success {
-    @apply btn bg-green-600 text-white hover:bg-green-700 
-           disabled:bg-green-400;
+    @apply btn text-white hover:brightness-110
+           disabled:opacity-50;
+    background-color: #A9CBB7;
   }
   
   .btn-danger {
-    @apply btn bg-red-600 text-white hover:bg-red-700 
-           disabled:bg-red-400;
+    @apply btn text-white hover:brightness-110
+           disabled:opacity-50;
+    background-color: #FF934F;
   }
   
   .btn-ghost {
-    @apply btn bg-transparent text-gray-700 hover:bg-gray-100;
+    @apply btn bg-transparent hover:bg-gray-100;
+    color: #5E565A;
   }
 
   .btn-icon {
     @apply p-2 rounded-full hover:bg-gray-100 transition-colors;
   }
 
+  /* Bottone CTA speciale */
+  .btn-cta {
+    @apply btn text-white font-bold shadow-lg hover:shadow-xl
+           disabled:opacity-50;
+    background-color: #FF934F;
+  }
+
   
   /* ===== INPUTS & FORMS ===== */
   
   .input {
-    @apply w-full px-4 py-3 border border-gray-300 rounded-lg
-           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+    @apply w-full px-4 py-3 rounded-lg
+           focus:outline-none focus:ring-2 focus:border-transparent
            disabled:bg-gray-100 disabled:cursor-not-allowed
            text-base;
+    border: 2px solid #EFECCA;
+    background-color: white;
+    color: #5E565A;
+  }
+  
+  .input:focus {
+    border-color: #A9CBB7;
+    ring-color: #A9CBB7;
   }
   
   .input-with-icon {
@@ -50,11 +82,17 @@
   }
   
   .input-error {
-    @apply input border-red-500 focus:ring-red-500;
+    @apply input;
+    border-color: #FF934F;
+  }
+  
+  .input-error:focus {
+    ring-color: #FF934F;
   }
   
   .label {
-    @apply block text-sm font-medium text-gray-700 mb-1;
+    @apply block text-sm font-medium mb-1;
+    color: #5E565A;
   }
 
   .form-group {
@@ -65,7 +103,8 @@
   /* ===== CARDS ===== */
   
   .card {
-    @apply bg-white rounded-lg shadow-md p-4;
+    @apply rounded-lg shadow-md p-4;
+    background-color: white;
   }
   
   .card-lg {
@@ -77,7 +116,12 @@
   }
 
   .card-interactive {
-    @apply card-hover border border-gray-200 hover:border-blue-300;
+    @apply card-hover border hover:border-opacity-80;
+    border-color: #A9CBB7;
+  }
+
+  .card-beige {
+    background-color: #EFECCA;
   }
 
   
@@ -92,15 +136,19 @@
   }
   
   .route-stat-icon {
-    @apply text-blue-600 flex-shrink-0;
+    @apply flex-shrink-0;
+    color: #A9CBB7;
   }
   
   .route-stat-label {
-    @apply text-xs text-gray-500;
+    @apply text-xs;
+    color: #5E565A;
+    opacity: 0.7;
   }
   
   .route-stat-value {
-    @apply font-semibold text-gray-900;
+    @apply font-semibold;
+    color: #5E565A;
   }
 
   
@@ -108,17 +156,24 @@
   
   .dropdown {
     @apply absolute z-dropdown left-0 right-0 
-           bg-white border border-gray-200 rounded-lg shadow-lg 
+           bg-white rounded-lg shadow-lg 
            max-h-40 overflow-y-auto mt-1;
+    border: 2px solid #EFECCA;
   }
   
   .dropdown-item {
-    @apply p-2 hover:bg-blue-50 cursor-pointer text-sm
-           transition-colors;
+    @apply p-2 cursor-pointer text-sm transition-colors;
+    color: #5E565A;
+  }
+
+  .dropdown-item:hover {
+    background-color: #EFECCA;
   }
 
   .dropdown-item-active {
-    @apply dropdown-item bg-blue-100;
+    @apply dropdown-item;
+    background-color: #A9CBB7;
+    color: white;
   }
 
   
@@ -126,13 +181,18 @@
   
   .bottom-nav {
     @apply fixed bottom-4 left-1/2 transform -translate-x-1/2
-           bg-white/90 backdrop-blur-md shadow-lg rounded-xl
+           backdrop-blur-md shadow-lg rounded-xl
            px-4 py-2 flex items-center gap-6 z-nav;
+    background-color: rgba(239, 236, 202, 0.95);
   }
   
   .nav-item {
-    @apply flex flex-col items-center text-sm text-gray-700 
-           hover:text-blue-600 transition-colors;
+    @apply flex flex-col items-center text-sm transition-colors;
+    color: #5E565A;
+  }
+
+  .nav-item:hover {
+    color: #A9CBB7;
   }
   
   .nav-item-label {
@@ -154,15 +214,18 @@
   }
   
   .modal-header {
-    @apply p-6 text-white flex-shrink-0;
+    @apply p-6 flex-shrink-0;
+    color: white;
   }
   
   .modal-header-primary {
-    @apply modal-header bg-gradient-to-r from-blue-600 to-blue-400;
+    @apply modal-header;
+    background: linear-gradient(135deg, #A9CBB7 0%, #FF934F 100%);
   }
   
   .modal-header-success {
-    @apply modal-header bg-gradient-to-r from-green-600 to-green-400;
+    @apply modal-header;
+    background: linear-gradient(135deg, #A9CBB7 0%, #98baa7 100%);
   }
   
   .modal-body {
@@ -182,23 +245,33 @@
   }
   
   .badge-primary {
-    @apply badge bg-blue-100 text-blue-800;
+    @apply badge;
+    background-color: rgba(169, 203, 183, 0.2);
+    color: #5E565A;
   }
   
   .badge-success {
-    @apply badge bg-green-100 text-green-800;
+    @apply badge;
+    background-color: rgba(169, 203, 183, 0.3);
+    color: #5E565A;
   }
   
   .badge-warning {
-    @apply badge bg-yellow-100 text-yellow-800;
+    @apply badge;
+    background-color: rgba(247, 255, 88, 0.3);
+    color: #5E565A;
   }
   
   .badge-danger {
-    @apply badge bg-red-100 text-red-800;
+    @apply badge;
+    background-color: rgba(255, 147, 79, 0.2);
+    color: #5E565A;
   }
   
   .badge-gray {
-    @apply badge bg-gray-100 text-gray-800;
+    @apply badge;
+    background-color: #EFECCA;
+    color: #5E565A;
   }
 
   
@@ -209,19 +282,24 @@
   }
   
   .difficulty-easy {
-    @apply difficulty-badge bg-green-500;
+    @apply difficulty-badge;
+    background-color: #A9CBB7;
   }
   
   .difficulty-medium {
-    @apply difficulty-badge bg-blue-500;
+    @apply difficulty-badge;
+    background-color: #FF934F;
   }
   
   .difficulty-hard {
-    @apply difficulty-badge bg-orange-500;
+    @apply difficulty-badge;
+    background-color: #F7FF58;
+    color: #5E565A;
   }
   
   .difficulty-expert {
-    @apply difficulty-badge bg-red-500;
+    @apply difficulty-badge;
+    background-color: #5E565A;
   }
 
   
@@ -232,19 +310,31 @@
   }
   
   .alert-error {
-    @apply alert bg-red-50 border border-red-200 text-red-700;
+    @apply alert;
+    background-color: rgba(255, 147, 79, 0.1);
+    border: 2px solid #FF934F;
+    color: #5E565A;
   }
   
   .alert-success {
-    @apply alert bg-green-50 border border-green-200 text-green-700;
+    @apply alert;
+    background-color: rgba(169, 203, 183, 0.1);
+    border: 2px solid #A9CBB7;
+    color: #5E565A;
   }
   
   .alert-warning {
-    @apply alert bg-yellow-50 border border-yellow-200 text-yellow-800;
+    @apply alert;
+    background-color: rgba(247, 255, 88, 0.2);
+    border: 2px solid #F7FF58;
+    color: #5E565A;
   }
   
   .alert-info {
-    @apply alert bg-blue-50 border border-blue-200 text-blue-700;
+    @apply alert;
+    background-color: rgba(169, 203, 183, 0.1);
+    border: 2px solid #A9CBB7;
+    color: #5E565A;
   }
 
   
@@ -255,7 +345,8 @@
   }
   
   .spinner {
-    @apply animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600;
+    @apply animate-spin rounded-full h-12 w-12 border-b-2;
+    border-color: #A9CBB7;
   }
 
   .spinner-sm {
@@ -266,29 +357,37 @@
   /* ===== INSTRUCTIONS LIST ===== */
   
   .instruction-item {
-    @apply flex items-start space-x-3 p-2 hover:bg-gray-50 rounded;
+    @apply flex items-start space-x-3 p-2 rounded transition-colors;
+  }
+
+  .instruction-item:hover {
+    background-color: #EFECCA;
   }
   
   .instruction-number {
-    @apply flex-shrink-0 w-6 h-6 bg-blue-600 text-white 
+    @apply flex-shrink-0 w-6 h-6 text-white 
            rounded-full flex items-center justify-center 
            text-xs font-bold;
+    background-color: #A9CBB7;
   }
   
   .instruction-text {
-    @apply text-sm font-medium text-gray-800;
+    @apply text-sm font-medium;
+    color: #5E565A;
   }
   
   .instruction-details {
-    @apply text-xs text-gray-500;
+    @apply text-xs;
+    color: #5E565A;
+    opacity: 0.7;
   }
 
   
-  /* ===== HEADER - NUOVO DESIGN ===== */
+  /* ===== HEADER - ALBA SULLA MONTAGNA ===== */
   
   .app-header {
     @apply sticky top-0 z-50 shadow-lg;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #A9CBB7 0%, #FF934F 100%);
   }
   
   /* Container principale header */
@@ -304,10 +403,12 @@
   
   /* Icona logo */
   .logo-icon {
-    @apply w-12 h-12 bg-white/20 backdrop-blur-sm
+    @apply w-12 h-12 backdrop-blur-sm
            rounded-2xl flex items-center justify-center 
-           text-white font-bold text-2xl shadow-xl
-           border border-white/30;
+           font-bold text-2xl shadow-xl;
+    background-color: rgba(255, 255, 255, 0.25);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    color: #5E565A;
   }
   
   /* Container del testo */
@@ -317,58 +418,84 @@
   
   /* Titolo principale */
   .logo-title {
-    @apply text-2xl font-black text-white drop-shadow-md;
+    @apply text-2xl font-black;
     font-family: 'Montserrat', sans-serif;
     letter-spacing: -0.5px;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(94, 86, 90, 0.3);
   }
   
   /* Sottotitolo */
   .logo-subtitle {
-    @apply text-xs text-white/90 font-medium;
+    @apply text-xs font-medium;
+    color: rgba(255, 255, 255, 0.95);
+    text-shadow: 1px 1px 2px rgba(94, 86, 90, 0.2);
   }
 
   
   /* ===== USER MENU ===== */
   
   .user-menu-button {
-    @apply bg-white/10 hover:bg-white/20 backdrop-blur-sm
-           border border-white/30
+    @apply backdrop-blur-sm
            px-4 py-2 rounded-lg font-medium 
            flex items-center space-x-2 transition-all
-           text-white shadow-md hover:shadow-lg;
+           shadow-md hover:shadow-lg;
+    background-color: rgba(255, 255, 255, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+  }
+
+  .user-menu-button:hover {
+    background-color: rgba(255, 255, 255, 0.25);
   }
   
   .user-avatar {
-    @apply w-8 h-8 bg-white/30 text-white rounded-full 
-           flex items-center justify-center font-bold
-           border border-white/50;
+    @apply w-8 h-8 rounded-full 
+           flex items-center justify-center font-bold;
+    background-color: rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    color: #5E565A;
   }
   
   .user-dropdown {
     @apply absolute right-0 mt-2 w-56 
-           bg-white rounded-lg shadow-xl border border-gray-200 
+           bg-white rounded-lg shadow-xl 
            py-2 z-dropdown;
+    border: 2px solid #EFECCA;
   }
   
   .user-dropdown-item {
-    @apply w-full px-4 py-2 text-left hover:bg-gray-50 
-           flex items-center space-x-2 text-gray-700
+    @apply w-full px-4 py-2 text-left 
+           flex items-center space-x-2
            transition-colors;
+    color: #5E565A;
+  }
+
+  .user-dropdown-item:hover {
+    background-color: #EFECCA;
   }
 
   
   /* ===== SAVED ROUTES LIST ===== */
   
   .saved-route-card {
-    @apply border rounded-lg p-3 hover:bg-gray-50 transition-colors;
+    @apply rounded-lg p-3 transition-colors;
+    border: 2px solid #EFECCA;
+  }
+
+  .saved-route-card:hover {
+    background-color: #EFECCA;
   }
   
   .saved-route-title {
-    @apply font-bold text-gray-800 mb-1;
+    @apply font-bold mb-1;
+    color: #5E565A;
   }
   
   .saved-route-info {
-    @apply text-xs text-gray-500 space-y-1;
+    @apply text-xs space-y-1;
+    color: #5E565A;
+    opacity: 0.8;
   }
   
   .saved-route-stats {
@@ -379,38 +506,50 @@
   /* ===== NEARBY HIKES ===== */
   
   .hike-card {
-    @apply border rounded-lg p-4 
-           hover:bg-gray-50 cursor-pointer transition-colors;
+    @apply rounded-lg p-4 
+           cursor-pointer transition-colors;
+    border: 2px solid #EFECCA;
+  }
+
+  .hike-card:hover {
+    background-color: #EFECCA;
   }
   
   .hike-card-loading {
-    @apply hike-card bg-green-50 cursor-wait;
+    @apply hike-card cursor-wait;
+    background-color: rgba(169, 203, 183, 0.1);
   }
   
   .hike-title {
-    @apply font-bold text-gray-800 mb-1;
+    @apply font-bold mb-1;
+    color: #5E565A;
   }
   
   .hike-details {
-    @apply flex items-center flex-wrap gap-3 text-sm text-gray-600 mb-2;
+    @apply flex items-center flex-wrap gap-3 text-sm mb-2;
+    color: #5E565A;
   }
 
   
   /* ===== NAVIGATION MODE ===== */
   
   .nav-status-bar {
-    @apply bg-blue-600 text-white rounded-lg shadow-lg p-4 
+    @apply text-white rounded-lg shadow-lg p-4 
            w-full max-w-xl;
+    background-color: #A9CBB7;
   }
   
   .nav-instruction-card {
     @apply bg-white rounded-lg shadow-lg p-4 
-           w-full max-w-xl border-l-4 border-blue-600;
+           w-full max-w-xl;
+    border-left: 4px solid #A9CBB7;
   }
   
   .nav-warning {
-    @apply bg-yellow-50 border-l-4 border-yellow-400 
-           p-4 rounded-lg shadow-md w-full max-w-xl;
+    @apply rounded-lg shadow-md p-4
+           w-full max-w-xl;
+    background-color: rgba(247, 255, 88, 0.2);
+    border-left: 4px solid #F7FF58;
   }
 
   
@@ -421,7 +560,8 @@
   }
   
   .info-section-title {
-    @apply text-lg font-bold text-gray-800 mb-3;
+    @apply text-lg font-bold mb-3;
+    color: #5E565A;
   }
   
   .info-step {
@@ -429,27 +569,38 @@
   }
   
   .info-step-icon {
-    @apply flex-shrink-0 w-8 h-8 bg-blue-100 text-blue-600 
+    @apply flex-shrink-0 w-8 h-8
            rounded-full flex items-center justify-center;
+    background-color: rgba(169, 203, 183, 0.2);
+    color: #A9CBB7;
   }
   
   .info-step-title {
-    @apply font-semibold text-gray-800;
+    @apply font-semibold;
+    color: #5E565A;
   }
   
   .info-step-description {
-    @apply text-sm text-gray-600;
+    @apply text-sm;
+    color: #5E565A;
+    opacity: 0.8;
   }
 
   
   /* ===== FOOTER ===== */
   
   .footer {
-    @apply text-center py-4 text-sm text-gray-600;
+    @apply text-center py-4 text-sm;
+    color: #5E565A;
   }
   
   .footer-link {
-    @apply text-blue-600 hover:underline;
+    @apply hover:underline transition-colors;
+    color: #A9CBB7;
+  }
+
+  .footer-link:hover {
+    color: #98baa7;
   }
 
   
@@ -464,15 +615,22 @@
   }
 
   .divider {
-    @apply border-t border-gray-200 my-4;
+    @apply border-t my-4;
+    border-color: #EFECCA;
   }
 
   .text-muted {
-    @apply text-gray-500 text-sm;
+    @apply text-sm;
+    color: #5E565A;
+    opacity: 0.7;
   }
 
   .text-link {
-    @apply text-blue-600 hover:text-blue-700 hover:underline 
-           cursor-pointer transition-colors;
+    @apply hover:underline cursor-pointer transition-colors;
+    color: #A9CBB7;
+  }
+
+  .text-link:hover {
+    color: #98baa7;
   }
 }

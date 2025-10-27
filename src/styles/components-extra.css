@@ -1,0 +1,488 @@
+/* ===================================================================
+   🚀 CLASSI AGGIUNTIVE PER I COMPONENTI CONVERTITI
+   ===================================================================
+   
+   Questo file contiene le classi @apply per:
+   - RouteSearchForm
+   - NearbyHikes  
+   - NavigationMode
+   
+   Aggiungi queste classi al tuo components-alba.css oppure importalo
+   come file separato dopo components-alba.css
+   ===================================================================*/
+
+@layer components {
+
+  /* ===== ROUTE SEARCH FORM ===== */
+  
+  .route-search-form {
+    @apply flex flex-col space-y-4 p-4 bg-white rounded-lg shadow-md w-full max-w-xl;
+  }
+
+  .route-input-container {
+    @apply flex items-center space-x-2 relative;
+  }
+
+  .route-input {
+    @apply w-full py-3 h-12 text-base rounded-md
+           focus:outline-none focus:ring-2 transition-all;
+    padding-left: 2.5rem;
+    border: 2px solid #EFECCA;
+    color: #5E565A;
+  }
+
+  .route-input:focus {
+    border-color: #A9CBB7;
+    ring-color: #A9CBB7;
+  }
+
+  .route-input:disabled {
+    background-color: #f3f4f6;
+    cursor: not-allowed;
+  }
+
+  .route-input-icon {
+    @apply absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none;
+  }
+
+  .route-input-icon-start {
+    @apply route-input-icon;
+    color: #10b981;
+  }
+
+  .route-input-icon-end {
+    @apply route-input-icon;
+    color: #ef4444;
+  }
+
+  .route-suggestions-dropdown {
+    @apply absolute z-20 left-0 right-0 bg-white rounded shadow mt-1
+           max-h-40 overflow-y-auto;
+    border: 2px solid #EFECCA;
+  }
+
+  .route-suggestion-item {
+    @apply p-2 cursor-pointer text-sm transition-colors;
+    color: #5E565A;
+  }
+
+  .route-suggestion-item:hover {
+    background-color: #EFECCA;
+  }
+
+  .route-suggestion-loading {
+    @apply p-2 text-xs;
+    color: #5E565A;
+    opacity: 0.6;
+  }
+
+  .route-error-message {
+    @apply px-4 py-2 rounded text-sm;
+    background-color: rgba(255, 147, 79, 0.1);
+    border: 2px solid #FF934F;
+    color: #5E565A;
+  }
+
+  .route-submit-btn {
+    @apply py-3 px-4 rounded-md font-medium transition-all;
+    background-color: #A9CBB7;
+    color: white;
+  }
+
+  .route-submit-btn:hover:not(:disabled) {
+    background-color: #98baa7;
+  }
+
+  .route-submit-btn:disabled {
+    background-color: #d1d5db;
+    cursor: not-allowed;
+  }
+
+  .route-info-grid {
+    @apply grid grid-cols-2 gap-3;
+  }
+
+  .route-action-section {
+    @apply mt-4 pt-4 space-y-2;
+    border-top: 2px solid #EFECCA;
+  }
+
+  .route-gps-btn {
+    @apply w-full py-3 px-4 rounded-md font-bold 
+           flex items-center justify-center space-x-2
+           transition-all shadow-md hover:shadow-lg;
+    background-color: #FF934F;
+    color: white;
+  }
+
+  .route-gps-btn:hover {
+    background-color: #ff8439;
+  }
+
+  .route-instructions-container {
+    @apply bg-white rounded-lg shadow-md p-4 w-full max-w-xl;
+  }
+
+  .route-instructions-title {
+    @apply text-lg font-bold mb-3;
+    color: #5E565A;
+  }
+
+  .route-instructions-list {
+    @apply space-y-2 max-h-60 overflow-y-auto;
+  }
+
+  .route-instruction-step {
+    @apply flex items-start space-x-3 p-2 rounded transition-colors;
+  }
+
+  .route-instruction-step:hover {
+    background-color: #EFECCA;
+  }
+
+  .route-instruction-badge {
+    @apply flex-shrink-0 w-6 h-6 text-white rounded-full
+           flex items-center justify-center text-xs font-bold;
+    background-color: #A9CBB7;
+  }
+
+  .route-instruction-content {
+    @apply flex-1;
+  }
+
+  .route-instruction-text {
+    @apply text-sm font-medium;
+    color: #5E565A;
+  }
+
+  .route-instruction-meta {
+    @apply text-xs;
+    color: #5E565A;
+    opacity: 0.7;
+  }
+
+  .route-map-container {
+    @apply w-full h-[400px] rounded-lg shadow-md;
+  }
+
+
+  /* ===== NEARBY HIKES MODAL ===== */
+  
+  .hikes-modal-overlay {
+    @apply fixed inset-0 flex items-center justify-center z-modal p-4;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+  }
+
+  .hikes-modal-content {
+    @apply bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh]
+           overflow-hidden flex flex-col;
+  }
+
+  .hikes-modal-header {
+    @apply p-6 text-white flex-shrink-0;
+    background: linear-gradient(135deg, #A9CBB7 0%, #FF934F 100%);
+  }
+
+  .hikes-header-row {
+    @apply flex items-center justify-between;
+  }
+
+  .hikes-header-content {
+    @apply flex items-center space-x-3;
+  }
+
+  .hikes-header-icon {
+    @apply text-3xl;
+  }
+
+  .hikes-header-text-container {
+    @apply flex flex-col;
+  }
+
+  .hikes-header-title {
+    @apply text-2xl font-bold;
+  }
+
+  .hikes-header-subtitle {
+    @apply text-sm;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .hikes-close-btn {
+    @apply text-white rounded-full p-2 transition-colors;
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .hikes-close-btn:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .hikes-radius-selector {
+    @apply mt-4;
+  }
+
+  .hikes-radius-label {
+    @apply text-sm block mb-2;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .hikes-radius-buttons {
+    @apply flex space-x-2;
+  }
+
+  .hikes-radius-btn {
+    @apply px-3 py-1 rounded-md text-sm font-medium transition-colors;
+  }
+
+  .hikes-radius-btn-active {
+    @apply hikes-radius-btn;
+    background-color: white;
+    color: #A9CBB7;
+  }
+
+  .hikes-radius-btn-inactive {
+    @apply hikes-radius-btn text-white;
+    background-color: rgba(169, 203, 183, 0.3);
+  }
+
+  .hikes-radius-btn-inactive:hover {
+    background-color: rgba(169, 203, 183, 0.5);
+  }
+
+  .hikes-modal-body {
+    @apply flex-1 overflow-y-auto p-6;
+  }
+
+  .hikes-loading-container {
+    @apply flex flex-col items-center justify-center py-12;
+  }
+
+  .hikes-loading-icon {
+    @apply text-4xl animate-spin mb-4;
+    color: #A9CBB7;
+  }
+
+  .hikes-loading-text {
+    @apply text-sm mt-2;
+    color: #5E565A;
+    opacity: 0.7;
+  }
+
+  .hikes-error-message {
+    @apply rounded-lg p-4 font-medium;
+    background-color: rgba(247, 255, 88, 0.2);
+    border: 2px solid #F7FF58;
+    color: #5E565A;
+  }
+
+  .hikes-list {
+    @apply space-y-3;
+  }
+
+  .hike-card {
+    @apply rounded-lg p-4 transition-colors cursor-pointer;
+    border: 2px solid #EFECCA;
+  }
+
+  .hike-card:hover {
+    background-color: #EFECCA;
+  }
+  
+  .hike-card-loading {
+    @apply hike-card cursor-wait;
+    background-color: rgba(169, 203, 183, 0.1);
+  }
+
+  .hike-card-content {
+    @apply flex items-start justify-between;
+  }
+
+  .hike-card-main {
+    @apply flex-1;
+  }
+  
+  .hike-title {
+    @apply font-bold mb-1;
+    color: #5E565A;
+  }
+  
+  .hike-details {
+    @apply flex items-center flex-wrap gap-3 text-sm mb-2;
+    color: #5E565A;
+  }
+
+  .hike-detail-item {
+    @apply flex items-center space-x-1;
+  }
+
+  .hike-detail-icon {
+    @apply flex-shrink-0;
+  }
+
+  .hike-description {
+    @apply text-sm mb-2;
+    color: #5E565A;
+  }
+
+  .hike-operator {
+    @apply text-xs;
+    color: #5E565A;
+    opacity: 0.7;
+  }
+
+  .hike-loading-status {
+    @apply mt-2 flex items-center space-x-2 text-sm;
+    color: #A9CBB7;
+  }
+
+  .hike-loading-spinner {
+    @apply animate-spin;
+  }
+
+  .hike-chevron {
+    @apply ml-4;
+    color: #5E565A;
+    opacity: 0.4;
+  }
+
+
+  /* ===== NAVIGATION MODE ===== */
+
+  .navigation-container {
+    @apply flex flex-col space-y-3;
+  }
+
+  .nav-status-card {
+    @apply rounded-lg shadow-lg p-4 w-full max-w-xl text-white;
+    background-color: #A9CBB7;
+  }
+
+  .nav-status-header {
+    @apply flex items-center justify-between mb-2;
+  }
+
+  .nav-status-title {
+    @apply flex items-center space-x-2;
+  }
+
+  .nav-status-icon {
+    @apply text-lg animate-pulse;
+  }
+
+  .nav-status-text {
+    @apply font-bold;
+  }
+
+  .nav-stop-btn {
+    @apply px-3 py-1 rounded-md text-sm font-medium flex items-center space-x-1
+           transition-all shadow-md hover:shadow-lg;
+    background-color: #FF934F;
+    color: white;
+  }
+
+  .nav-stop-btn:hover {
+    background-color: #ff8439;
+  }
+
+  .nav-distance-info {
+    @apply flex items-center space-x-2 text-sm;
+  }
+
+  .nav-off-route-warning {
+    @apply rounded-lg shadow-md p-4 w-full max-w-xl;
+    background-color: rgba(247, 255, 88, 0.2);
+    border-left: 4px solid #F7FF58;
+  }
+
+  .nav-warning-content {
+    @apply flex items-center space-x-2;
+    color: #5E565A;
+  }
+
+  .nav-warning-icon {
+    @apply text-xl;
+    color: #F7FF58;
+  }
+
+  .nav-warning-text-container {
+    @apply flex flex-col;
+  }
+
+  .nav-warning-title {
+    @apply font-bold;
+  }
+
+  .nav-warning-description {
+    @apply text-sm;
+  }
+
+  .nav-current-instruction {
+    @apply bg-white rounded-lg shadow-lg p-4 w-full max-w-xl;
+    border-left: 4px solid #A9CBB7;
+  }
+
+  .nav-instruction-content {
+    @apply flex items-start space-x-3;
+  }
+
+  .nav-instruction-number {
+    @apply flex-shrink-0 w-12 h-12 text-white rounded-full
+           flex items-center justify-center text-xl font-bold;
+    background-color: #A9CBB7;
+  }
+
+  .nav-instruction-details {
+    @apply flex-1;
+  }
+
+  .nav-instruction-label {
+    @apply text-xs uppercase tracking-wide mb-1;
+    color: #5E565A;
+    opacity: 0.7;
+  }
+
+  .nav-instruction-text {
+    @apply text-lg font-bold;
+    color: #5E565A;
+  }
+
+  .nav-instruction-meta {
+    @apply flex items-center space-x-4 mt-2 text-sm;
+    color: #5E565A;
+  }
+
+  .nav-instruction-meta-item {
+    @apply flex items-center space-x-1;
+  }
+
+  .nav-next-instruction {
+    @apply rounded-lg shadow p-3 w-full max-w-xl;
+    background-color: #EFECCA;
+  }
+
+  .nav-next-label {
+    @apply text-xs uppercase tracking-wide mb-1;
+    color: #5E565A;
+    opacity: 0.7;
+  }
+
+  .nav-next-text {
+    @apply text-sm font-medium;
+    color: #5E565A;
+  }
+
+  .nav-remaining-card {
+    @apply bg-white rounded-lg shadow p-3 w-full max-w-xl;
+  }
+
+  .nav-remaining-content {
+    @apply flex items-center justify-between text-sm;
+    color: #5E565A;
+  }
+
+  .nav-remaining-count {
+    @apply font-bold;
+    color: #A9CBB7;
+  }
+}

@@ -7,6 +7,7 @@
 /* Import dei nostri file custom */
 @import './base.css';
 @import './components.css';
+@import './components-extra.css';
 @import './utilities.css';
 
 /* Font globale */
