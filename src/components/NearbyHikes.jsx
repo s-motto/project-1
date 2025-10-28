@@ -301,15 +301,39 @@ const processOverpassData = (data, userLat, userLon) => {
   }
 
 // Funzione per ottenere l'etichetta della difficoltà
-  const getDifficultyColor = (difficulty) => {
-  if (!difficulty || difficulty === 'Non specificata') return 'hike-difficulty-gray'
-  const lower = difficulty.toLowerCase()
-  if (lower.includes('hiking') || lower === 't1') return 'hike-difficulty-green'
-  if (lower.includes('mountain_hiking') || lower === 't2') return 'hike-difficulty-blue'
-  if (lower.includes('demanding') || lower === 't3') return 'hike-difficulty-orange'
-  if (lower.includes('alpine') || lower === 't4' || lower === 't5' || lower === 't6') return 'hike-difficulty-red'
-  return 'hike-difficulty-gray'
+  const getDifficultyLabel = (difficulty) => {
+  if (!difficulty || difficulty === "Non specificata") {
+    return { label: "Non specificata", color: "#EFECCA" }
+  }
+  const d = difficulty.toLowerCase()
+  if (d.includes("t1") || d === "hiking") {
+    return { label: "Turistico", color: "#A9CBB7" }
+  }
+  if (d.includes("t2") || d.includes("mountain_hiking")) {
+    return { label: "Escursionistico", color: "#F7FF58" }
+  }
+  if (d.includes("t3") || d.includes("demanding")) {
+    return { label: "Esperti (EE)", color: "#FF934F" }
+  }
+  if (d.includes("t4") || d.includes("t5") || d.includes("t6") || d.includes("alpine")) {
+    return { label: "Alpinistico (EEA)", color: "#5E565A" }
+  }
+  return { label: difficulty, color: "#EFECCA" }
 }
+// Componente per il badge della difficoltà
+const DifficultyBadge = ({ difficulty }) => {
+  const { label, color } = getDifficultyLabel(difficulty)
+  return (
+    <span
+      className="px-2 py-1 rounded-full text-xs font-medium"
+      style={{ backgroundColor: color, color: "#000" }}
+    >
+      {label}
+    </span>
+  )
+}
+
+
   return (
     <div className="hikes-modal-overlay">
   <div className="hikes-modal-content">
@@ -399,9 +423,9 @@ const processOverpassData = (data, userLat, userLon) => {
 )}
                           
                           
-       <span className={getDifficultyColor(hike.difficulty)}>{hike.difficulty}
-  
-</span>
+      <DifficultyBadge difficulty={hike.difficulty} />
+
+
                         </div>
 
                         {hike.description && (
