@@ -51,7 +51,7 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
     // Query SEMPLIFICATA - cerca solo percorsi hiking nominati
     // Divisa in due query più piccole per evitare timeout
     
-    // Prima prova: solo relations (percorsi principali) - ✅ FIXED: usa out geom
+    // Prima prova: solo relations (percorsi principali) - usa out geom
     const query1 = `
       [out:json][timeout:15];
       (
@@ -134,7 +134,7 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
   }
 }
   
-// Funzione per processare i dati ricevuti da Overpass API - ✅ FIXED: ordine corretto dei nodi + smoothing
+// Funzione per processare i dati ricevuti da Overpass API 
   const processOverpassData = (data, userLat, userLon) => {
     const hikes = []
     const processedIds = new Set()
@@ -176,7 +176,7 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
           // Calcola lunghezza approssimativa del percorso
           const length = calculatePathLength(coordinates)
 
-          // ✅ FIX: Non usare osmc:symbol per la difficoltà, solo sac_scale
+          // Aggiungi il percorso alla lista
           hikes.push({
             id: element.id,
             type: 'relation',
@@ -193,7 +193,7 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
       }
     })
 
-    // Processa ways (sentieri singoli) - ✅ FIXED: usa geometry nell'ordine corretto
+    // Processa ways (sentieri singoli) - 
     data.elements.forEach(element => {
       if (element.type === 'way' && element.tags && element.tags.name && !processedIds.has(element.id)) {
         processedIds.add(element.id)
@@ -480,8 +480,8 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
 )}
                           
                           
-                          <span className={getDifficultyColor(hike.difficulty)}>
-  {getDifficultyLabel(hike.difficulty)}
+       <span className={getDifficultyColor(hike.difficulty)}>{hike.difficulty}
+  
 </span>
                         </div>
 

@@ -22,7 +22,7 @@ export default {
         'modal': '9999',
         'map-marker': '400',
         'dropdown': '50',
-        'nav': '40',
+        'nav': '9999',
       }
     },
   },
