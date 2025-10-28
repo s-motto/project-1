@@ -34,6 +34,7 @@ const RouteSearchForm = forwardRef(({preloadedRoute, preloadedHike}, ref) => {
   const [isNavigating, setIsNavigating] = useState(false) //stato modalità navigazione
   const [fullRouteData, setFullRouteData] = useState(null) // salva tutti i dati del percorso
   const [isPreloaded, setIsPreloaded] = useState(false) //indica se il percorso è pre-caricato
+  const [routeSaved, setRouteSaved] = useState(false) //indica se l'utente ha già salvato il percorso
 
   useEffect(() => {
     const mapInstance = L.map('map').setView([45.4642, 9.1900], 13) //Centro su Milano di default
@@ -174,7 +175,8 @@ useEffect(() => {
 
       // Salvo i dati completi del percorso
       setFullRouteData(route)
-      setIsPreloaded(true) //indico che il percorso è pre-caricato
+  setIsPreloaded(true) //indico che il percorso è pre-caricato
+  setRouteSaved(true) // this route was loaded from saved routes -> already saved
 
     } catch (error) {
       console.error('Error loading saved route:', error)
@@ -299,6 +301,21 @@ const loadHikingRoute = (hike) => {
     // Adatto la vista della mappa al percorso
     map.fitBounds(newRouteLayer.getBounds(), { padding: [50, 50] })
 
+    // Salvo i dati completi del percorso per permettere il salvataggio
+    const hikingFullData = {
+      startPoint: { lat: startCoord[1], lon: startCoord[0], name: hike.name || 'Partenza' },
+      endPoint: { lat: endCoord[1], lon: endCoord[0], name: hike.name ? `${hike.name} - Arrivo` : 'Arrivo' },
+      distance: parseFloat(totalDistance.toFixed(2)),
+      duration: hike.duration || Math.round(totalDistance * 20),
+      ascent: hike.ascent || 0,
+      descent: hike.descent || 0,
+      coordinates: hike.coordinates,
+      instructions: hike.instructions || []
+    }
+
+  setFullRouteData(hikingFullData)
+  setRouteSaved(false) // hiking routes are not saved by default
+
   } catch (error) {
     console.error('Error loading hiking route:', error)
     setErrorMsg('Errore nel caricamento del percorso di hiking')
@@ -379,6 +396,7 @@ const handleReset = () => {
   setRouteInfo(null)
   setInstructions([])
   setFullRouteData(null)
+  setRouteSaved(false)
   setIsPreloaded(false)
   setErrorMsg('')
 
@@ -560,6 +578,8 @@ const handleReset = () => {
           coordinates: feature.geometry.coordinates,
           instructions: props.segments && props.segments[0].steps ? props.segments[0].steps : []
         })
+        // Newly calculated route is not saved yet
+        setRouteSaved(false)
       } else { // Nessun percorso trovato
         setErrorMsg('Non è stato possibile calcolare un percorso.')
       }
@@ -741,7 +761,19 @@ const handleReset = () => {
               </div>
 
               <div className="mt-4 pt-4 border-t space-y-2">
-                 {fullRouteData && !isPreloaded && <SaveRouteButton routeData={fullRouteData} />} 
+                 
+                 {fullRouteData && (!isPreloaded || preloadedHike) && !routeSaved && (
+                   <SaveRouteButton
+                     routeData={fullRouteData}
+                     onSaved={(savedId) => {
+                       // Segna il percorso come salvato
+                       setRouteSaved(true)
+                       if (savedId) {
+                         setFullRouteData((prev) => ({ ...(prev || {}), savedId }))
+                       }
+                     }}
+                   />
+                 )}
                 
                 <button
                   onClick={() => setIsNavigating(true)}

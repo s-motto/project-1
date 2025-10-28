@@ -3,7 +3,7 @@ import { FaBookmark, FaCheck, FaSpinner } from 'react-icons/fa'
 import { useAuth } from '../contexts/AuthContext'
 import routesService from '../services/routesService'
 
-const SaveRouteButton = ({ routeData }) => {
+const SaveRouteButton = ({ routeData, onSaved }) => {
   const { user } = useAuth()
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -35,6 +35,9 @@ const SaveRouteButton = ({ routeData }) => {
     if (result.success) {
       setSaved(true)
       setShowNameInput(false)
+      // Estraggo l'id del percorso salvato e notifico il componente genitore in modo che possa persisterlo
+      const savedId = result.data && (result.data.$id || result.data.id || result.data.$uid)
+      if (onSaved) onSaved(savedId)
       setTimeout(() => setSaved(false), 3000)
     } else {
       alert('Errore nel salvataggio: ' + result.error)
