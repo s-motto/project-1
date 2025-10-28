@@ -46,195 +46,114 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
     )
   }
 // Funzione per cercare i percorsi di hiking nelle vicinanze usando Overpass API
-  const fetchNearbyHikes = async (lat, lon) => {
+  // Funzione per cercare i percorsi di hiking nelle vicinanze usando Overpass API
+const fetchNearbyHikes = async (lat, lon) => {
   try {
-    // Query SEMPLIFICATA - cerca solo percorsi hiking nominati
-    // Divisa in due query più piccole per evitare timeout
-    
-    // Prima prova: solo relations (percorsi principali) - usa out geom
-    const query1 = `
-      [out:json][timeout:15];
+    setLoading(true)
+    setError('')
+
+    // Query principale: percorsi escursionistici (relations e ways)
+    const query = `
+      [out:json][timeout:25];
       (
+        // Relations di percorsi escursionistici
         relation["route"="hiking"]["name"](around:${radiusKm * 1000},${lat},${lon});
+        // Ways singoli con sentieri e scala di difficoltà
+        way["highway"="path"]["name"](around:${radiusKm * 1000},${lat},${lon});
+        way["highway"="footway"]["name"](around:${radiusKm * 1000},${lat},${lon});
       );
-      out geom;
-    `
+      out tags geom;
+    `;
 
-    let response = await fetch('https://overpass-api.de/api/interpreter', {
+    const response = await fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
-      body: query1
-    })
+      body: query
+    });
 
-    let data
-    
     if (!response.ok) {
-      // Fallback: prova con query ancora più semplice
-      console.log('Prima query fallita, provo con query ridotta...')
-      const query2 = `
-        [out:json][timeout:10];
-        (
-          relation["route"="hiking"]["name"](around:${Math.min(radiusKm * 1000, 10000)},${lat},${lon});
-        );
-        out geom 10;
-      `
-      
-      response = await fetch('https://overpass-api.de/api/interpreter', {
-        method: 'POST',
-        body: query2
-      })
-      
-      if (!response.ok) {
-        throw new Error('Server Overpass temporaneamente non disponibile')
-      }
+      throw new Error('Errore dal server Overpass');
     }
 
-    data = await response.json()
-    
-    // Se non troviamo nulla con le relations, prova con i ways
-    if (!data.elements || data.elements.length < 5) {
-      console.log('Pochi risultati, cerco anche sentieri singoli...')
-      const query3 = `
-        [out:json][timeout:10];
-        (
-          way["highway"="path"]["name"]["sac_scale"](around:${Math.min(radiusKm * 1000, 10000)},${lat},${lon});
-        );
-        out geom 15;
-      `
-      
-      const response3 = await fetch('https://overpass-api.de/api/interpreter', {
-        method: 'POST',
-        body: query3
-      })
-      
-      if (response3.ok) {
-        const data3 = await response3.json()
-        // Combina i risultati
-        data.elements = [...(data.elements || []), ...(data3.elements || [])]
-      }
-    }
-    
-    // Processa i risultati
-    const processedHikes = processOverpassData(data, lat, lon)
-    setHikes(processedHikes)
-    
+    const data = await response.json();
+    const processedHikes = processOverpassData(data, lat, lon);
+
+    setHikes(processedHikes);
+
     if (processedHikes.length === 0) {
-      setError(`Nessun sentiero trovato entro ${radiusKm} km. 
-        Prova ad aumentare il raggio o spostati in una zona più montuosa.
-        ${radiusKm < 20 ? 'Suggerimento: prova con 20 o 50 km.' : ''}`)
+      setError(`Nessun sentiero trovato entro ${radiusKm} km.
+        Prova ad aumentare il raggio o spostarti in una zona più montuosa.
+        ${radiusKm < 20 ? 'Suggerimento: prova con 20 o 50 km.' : ''}`);
     }
   } catch (err) {
-    console.error('Error fetching hikes:', err)
-    if (err.message.includes('Overpass')) {
-      setError('Il server Overpass è temporaneamente sovraccarico. Riprova tra qualche minuto o aumenta il raggio di ricerca.')
-    } else {
-      setError('Errore nel caricamento dei percorsi. Controlla la connessione internet e riprova.')
-    }
+    console.error('Error fetching hikes:', err);
+    setError('Errore nel caricamento dei percorsi o server Overpass sovraccarico. Riprova tra qualche minuto.');
   } finally {
-    setLoading(false)
+    setLoading(false);
   }
-}
-  
+};
+
+
 // Funzione per processare i dati ricevuti da Overpass API 
-  const processOverpassData = (data, userLat, userLon) => {
-    const hikes = []
-    const processedIds = new Set()
+const processOverpassData = (data, userLat, userLon) => {
+  const hikes = [];
+  const processedIds = new Set();
 
-    // Processa relations (percorsi completi)
-    data.elements.forEach(element => {
-      if (element.type === 'relation' && element.tags && element.tags.name && !processedIds.has(element.id)) {
-        processedIds.add(element.id)
-        
-        // Per le relations con out geom, i membri hanno già la geometria completa
-        let coordinates = []
-        
-        if (element.members) {
-          // Segui l'ordine dei membri della relation
-          element.members.forEach(member => {
-            if (member.geometry && member.geometry.length > 0) {
-              // Aggiungi tutte le coordinate del membro nell'ordine corretto
-              member.geometry.forEach(point => {
-                coordinates.push([point.lon, point.lat])
-              })
-            }
-          })
-        }
-        
-        // Se non ci sono coordinate dai membri, prova con la geometria diretta
-        if (coordinates.length === 0 && element.geometry) {
-          coordinates = element.geometry.map(point => [point.lon, point.lat])
-        }
-        
-        // Rimuovi duplicati consecutivi per pulire il percorso
-        coordinates = removeDuplicatePoints(coordinates)
-        
-        if (coordinates.length > 1) {
-          // Calcola punto centrale
-          const avgLat = coordinates.reduce((sum, coord) => sum + coord[1], 0) / coordinates.length
-          const avgLon = coordinates.reduce((sum, coord) => sum + coord[0], 0) / coordinates.length
-          const distance = calculateDistance(userLat, userLon, avgLat, avgLon)
-          
-          // Calcola lunghezza approssimativa del percorso
-          const length = calculatePathLength(coordinates)
+  data.elements.forEach(element => {
+    if (!element.tags || !element.tags.name || processedIds.has(element.id)) return;
+    processedIds.add(element.id);
 
-          // Aggiungi il percorso alla lista
-          hikes.push({
-            id: element.id,
-            type: 'relation',
-            name: element.tags.name,
-            distance: distance,
-            length: length,
-            difficulty: element.tags.sac_scale || 'Non specificata',
-            description: element.tags.description || '',
-            operator: element.tags.operator || '',
-            coordinates: coordinates,
-            center: { lat: avgLat, lon: avgLon }
-          })
-        }
-      }
-    })
+    let coordinates = [];
 
-    // Processa ways (sentieri singoli) - 
-    data.elements.forEach(element => {
-      if (element.type === 'way' && element.tags && element.tags.name && !processedIds.has(element.id)) {
-        processedIds.add(element.id)
-        
-        // Con out geom, il way ha già la proprietà geometry con tutti i punti nell'ordine corretto
-        let coordinates = []
-        
-        if (element.geometry && element.geometry.length > 0) {
-          coordinates = element.geometry.map(point => [point.lon, point.lat])
+    // Usa geometria già fornita da Overpass
+    if (element.geometry && element.geometry.length > 0) {
+      coordinates = element.geometry.map(point => [point.lon, point.lat]);
+    } else if (element.members) {
+      // Se è una relation, prova a costruire le coordinate dai membri
+      element.members.forEach(member => {
+        if (member.geometry) {
+          member.geometry.forEach(point => {
+            coordinates.push([point.lon, point.lat]);
+          });
         }
-        
-        // Rimuovi duplicati consecutivi
-        coordinates = removeDuplicatePoints(coordinates)
-        
-        if (coordinates.length > 1) {
-          // Calcola punto centrale
-          const avgLat = coordinates.reduce((sum, coord) => sum + coord[1], 0) / coordinates.length
-          const avgLon = coordinates.reduce((sum, coord) => sum + coord[0], 0) / coordinates.length
-          const distance = calculateDistance(userLat, userLon, avgLat, avgLon)
-          
-          // Calcola lunghezza approssimativa del percorso
-          const length = calculatePathLength(coordinates)
+      });
+    }
 
-          hikes.push({
-            id: element.id,
-            type: 'way',
-            name: element.tags.name,
-            distance: distance,
-            length: length,
-            difficulty: element.tags.sac_scale || 'Non specificata',
-            description: element.tags.description || '',
-            coordinates: coordinates,
-            center: { lat: avgLat, lon: avgLon }
-          })
-        }
-      }
-    })
+    coordinates = removeDuplicatePoints(coordinates);
+    if (coordinates.length < 2) return;
 
-    // Ordina per distanza
-    return hikes.sort((a, b) => a.distance - b.distance).slice(0, 20)
-  }
+    // Calcola posizione media e distanza dall'utente
+    const avgLat = coordinates.reduce((sum, c) => sum + c[1], 0) / coordinates.length;
+    const avgLon = coordinates.reduce((sum, c) => sum + c[0], 0) / coordinates.length;
+    const distance = calculateDistance(userLat, userLon, avgLat, avgLon);
+    const length = calculatePathLength(coordinates);
+
+    // Cerca di determinare la difficoltà
+    let difficulty = element.tags.sac_scale;
+
+    // Se è una relation, prova a vedere se i membri hanno sac_scale
+    if (!difficulty && element.members) {
+      const memberDiff = element.members.find(m => m.tags && m.tags.sac_scale);
+      if (memberDiff) difficulty = memberDiff.tags.sac_scale;
+    }
+
+    hikes.push({
+      id: element.id,
+      type: element.type,
+      name: element.tags.name,
+      distance,
+      length,
+      difficulty: difficulty || 'Non specificata',
+      description: element.tags.description || '',
+      operator: element.tags.operator || '',
+      coordinates,
+      center: { lat: avgLat, lon: avgLon }
+    });
+  });
+
+  // Ordina per distanza
+  return hikes.sort((a, b) => a.distance - b.distance).slice(0, 20);
+};
+
 
   // Rimuovi punti duplicati consecutivi
   const removeDuplicatePoints = (coordinates) => {
