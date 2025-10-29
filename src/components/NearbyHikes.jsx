@@ -46,7 +46,6 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
     )
   }
 // Funzione per cercare i percorsi di hiking nelle vicinanze usando Overpass API
-  // Funzione per cercare i percorsi di hiking nelle vicinanze usando Overpass API
 const fetchNearbyHikes = async (lat, lon) => {
   try {
     setLoading(true)
@@ -56,15 +55,16 @@ const fetchNearbyHikes = async (lat, lon) => {
     const query = `
       [out:json][timeout:25];
       (
-        // Relations di percorsi escursionistici
-        relation["route"="hiking"]["name"](around:${radiusKm * 1000},${lat},${lon});
-        // Ways singoli con sentieri e scala di difficoltà
+        
+        relation["route"="hiking"]["name"](around:${radiusKm * 1000},${lat},${lon}); 
+        
         way["highway"="path"]["name"](around:${radiusKm * 1000},${lat},${lon});
+        
         way["highway"="footway"]["name"](around:${radiusKm * 1000},${lat},${lon});
       );
       out tags geom;
     `;
-
+// Effettua la richiesta a Overpass API
     const response = await fetch('https://overpass-api.de/api/interpreter', {
       method: 'POST',
       body: query
@@ -73,7 +73,7 @@ const fetchNearbyHikes = async (lat, lon) => {
     if (!response.ok) {
       throw new Error('Errore dal server Overpass');
     }
-
+// Processa i dati ricevuti
     const data = await response.json();
     const processedHikes = processOverpassData(data, lat, lon);
 
@@ -108,7 +108,7 @@ const processOverpassData = (data, userLat, userLon) => {
     if (element.geometry && element.geometry.length > 0) {
       coordinates = element.geometry.map(point => [point.lon, point.lat]);
     } else if (element.members) {
-      // Se è una relation, prova a costruire le coordinate dai membri
+      // Se è una relation, prova a costruire le coordinate dai punti dei membri
       element.members.forEach(member => {
         if (member.geometry) {
           member.geometry.forEach(point => {
@@ -135,19 +135,20 @@ const processOverpassData = (data, userLat, userLon) => {
       const memberDiff = element.members.find(m => m.tags && m.tags.sac_scale);
       if (memberDiff) difficulty = memberDiff.tags.sac_scale;
     }
+      if (length > 1 && length < 80) {
+        hikes.push({
+        id: element.id,
+        type: element.type,
+        name: element.tags.name,
+        distance,
+        length,
+        difficulty: difficulty || 'Non specificata',
+        description: element.tags.description || '',
+        operator: element.tags.operator || '',
+        coordinates,
+        center: { lat: avgLat, lon: avgLon }
 
-    hikes.push({
-      id: element.id,
-      type: element.type,
-      name: element.tags.name,
-      distance,
-      length,
-      difficulty: difficulty || 'Non specificata',
-      description: element.tags.description || '',
-      operator: element.tags.operator || '',
-      coordinates,
-      center: { lat: avgLat, lon: avgLon }
-    });
+      })};
   });
 
   // Ordina per distanza
