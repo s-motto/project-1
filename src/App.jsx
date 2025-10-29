@@ -66,7 +66,7 @@ function App() {
               </div>
               <div className="logo-text-container">
                 <h1 className="logo-title">Let's Walk!</h1>
-                <p className="logo-subtitle">Pianifica i tuoi percorsi</p>
+                <p className="logo-subtitle">Ciao! Dove andiamo oggi?</p>
               </div>
             </div>
             <UserMenu onShowSavedRoutes={handleSavedClick} />
