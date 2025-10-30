@@ -4,6 +4,7 @@ import SaveRouteButton from './SaveRouteButton'
 import { FaMapMarkerAlt, FaFlag, FaWalking, FaClock, FaRoute, FaLocationArrow } from 'react-icons/fa'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import useNavigation from '../contexts/NavigationContext'
 
 const RouteSearchForm = forwardRef(({preloadedRoute, preloadedHike}, ref) => {
   const [startPoint, setStartPoint] = useState(null) //latitudine e longitudine
@@ -31,7 +32,8 @@ const RouteSearchForm = forwardRef(({preloadedRoute, preloadedHike}, ref) => {
   const endMarkerRef = useRef(null) //marcatore arrivo
   const updateMarkersListenerRef = useRef(null) // riferimento al listener
   
-  const [isNavigating, setIsNavigating] = useState(false) //stato modalità navigazione
+  // Navigation state and actions come dal NavigationContext
+  const { isNavigating, currentPosition, heading, startNavigation, stopNavigation } = useNavigation()
   const [fullRouteData, setFullRouteData] = useState(null) // salva tutti i dati del percorso
   const [isPreloaded, setIsPreloaded] = useState(false) //indica se il percorso è pre-caricato
   const [routeSaved, setRouteSaved] = useState(false) //indica se l'utente ha già salvato il percorso
@@ -386,7 +388,9 @@ const handleReset = () => {
   if (updateMarkersListenerRef.current && map) {
     map.off('move zoom', updateMarkersListenerRef.current)
   }
-
+  // Ensure navigation is stopped and geolocation watch is cleared via context
+  try { stopNavigation() } catch (err) { /* ignore */ }
+  
   // Reset degli stati
   setStartPoint(null)
   setEndPoint(null)
@@ -592,7 +596,7 @@ const handleReset = () => {
 
   return (
     <div className="flex flex-col space-y-4">
-      {!isNavigating ? (
+  {!isNavigating ? (
         <>
           <form onSubmit={handleSubmit} className="flex flex-col space-y-4 p-4 bg-white rounded-lg shadow-md w-full max-w-xl">
             <div className="flex items-center space-x-2 relative">
@@ -776,7 +780,7 @@ const handleReset = () => {
                  )}
                 
                 <button
-                  onClick={() => setIsNavigating(true)}
+                  onClick={() => startNavigation()}
                   className="route-gps-btn"
                 >
                   <FaLocationArrow />
@@ -819,7 +823,9 @@ const handleReset = () => {
           routeLayer={routeLayer}
           instructions={instructions}
           endPoint={endPoint}
-          onStop={() => setIsNavigating(false)}
+          currentPosition={currentPosition}
+          heading={heading}
+          onStop={() => stopNavigation()}
         />
       )}
 

@@ -2,15 +2,11 @@ import React, { useState, useEffect, useRef } from 'react'
 import { FaLocationArrow, FaRoute, FaFlag, FaExclamationTriangle, FaStop, FaCompass } from 'react-icons/fa'
 import L from 'leaflet'
 
-const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop }) => {
-  const [currentPosition, setCurrentPosition] = useState(null)
+const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, currentPosition, heading }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [distanceToEnd, setDistanceToEnd] = useState(null)
   const [isOffRoute, setIsOffRoute] = useState(false)
-  const [heading, setHeading] = useState(0)
-  const watchIdRef = useRef(null)
   const userMarkerRef = useRef(null)
-  const [isTracking, setIsTracking] = useState(false)
 
   // Calcola distanza tra due punti (formula Haversine)
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
@@ -53,121 +49,75 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop }) => 
     return nearestPoint
   }
 
-  // Avvia il tracking GPS
+  // React to external currentPosition prop (managed by parent hook)
   useEffect(() => {
+    // Update user marker and map view when position or map/route change
     if (!map || !routeLayer) return
+    if (!currentPosition) return
 
-    setIsTracking(true)
+    const { lat, lng, accuracy } = currentPosition
 
-    // Opzioni di geolocalizzazione ad alta precisione
-    const geoOptions = {
-      enableHighAccuracy: true,
-      timeout: 5000,
-      maximumAge: 0
-    }
-
-    // Callback per aggiornamenti posizione
-    const handlePosition = (position) => {
-      const lat = position.coords.latitude
-      const lng = position.coords.longitude
-      const accuracy = position.coords.accuracy
-      const heading = position.coords.heading || 0
-
-      setCurrentPosition({ lat, lng, accuracy })
-      setHeading(heading)
-
-      // Aggiorna o crea il marker dell'utente
-      if (userMarkerRef.current) {
-        userMarkerRef.current.setLatLng([lat, lng])
-      } else {
-        const userIcon = L.divIcon({
-          className: 'user-location-marker',
-          html: `
+    // Update or create user marker
+    if (userMarkerRef.current) {
+      userMarkerRef.current.setLatLng([lat, lng])
+    } else {
+      const userIcon = L.divIcon({
+        className: 'user-location-marker',
+        html: `
+          <div style="
+            width: 20px; 
+            height: 20px; 
+            background: #3b82f6; 
+            border: 3px solid white; 
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+            position: relative;
+          ">
             <div style="
-              width: 20px; 
-              height: 20px; 
-              background: #3b82f6; 
-              border: 3px solid white; 
-              border-radius: 50%;
-              box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
-              position: relative;
-            ">
-              <div style="
-                position: absolute;
-                top: -5px;
-                left: 50%;
-                transform: translateX(-50%) rotate(${heading}deg);
-                width: 0;
-                height: 0;
-                border-left: 5px solid transparent;
-                border-right: 5px solid transparent;
-                border-bottom: 10px solid #3b82f6;
-              "></div>
-            </div>
-          `,
-          iconSize: [20, 20]
-        })
-        userMarkerRef.current = L.marker([lat, lng], { icon: userIcon }).addTo(map)
-        
-        // Aggiungi cerchio di accuratezza
-        L.circle([lat, lng], {
-          radius: accuracy,
-          color: '#3b82f6',
-          fillColor: '#3b82f6',
-          fillOpacity: 0.1,
-          weight: 1
-        }).addTo(map)
-      }
-
-      // Centra la mappa sulla posizione
-      map.setView([lat, lng], 17, { animate: true })
-
-      // Calcola distanza dalla destinazione
-      if (endPoint) {
-        const distToEnd = calculateDistance(lat, lng, endPoint.lat, endPoint.lon)
-        setDistanceToEnd(distToEnd)
-
-        // Sei arrivato?
-        if (distToEnd < 0.05) { // Meno di 50 metri
-          handleArrival()
-        }
-      }
-
-      // Verifica se sei fuori percorso
-      const nearestPoint = findNearestPointOnRoute({ lat, lng })
-      if (nearestPoint && nearestPoint.distance > 0.05) { // Più di 50m dal percorso
-        setIsOffRoute(true)
-      } else {
-        setIsOffRoute(false)
-      }
-
-      // Determina quale step sei vicino
-      updateCurrentStep({ lat, lng })
+              position: absolute;
+              top: -5px;
+              left: 50%;
+              transform: translateX(-50%) rotate(${heading || 0}deg);
+              width: 0;
+              height: 0;
+              border-left: 5px solid transparent;
+              border-right: 5px solid transparent;
+              border-bottom: 10px solid #3b82f6;
+            "></div>
+          </div>
+        `,
+        iconSize: [20, 20]
+      })
+      userMarkerRef.current = L.marker([lat, lng], { icon: userIcon }).addTo(map)
+      L.circle([lat, lng], { radius: accuracy, color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.1, weight: 1 }).addTo(map)
     }
 
-    const handleError = (error) => {
-      console.error('GPS Error:', error)
-      alert('Errore GPS: ' + error.message)
+    map.setView([lat, lng], 17, { animate: true })
+
+    // Calculate distance to end and off-route
+    if (endPoint) {
+      const distToEnd = calculateDistance(lat, lng, endPoint.lat, endPoint.lon)
+      setDistanceToEnd(distToEnd)
+      if (distToEnd < 0.05) handleArrival()
     }
 
-    // Avvia il watch della posizione
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      handlePosition,
-      handleError,
-      geoOptions
-    )
+    const nearestPoint = findNearestPointOnRoute({ lat, lng })
+    if (nearestPoint && nearestPoint.distance > 0.05) setIsOffRoute(true)
+    else setIsOffRoute(false)
 
-    // Cleanup
+    updateCurrentStep({ lat, lng })
+
+    // cleanup of marker handled in separate unmount effect
+  }, [map, routeLayer, endPoint, currentPosition, heading])
+
+  useEffect(() => {
     return () => {
-      if (watchIdRef.current) {
-        navigator.geolocation.clearWatch(watchIdRef.current)
-      }
       if (userMarkerRef.current && map) {
         map.removeLayer(userMarkerRef.current)
+        userMarkerRef.current = null
       }
-      setIsTracking(false)
     }
-  }, [map, routeLayer, endPoint])
+  }, [map])
 
   // Aggiorna lo step corrente basato sulla posizione
   const updateCurrentStep = (position) => {
@@ -181,20 +131,15 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop }) => 
 
   const handleArrival = () => {
     alert('🎉 Sei arrivato a destinazione!')
-    if (watchIdRef.current) {
-      navigator.geolocation.clearWatch(watchIdRef.current)
-    }
     onStop()
   }
 
   const handleStop = () => {
-    if (watchIdRef.current) {
-      navigator.geolocation.clearWatch(watchIdRef.current)
-    }
     onStop()
   }
 
-  if (!isTracking) {
+  // Show a loading state until we have a position
+  if (!currentPosition) {
     return (
       <div className="bg-white rounded-lg shadow-md p-4 w-full max-w-xl">
         <p className="text-center text-gray-600">Avvio navigazione GPS...</p>
@@ -295,4 +240,8 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop }) => 
   )
 }
 
+// Cleanup marker on unmount
+// This effect ensures user marker is removed if component unmounts
+// (separate from position updates)
+// Note: map ref and userMarkerRef are module-level within component via closure
 export default NavigationMode
