@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import useNavigation from '../contexts/NavigationContext'
 import { FaLocationArrow, FaRoute, FaFlag, FaExclamationTriangle, FaStop, FaCompass } from 'react-icons/fa'
 import L from 'leaflet'
 
@@ -153,6 +154,10 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
   return (
     <div className="navigation-container">
       {/* Status Bar */}
+      <div className="nav-status-top">
+        {/* GPS status badge from NavigationContext */}
+        <GPSStatusBadge currentPosition={currentPosition} />
+      </div>
       <div className="nav-status-card">
   <div className="nav-status-header">
     <div className="nav-status-title">
@@ -238,6 +243,34 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
 </div>
     </div>
   )
+}
+
+function GPSStatusBadge({ currentPosition }) {
+  // use context to read error/isNavigating
+  try {
+    const { isNavigating, error } = useNavigation()
+    let text = 'GPS: in attesa'
+    let cls = 'gps-badge waiting'
+    if (error) {
+      text = `GPS: errore` + (error.message ? `: ${error.message}` : '')
+      cls = 'gps-badge error'
+    } else if (isNavigating && currentPosition) {
+      text = 'GPS: attivo'
+      cls = 'gps-badge active'
+    } else if (isNavigating) {
+      text = 'GPS: in attesa'
+      cls = 'gps-badge waiting'
+    }
+
+    return (
+      <div className={cls} style={{ padding: '6px 10px', borderRadius: 16, background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', display: 'inline-block', fontSize: 14 }}>
+        {text}
+      </div>
+    )
+  } catch (e) {
+    // If context not available, don't break rendering
+    return null
+  }
 }
 
 // Cleanup marker on unmount
