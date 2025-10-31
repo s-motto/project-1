@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
 import NavigationMode from './NavigationMode'
 import SaveRouteButton from './SaveRouteButton'
-import { FaMapMarkerAlt, FaFlag, FaWalking, FaClock, FaRoute, FaLocationArrow } from 'react-icons/fa'
+import { FaMapMarkerAlt, FaFlag, FaWalking, FaClock, FaRoute, FaLocationArrow, FaSpinner } from 'react-icons/fa'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import useNavigation from '../contexts/NavigationContext'
@@ -37,6 +37,8 @@ const RouteSearchForm = forwardRef(({preloadedRoute, preloadedHike}, ref) => {
   const [fullRouteData, setFullRouteData] = useState(null) // salva tutti i dati del percorso
   const [isPreloaded, setIsPreloaded] = useState(false) //indica se il percorso è pre-caricato
   const [routeSaved, setRouteSaved] = useState(false) //indica se l'utente ha già salvato il percorso
+  const [gettingLocation, setGettingLocation] = useState(false)//stato ottenimento posizione utente
+  const [userLocation, setUserLocation] = useState(null)//posizione utente
 
   useEffect(() => {
     const mapInstance = L.map('map').setView([45.4642, 9.1900], 13) //Centro su Milano di default
@@ -337,6 +339,83 @@ const calculateDistance = (lat1, lon1, lat2, lon2) => {
   return R * c
 }
 
+// Funzione per ottenere la posizione corrente dell'utente
+const getCurrentLocation = () => {
+  setGettingLocation(true)
+  setErrorMsg('')
+  
+  if (!navigator.geolocation) {
+    setErrorMsg('Il tuo browser non supporta la geolocalizzazione')
+    setGettingLocation(false)
+    return
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const lat = position.coords.latitude
+      const lon = position.coords.longitude
+      
+      // Imposta le coordinate come punto di partenza
+      setStartPoint({
+        lat,
+        lon,
+        name: 'La tua posizione'
+      })
+      
+      // Reverse geocoding per ottenere il nome del luogo
+      try {
+        const response = await fetch(
+          `https://api.openrouteservice.org/geocode/reverse?api_key=${ORS_KEY}&point.lat=${lat}&point.lon=${lon}&size=1`
+        )
+        
+        if (response.ok) {
+          const data = await response.json()
+          if (data.features && data.features.length > 0) {
+            const placeName = data.features[0].properties.label
+            setStartText(`📍 ${placeName}`)
+            setStartPoint({
+              lat,
+              lon,
+              name: placeName
+            })
+          } else {
+            setStartText('📍 La tua posizione')
+          }
+        } else {
+          setStartText('📍 La tua posizione')
+        }
+      } catch (error) {
+        console.error('Reverse geocoding error:', error)
+        setStartText('📍 La tua posizione')
+      }
+      
+      setGettingLocation(false)
+      setUserLocation({ lat, lon })
+    },
+    (error) => {
+      console.error('Geolocation error:', error)
+      switch(error.code) {
+        case error.PERMISSION_DENIED:
+          setErrorMsg('Permesso di geolocalizzazione negato')
+          break
+        case error.POSITION_UNAVAILABLE:
+          setErrorMsg('Posizione non disponibile')
+          break
+        case error.TIMEOUT:
+          setErrorMsg('Richiesta posizione scaduta')
+          break
+        default:
+          setErrorMsg('Errore nel recupero della posizione')
+      }
+      setGettingLocation(false)
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    }
+  )
+}
 
  const geocodeText = async (text) => {
   if (!text) return null
@@ -599,62 +678,82 @@ const handleReset = () => {
   {!isNavigating ? (
         <>
           <form onSubmit={handleSubmit} className="flex flex-col space-y-4 p-4 bg-white rounded-lg shadow-md w-full max-w-xl">
-            <div className="flex items-center space-x-2 relative">
-              
-              <div className="flex-1">
-                <div className="relative">
-                  <input
-                    ref={startInputRef}
-                    placeholder="Punto di partenza"
-                    value={startText}
-                    autoComplete="off"
-                    disabled={isPreloaded}
-                    onFocus={() => { if (startText.length > 1) setShowStartDropdown(true) }}
-                    onBlur={() => setTimeout(() => setShowStartDropdown(false), 150)}
-                    onChange={async (e) => {
-                      const val = e.target.value
-                      setStartText(val)
-                      setStartPoint(null)
-                      if (val.length > 1) {
-                        setStartLoading(true)
-                        setShowStartDropdown(true)
-                        const suggestions = await fetchSuggestions(val)
-                        setStartSuggestions(suggestions)
-                        setStartLoading(false)
-                      } else {
-                        setStartSuggestions([])
-                        setShowStartDropdown(false)
-                      }
-                    }}
-                    className="route-input"
-                  />
-                  {showStartDropdown && (startSuggestions.length > 0 || startLoading) && (
-                    <ul className="route-suggestions-dropdown">
-                      {startLoading && <li className="route-suggestion-loading">Caricamento…</li>}
-                      {startSuggestions.map((suggestion) => (
-                        <li
-                          key={suggestion.place_id}
-                          className="route-suggestion-item"
-                          onMouseDown={() => {
-                            setStartText(suggestion.display_name)
-                            setStartPoint({
-                              lat: suggestion.lat,
-                              lon: suggestion.lon,
-                              name: suggestion.display_name,
-                            })
-                            setShowStartDropdown(false)
-                            setStartSuggestions([])
-                            startInputRef.current.blur()
-                          }}
-                        >
-                          {suggestion.display_name}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </div>
-            </div>
+            {/* Input punto di partenza con bottone GPS */}
+<div className="flex items-center space-x-2 relative">
+  <div className="flex-1">
+    <div className="relative">
+      {/* Icona marker sempre visibile */}
+      <FaMapMarkerAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-green-600 pointer-events-none z-10" />
+      
+      <input
+        ref={startInputRef}
+        placeholder="Punto di partenza"
+        value={startText}
+        autoComplete="off"
+        disabled={isPreloaded || gettingLocation}
+        onFocus={() => { if (startText.length > 1) setShowStartDropdown(true) }}
+        onBlur={() => setTimeout(() => setShowStartDropdown(false), 150)}
+        onChange={async (e) => {
+          const val = e.target.value
+          setStartText(val)
+          setStartPoint(null)
+          if (val.length > 1) {
+            setStartLoading(true)
+            setShowStartDropdown(true)
+            const suggestions = await fetchSuggestions(val)
+            setStartSuggestions(suggestions)
+            setStartLoading(false)
+          } else {
+            setStartSuggestions([])
+            setShowStartDropdown(false)
+          }
+        }}
+        className="route-input"
+      />
+      
+      {/* Dropdown suggerimenti */}
+      {showStartDropdown && (startSuggestions.length > 0 || startLoading) && (
+        <ul className="route-suggestions-dropdown">
+          {startLoading && <li className="route-suggestion-loading">Caricamento…</li>}
+          {startSuggestions.map((suggestion) => (
+            <li
+              key={suggestion.place_id}
+              className="route-suggestion-item"
+              onMouseDown={() => {
+                setStartText(suggestion.display_name)
+                setStartPoint({
+                  lat: suggestion.lat,
+                  lon: suggestion.lon,
+                  name: suggestion.display_name,
+                })
+                setShowStartDropdown(false)
+                setStartSuggestions([])
+                startInputRef.current.blur()
+              }}
+            >
+              {suggestion.display_name}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  </div>
+  
+  {/* Bottone GPS */}
+  <button
+    type="button"
+    onClick={getCurrentLocation}
+    disabled={gettingLocation || isPreloaded}
+    className="gps-location-btn"
+    title="Usa la tua posizione"
+  >
+    {gettingLocation ? (
+      <FaSpinner className="animate-spin" />
+    ) : (
+      <FaLocationArrow />
+    )}
+  </button>
+</div>
 
             <div className="flex items-center space-x-2 relative">
               
@@ -728,6 +827,14 @@ const handleReset = () => {
   </button>
 )}
           </form>
+
+          {/* Indicatore visuale gps */}
+{userLocation && startPoint && startPoint.lat === userLocation.lat && (
+  <div className="flex items-center space-x-2 px-4 py-2 bg-green-50 rounded-lg text-sm text-green-700">
+    <FaLocationArrow className="text-green-600" />
+    <span>Partenza impostata sulla tua posizione attuale</span>
+  </div>
+)}
 
           {/* Route Information Card */}
           {routeInfo && (
