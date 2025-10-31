@@ -759,6 +759,7 @@ const handleReset = () => {
               
               <div className="flex-1">
                 <div className="relative">
+                   <FaFlag className="absolute left-3 top-1/2 transform -translate-y-1/2 text-red-600 pointer-events-none z-10" />
                   <input
                     ref={endInputRef}
                     placeholder="Punto di arrivo"
@@ -810,6 +811,8 @@ const handleReset = () => {
                   )}
                 </div>
               </div>
+              // Spazio per allineamento
+               <div className="w-12 h-12"></div>
             </div>
 
             {errorMsg && (
