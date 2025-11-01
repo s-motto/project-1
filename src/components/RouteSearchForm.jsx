@@ -811,7 +811,7 @@ const handleReset = () => {
                   )}
                 </div>
               </div>
-              // Spazio per allineamento
+              
                <div className="w-12 h-12"></div>
             </div>
 

@@ -383,7 +383,7 @@
   }
 
   
-  /* ===== HEADER - ALBA SULLA MONTAGNA ===== */
+  /* ===== HEADER ===== */
   
   .app-header {
     @apply sticky top-0 z-50 shadow-lg;

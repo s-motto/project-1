@@ -1,13 +1,15 @@
 import React, { useState } from 'react'
-import { FaUser, FaSignOutAlt, FaBookmark, FaChevronDown } from 'react-icons/fa'
+import { FaUser, FaSignOutAlt, FaBookmark, FaChevronDown, FaChartLine } from 'react-icons/fa'
 import { useAuth } from '../contexts/AuthContext'
 import AuthPage from './AuthPage'
+import Dashboard from './Dashboard'
 
 // Componente UserMenu per la gestione dell'utente
 const UserMenu = ({ onShowSavedRoutes }) => {
   const { user, logout } = useAuth()
   const [showMenu, setShowMenu] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
+  const [showDashboard, setShowDashboard] = useState(false)
 // Gestore del logout
   const handleLogout = async () => {
     const result = await logout()
@@ -37,6 +39,7 @@ const UserMenu = ({ onShowSavedRoutes }) => {
 
   // Se l'utente è autenticato, mostro il menu utente completo
   return (
+    <>
     <div className="relative">
       {/* Bottone con avatar e nome utente */}
       <button
@@ -70,6 +73,18 @@ const UserMenu = ({ onShowSavedRoutes }) => {
               <p className="text-xs text-gray-500 truncate">{user.email}</p>
             </div>
 
+            {/* Bottone "Dashboard" */}
+              <button
+                onClick={() => {
+                  setShowMenu(false)
+                  setShowDashboard(true)
+                }}
+                className="user-dropdown-item"
+              >
+                <FaChartLine className="w-4" />
+                <span>Dashboard</span>
+              </button>
+
             {/* Bottone "Percorsi salvati" */}
             <button
               onClick={() => {
@@ -94,6 +109,11 @@ const UserMenu = ({ onShowSavedRoutes }) => {
         </>
       )}
     </div>
+    {/* Modal Dashboard */}
+      {showDashboard && (
+        <Dashboard onClose={() => setShowDashboard(false)} />
+      )}
+    </>
   )
 }
 

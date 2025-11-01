@@ -15,7 +15,7 @@
     display: none;
   }
 
-  /* Custom Scrollbar (sottile e elegante) */
+  /* Custom Scrollbar */
   .scrollbar-thin {
     scrollbar-width: thin;
   }
@@ -62,7 +62,7 @@
     overflow: hidden;
   }
 
-  /* Hide elements when modal is open */
+  /* Hide elements when modal is open*/
   body.modal-open .leaflet-marker-pane {
     display: none !important;
   }
@@ -71,11 +71,45 @@
     display: none !important;
   }
 
+  body.modal-open .custom-html-marker {
+    display: none !important;
+  }
+
+  body.modal-open .leaflet-control-container {
+    display: none !important;
+  }
+
+  body.modal-open .leaflet-pane {
+    display: none !important;
+  }
+
+  body.modal-open .leaflet-overlay-pane {
+    display: none !important;
+  }
+
+  /* Hide BottomNav when modal is open */
+  body.modal-open .bottom-nav {
+    display: none !important;
+  }
+
   /* Blur map when modal is open */
   body.modal-open #map {
-    filter: blur(3px);
-    opacity: 0.5;
+    filter: blur(5px) brightness(0.8);
+    opacity: 0.3;
     pointer-events: none;
+    z-index: 1 !important;
+  }
+
+  body.modal-open #map * {
+    z-index: 1 !important;
+  }
+
+/* Nascondi BottomNav quando modale è aperta */
+  body.modal-open .bottom-nav {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: translateY(100px) !important;
+    transition: all 0.3s ease-out !important;
   }
 
   /* Safe area paddings (per notch iPhone) */
