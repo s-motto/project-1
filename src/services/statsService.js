@@ -19,14 +19,19 @@ class StatsService {
       }
     }
 
-    // Calcola totali
-    const totalRoutes = routes.length
-    const totalKm = routes.reduce((sum, route) => sum + (route.distance || 0), 0)
-    const totalTime = routes.reduce((sum, route) => sum + (route.duration || 0), 0)
-    const totalAscent = routes.reduce((sum, route) => sum + (route.ascent || 0), 0)
+    // Filtra solo i percorsi con dati reali (actualDistance non NULL)
+    const validRoutes = routes.filter(route => 
+      route.actualDistance != null && route.actualDistance > 0
+    )
+
+     // Calcola totali 
+    const totalRoutes = validRoutes.length
+    const totalKm = validRoutes.reduce((sum, route) => sum + (route.actualDistance || 0), 0)
+    const totalTime = validRoutes.reduce((sum, route) => sum + (route.actualDuration || 0), 0)
+    const totalAscent = validRoutes.reduce((sum, route) => sum + (route.actualAscent || 0), 0)
 
     // Calcola km per mese
-    const monthlyKm = this.calculateMonthlyKm(routes)
+    const monthlyKm = this.calculateMonthlyKm(validRoutes)
 
     return {
       totalRoutes,
@@ -56,16 +61,19 @@ class StatsService {
       })
     }
 
-    // Aggrega km per mese
+    // Aggrega km per mese usando la data di completamento
     routes.forEach(route => {
-      if (!route.createdAt) return
+      // Usa completedAt invece di createdAt per i percorsi completati
+      const dateField = route.completedAt || route.createdAt
+      if (!dateField) return
       
-      const routeDate = new Date(route.createdAt)
+      const routeDate = new Date(dateField)
       const routeMonth = new Date(routeDate.getFullYear(), routeDate.getMonth(), 1)
       
       months.forEach(monthData => {
         if (monthData.date.getTime() === routeMonth.getTime()) {
-          monthData.km += route.distance || 0
+          // Usa actualDistance invece di distance
+          monthData.km += route.actualDistance || 0
         }
       })
     })

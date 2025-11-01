@@ -17,7 +17,8 @@ const SavedRoutes = ({ onLoadRoute }) => {
 
   const loadRoutes = async () => {
     setLoading(true)
-    const result = await routesService.getUserRoutes(user.$id)
+    // Carica i percorsi salvati dell'utente
+    const result = await routesService.getSavedRoutes(user.$id)
     if (result.success) {
       setRoutes(result.data)
     }

@@ -26,17 +26,19 @@ const Dashboard = ({ onClose }) => {
       loadData()
     }
   }, [user])
-// Carica i percorsi utente e calcola le statistiche
+
+  // Carica i percorsi completati  e calcola le statistiche
   const loadData = async () => {
     setLoading(true)
-    const result = await routesService.getUserRoutes(user.$id)
+    //Usa getCompletedRoutes invece di getUserRoutes
+    const result = await routesService.getCompletedRoutes(user.$id)
     
     if (result.success) {
-      const userRoutes = result.data
-      setRoutes(userRoutes)
+      const completedRoutes = result.data
+      setRoutes(completedRoutes)
       
-      // Calcola statistiche
-      const calculatedStats = statsService.calculateStats(userRoutes)
+      // Calcola statistiche dai percorsi completati
+      const calculatedStats = statsService.calculateStats(completedRoutes)
       setStats(calculatedStats)
     }
     
@@ -57,7 +59,8 @@ const Dashboard = ({ onClose }) => {
     }
     return null
   }
-// Se l'utente non è autenticato, mostro un messaggio di login
+
+  // Se l'utente non è autenticato, mostro un messaggio di login
   if (!user) {
     return (
       <div className="modal-overlay">
@@ -77,7 +80,8 @@ const Dashboard = ({ onClose }) => {
       </div>
     )
   }
-// Render del componente Dashboard
+
+  // Render del componente Dashboard
   return (
     <div className="modal-overlay">
       <div className="modal-content max-w-3xl">
@@ -109,7 +113,7 @@ const Dashboard = ({ onClose }) => {
               <FaRoute className="text-6xl text-gray-300 mx-auto mb-4" />
               <p className="text-gray-600 text-lg mb-2">Nessuna statistica disponibile</p>
               <p className="text-gray-500 text-sm">
-                Inizia a salvare i tuoi percorsi per vedere i progressi!
+                Completa i tuoi percorsi per vedere i progressi!
               </p>
             </div>
           ) : (
@@ -120,7 +124,7 @@ const Dashboard = ({ onClose }) => {
                 <div className="dashboard-stats-grid">
                   <StatsCard
                     icon={<FaRoute />}
-                    label="Percorsi salvati"
+                    label="Percorsi completati"
                     value={stats.totalRoutes.toString()}
                     color="text-green-600"
                   />
@@ -189,7 +193,7 @@ const Dashboard = ({ onClose }) => {
               {/* Footer con info */}
               <div className="dashboard-footer">
                 <p className="text-xs text-gray-500 text-center">
-                  💡 Le statistiche sono calcolate dai percorsi che hai salvato
+                  💡 Le statistiche sono calcolate dai percorsi che hai completato
                 </p>
               </div>
             </>
