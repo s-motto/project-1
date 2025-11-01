@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { FaRoute, FaTrash, FaMapMarkedAlt, FaSpinner } from 'react-icons/fa'
+import { FaRoute, FaTrash, FaMapMarkedAlt, FaSpinner, FaCheckCircle } from 'react-icons/fa'
 import { useAuth } from '../contexts/AuthContext'
 import routesService from '../services/routesService'
 
@@ -8,6 +8,7 @@ const SavedRoutes = ({ onLoadRoute }) => {
   const [routes, setRoutes] = useState([])
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(null)
+  const [completing, setCompleting] = useState(null)
 
   useEffect(() => {
     if (user) {
@@ -37,6 +38,20 @@ const SavedRoutes = ({ onLoadRoute }) => {
     }
     setDeleting(null)
   }
+// Gestore per completare un percorso
+  const handleComplete = async (routeId) => {
+  if (!confirm('Vuoi segnare questo percorso come completato?')) return
+  
+  setCompleting(routeId)
+  const result = await routesService.completeRoute(routeId)
+  if (result.success) {
+    setRoutes(routes.filter(r => r.$id !== routeId))
+    alert('✅ Percorso completato! Controlla la Dashboard.')
+  } else {
+    alert('Errore: ' + result.error)
+  }
+  setCompleting(null)
+}
 
   if (!user) {
     return (
@@ -94,6 +109,20 @@ const SavedRoutes = ({ onLoadRoute }) => {
                 >
                   <FaMapMarkedAlt />
                 </button>
+
+                {/* Bottone Segna come completato */}
+                <button
+                  onClick={() => handleComplete(route.$id)}
+                  disabled={completing === route.$id}
+                  className="text-green-600 hover:text-green-800 disabled:text-gray-400"
+                  title="Segna come completato"
+                >
+                  {completing === route.$id ? (
+                    <FaSpinner className="animate-spin" />
+                  ) : (
+                    <FaCheckCircle />
+                  )}
+                </button> 
                 <button
                   onClick={() => handleDelete(route.$id)}
                   disabled={deleting === route.$id}

@@ -24,7 +24,8 @@ class RoutesService {
           descent: routeData.descent,
           coordinates: JSON.stringify(routeData.coordinates),
           instructions: JSON.stringify(routeData.instructions),
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          status: 'saved' // saved o completed
         }
       )
       return { success: true, data: document }
@@ -61,6 +62,64 @@ class RoutesService {
       return { success: false, error: error.message }
     }
   }
+
+  // Recupera solo i percorsi salvati
+async getSavedRoutes(userId) {
+  try {
+    const response = await databases.listDocuments(
+      DATABASE_ID,
+      ROUTES_COLLECTION_ID,
+      [
+        Query.equal('userId', userId),
+        Query.equal('status', 'saved'),
+        Query.orderDesc('createdAt'),
+        Query.limit(100)
+      ]
+    )
+    return { 
+      success: true, 
+      data: response.documents.map(doc => ({
+        ...doc,
+        startPoint: JSON.parse(doc.startPoint),
+        endPoint: JSON.parse(doc.endPoint),
+        coordinates: JSON.parse(doc.coordinates),
+        instructions: JSON.parse(doc.instructions)
+      }))
+    }
+  } catch (error) {
+    console.error('Error fetching saved routes:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+// Recupera solo i percorsi completati
+async getCompletedRoutes(userId) {
+  try {
+    const response = await databases.listDocuments(
+      DATABASE_ID,
+      ROUTES_COLLECTION_ID,
+      [
+        Query.equal('userId', userId),
+        Query.equal('status', 'completed'),
+        Query.orderDesc('completedAt'),
+        Query.limit(100)
+      ]
+    )
+    return { 
+      success: true, 
+      data: response.documents.map(doc => ({
+        ...doc,
+        startPoint: JSON.parse(doc.startPoint),
+        endPoint: JSON.parse(doc.endPoint),
+        coordinates: JSON.parse(doc.coordinates),
+        instructions: JSON.parse(doc.instructions)
+      }))
+    }
+  } catch (error) {
+    console.error('Error fetching completed routes:', error)
+    return { success: false, error: error.message }
+  }
+}
 
     // Recupera solo i percorsi salvati (non completati) di un utente
   async getSavedRoutes(userId) {
@@ -174,6 +233,38 @@ class RoutesService {
       return { success: false, error: error.message }
     }
   }
+
+  // Segna un percorso come completato
+async completeRoute(routeId) {
+  try {
+    // Recupera il percorso
+    const routeResult = await this.getRoute(routeId)
+    if (!routeResult.success) {
+      return routeResult
+    }
+    
+    const route = routeResult.data
+    
+    // Aggiorna con dati reali
+    const document = await databases.updateDocument(
+      DATABASE_ID,
+      ROUTES_COLLECTION_ID,
+      routeId,
+      {
+        status: 'completed',
+        completedAt: new Date().toISOString(),
+        actualDistance: route.distance,
+        actualDuration: route.duration,
+        actualAscent: route.ascent || 0,
+        actualDescent: route.descent || 0
+      }
+    )
+    return { success: true, data: document }
+  } catch (error) {
+    console.error('Error completing route:', error)
+    return { success: false, error: error.message }
+  }
+}
 }
 
 export default new RoutesService()
