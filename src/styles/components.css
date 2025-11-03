@@ -16,6 +16,26 @@
            flex items-center justify-center space-x-2;
   }
   
+
+
+/* Pulsanti tracking */
+.btn-warning {
+  @apply bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-lg px-4 py-2 transition duration-200;
+}
+
+.btn-success {
+  @apply bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-4 py-2 transition duration-200;
+}
+
+/* Animazione GPS */
+@keyframes pulse-gps {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+
+.gps-badge.active {
+  animation: pulse-gps 2s infinite;
+}
   .btn-primary {
     @apply btn text-white hover:brightness-110
            disabled:opacity-50;

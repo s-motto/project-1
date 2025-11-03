@@ -64,62 +64,62 @@ class RoutesService {
   }
 
   // Recupera solo i percorsi salvati
-async getSavedRoutes(userId) {
-  try {
-    const response = await databases.listDocuments(
-      DATABASE_ID,
-      ROUTES_COLLECTION_ID,
-      [
-        Query.equal('userId', userId),
-        Query.equal('status', 'saved'),
-        Query.orderDesc('createdAt'),
-        Query.limit(100)
-      ]
-    )
-    return { 
-      success: true, 
-      data: response.documents.map(doc => ({
-        ...doc,
-        startPoint: JSON.parse(doc.startPoint),
-        endPoint: JSON.parse(doc.endPoint),
-        coordinates: JSON.parse(doc.coordinates),
-        instructions: JSON.parse(doc.instructions)
-      }))
+  async getSavedRoutes(userId) {
+    try {
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        ROUTES_COLLECTION_ID,
+        [
+          Query.equal('userId', userId),
+          Query.equal('status', 'saved'),
+          Query.orderDesc('createdAt'),
+          Query.limit(100)
+        ]
+      )
+      return { 
+        success: true, 
+        data: response.documents.map(doc => ({
+          ...doc,
+          startPoint: JSON.parse(doc.startPoint),
+          endPoint: JSON.parse(doc.endPoint),
+          coordinates: JSON.parse(doc.coordinates),
+          instructions: JSON.parse(doc.instructions)
+        }))
+      }
+    } catch (error) {
+      console.error('Error fetching saved routes:', error)
+      return { success: false, error: error.message }
     }
-  } catch (error) {
-    console.error('Error fetching saved routes:', error)
-    return { success: false, error: error.message }
   }
-}
 
-// Recupera solo i percorsi completati
-async getCompletedRoutes(userId) {
-  try {
-    const response = await databases.listDocuments(
-      DATABASE_ID,
-      ROUTES_COLLECTION_ID,
-      [
-        Query.equal('userId', userId),
-        Query.equal('status', 'completed'),
-        Query.orderDesc('completedAt'),
-        Query.limit(100)
-      ]
-    )
-    return { 
-      success: true, 
-      data: response.documents.map(doc => ({
-        ...doc,
-        startPoint: JSON.parse(doc.startPoint),
-        endPoint: JSON.parse(doc.endPoint),
-        coordinates: JSON.parse(doc.coordinates),
-        instructions: JSON.parse(doc.instructions)
-      }))
+  // Recupera solo i percorsi completati
+  async getCompletedRoutes(userId) {
+    try {
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        ROUTES_COLLECTION_ID,
+        [
+          Query.equal('userId', userId),
+          Query.equal('status', 'completed'),
+          Query.orderDesc('completedAt'),
+          Query.limit(100)
+        ]
+      )
+      return { 
+        success: true, 
+        data: response.documents.map(doc => ({
+          ...doc,
+          startPoint: JSON.parse(doc.startPoint),
+          endPoint: JSON.parse(doc.endPoint),
+          coordinates: JSON.parse(doc.coordinates),
+          instructions: JSON.parse(doc.instructions)
+        }))
+      }
+    } catch (error) {
+      console.error('Error fetching completed routes:', error)
+      return { success: false, error: error.message }
     }
-  } catch (error) {
-    console.error('Error fetching completed routes:', error)
-    return { success: false, error: error.message }
   }
-}
 
     // Recupera solo i percorsi salvati (non completati) di un utente
   async getSavedRoutes(userId) {
@@ -234,14 +234,29 @@ async getCompletedRoutes(userId) {
     }
   }
 
-  // Segna un percorso come completato
-async completeRoute(routeId) {
+  async updateRoute(routeId, data) {
   try {
-    // Recupera il percorso
-    const routeResult = await this.getRoute(routeId)
-    if (!routeResult.success) {
-      return routeResult
-    }
+    const document = await databases.updateDocument(
+      DATABASE_ID,
+      ROUTES_COLLECTION_ID,
+      routeId,
+      data
+    )
+    return { success: true, data: document }
+  } catch (error) {
+    console.error('Error updating route:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+    // Segna un percorso come completato
+  async completeRoute(routeId) {
+    try {
+      // Recupera il percorso
+      const routeResult = await this.getRoute(routeId)
+      if (!routeResult.success) {
+        return routeResult
+      }
     
     const route = routeResult.data
     
@@ -264,7 +279,7 @@ async completeRoute(routeId) {
     console.error('Error completing route:', error)
     return { success: false, error: error.message }
   }
-}
+ }
 }
 
 export default new RoutesService()

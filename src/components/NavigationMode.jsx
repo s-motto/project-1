@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import useNavigation from '../contexts/NavigationContext'
 import { FaLocationArrow, FaRoute, FaFlag, FaExclamationTriangle, FaStop, FaCompass } from 'react-icons/fa'
 import L from 'leaflet'
+import { calculateDistance } from '../utils/gpsUtils'
 
 const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, currentPosition, heading }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
@@ -9,18 +10,7 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
   const [isOffRoute, setIsOffRoute] = useState(false)
   const userMarkerRef = useRef(null)
 
-  // Calcola distanza tra due punti (formula Haversine)
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371 // Raggio della Terra in km
-    const dLat = (lat2 - lat1) * Math.PI / 180
-    const dLon = (lon2 - lon1) * Math.PI / 180
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon/2) * Math.sin(dLon/2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-    return R * c
-  }
+ 
 
   // Trova il punto più vicino sul percorso
   const findNearestPointOnRoute = (position) => {
@@ -108,7 +98,7 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
 
     updateCurrentStep({ lat, lng })
 
-    // cleanup of marker handled in separate unmount effect
+    // Cleanup function to remove marker if needed
   }, [map, routeLayer, endPoint, currentPosition, heading])
 
   useEffect(() => {
@@ -123,10 +113,10 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
   // Aggiorna lo step corrente basato sulla posizione
   const updateCurrentStep = (position) => {
     // Logica semplificata: avanza allo step successivo quando sei vicino
-    // In una versione più sofisticata, useresti la geometria del percorso
+    
     if (currentStepIndex < instructions.length - 1) {
       // Placeholder: avanza dopo tot metri
-      // Implementazione completa richiederebbe calcolo del progresso sul percorso
+      
     }
   }
 
@@ -261,20 +251,16 @@ function GPSStatusBadge({ currentPosition }) {
       text = 'GPS: in attesa'
       cls = 'gps-badge waiting'
     }
-
+// Render badge
     return (
       <div className={cls} style={{ padding: '6px 10px', borderRadius: 16, background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', display: 'inline-block', fontSize: 14 }}>
         {text}
       </div>
     )
   } catch (e) {
-    // If context not available, don't break rendering
+    // Se qualcosa va storto, non mostrare nulla
     return null
   }
 }
 
-// Cleanup marker on unmount
-// This effect ensures user marker is removed if component unmounts
-// (separate from position updates)
-// Note: map ref and userMarkerRef are module-level within component via closure
 export default NavigationMode
