@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { FaPlay, FaPause, FaStop, FaTimes, FaMapMarkerAlt } from 'react-icons/fa'
+import { FaPlay, FaPause, FaStop, FaTimes, FaMapMarkerAlt, FaExclamationTriangle } from 'react-icons/fa'
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet'
 import useGeolocation from '../hooks/useGeolocation'
 import routesService from '../services/routesService'
@@ -15,14 +15,14 @@ import {
 import 'leaflet/dist/leaflet.css'
 
 // Componente per centrare la mappa sulla posizione corrente
-function MapCenterController({ position }) {
+function MapCenterController({ position, shouldCenter }) {
   const map = useMap()
   
   useEffect(() => {
-    if (position) {
-      map.setView([position.lat, position.lng], map.getZoom())
+    if (position && shouldCenter) {
+      map.setView([position.lat, position.lng], 16)
     }
-  }, [position, map])
+  }, [position, shouldCenter, map])
   
   return null
 }
@@ -35,21 +35,25 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   const geolocation = useGeolocation()
   
   // Stati
-  const [isTracking, setIsTracking] = useState(false)
-  const [isPaused, setIsPaused] = useState(false)
-  const [trackPoints, setTrackPoints] = useState([])
-  const [currentPosition, setCurrentPosition] = useState(null)
-  const [elapsedTime, setElapsedTime] = useState(0)
-  const [distance, setDistance] = useState(0)
-  const [elevationGain, setElevationGain] = useState(0)
-  const [elevationLoss, setElevationLoss] = useState(0)
-  const [isSaving, setIsSaving] = useState(false)
+  const [isTracking, setIsTracking] = useState(false) // Se il tracking è attivo
+  const [isPaused, setIsPaused] = useState(false) // Se il tracking è in pausa
+  const [trackPoints, setTrackPoints] = useState([])// Punti GPS tracciati
+  const [currentPosition, setCurrentPosition] = useState(null) // Posizione corrente
+  const [gpsAccuracy, setGpsAccuracy] = useState(null) // Precisione GPS in metri
+  const [elapsedTime, setElapsedTime] = useState(0) // Tempo trascorso in secondi
+  const [distance, setDistance] = useState(0) // Distanza totale in km
+  const [elevationGain, setElevationGain] = useState(0) // Dislivello positivo in metri
+  const [elevationLoss, setElevationLoss] = useState(0) // Dislivello negativo in metri
+  const [isSaving, setIsSaving] = useState(false) // Se sta salvando i dati
+  const [savedRouteId, setSavedRouteId] = useState(route.$id || null) // ID del percorso salvato
+  const [shouldCenterMap, setShouldCenterMap] = useState(true) // Se centrare la mappa sulla posizione
+  const [waitingForGoodFix, setWaitingForGoodFix] = useState(true) // Se si aspetta un fix GPS preciso
   
   // Refs
-  const startTimeRef = useRef(null)
-  const pausedTimeRef = useRef(0)
-  const timerRef = useRef(null)
-  const watchIdRef = useRef(null)
+  const startTimeRef = useRef(null) // Timestamp di inizio tracking
+  const pausedTimeRef = useRef(0) // Tempo totale in pausa in ms
+  const timerRef = useRef(null) // Timer per aggiornare il tempo trascorso
+  const watchIdRef = useRef(null) // ID del watchPosition
 
   // Gestisce il blur della mappa quando la modale è aperta
   useEffect(() => {
@@ -86,13 +90,20 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       lat: position.coords.latitude,
       lng: position.coords.longitude,
       altitude: position.coords.altitude,
-      timestamp: position.timestamp
+      timestamp: position.timestamp,
+      accuracy: position.coords.accuracy
     }
     
     setCurrentPosition(newPoint)
+    setGpsAccuracy(position.coords.accuracy)
     
-    // Aggiungi punto solo se non in pausa
-    if (!isPaused) {
+    // Se accuracy è buona (< 50m), considera il GPS "fixed"
+    if (position.coords.accuracy < 50) {
+      setWaitingForGoodFix(false)
+    }
+    
+    // Aggiungi punto solo se non in pausa e se tracking è iniziato
+    if (!isPaused && isTracking) {
       setTrackPoints(prev => {
         const updated = [...prev, newPoint]
         
@@ -110,22 +121,80 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
         
         return updated
       })
+      
+      // Dopo i primi punti, disabilita auto-center
+      if (trackPoints.length > 3) {
+        setShouldCenterMap(false)
+      }
     }
   }
 
   const handlePositionError = (error) => {
     console.error('GPS Error:', error)
-    alert('Errore GPS: ' + error.message)
+    let errorMsg = 'Errore GPS: '
+    if (error.code === 1) {
+      errorMsg += 'Permesso negato. Abilita il GPS nelle impostazioni del browser.'
+    } else if (error.code === 2) {
+      errorMsg += 'Posizione non disponibile. Sei all\'aperto?'
+    } else if (error.code === 3) {
+      errorMsg += 'Timeout. Il GPS impiega troppo tempo.'
+    } else {
+      errorMsg += error.message
+    }
+    alert(errorMsg)
+  }
+
+  // Salva il percorso se non è ancora salvato
+  const ensureRouteSaved = async () => {
+    if (savedRouteId) {
+      return savedRouteId // Già salvato
+    }
+    
+    // Salva il percorso
+    const result = await routesService.saveRoute(
+      {
+        name: route.name || 'Percorso tracciato',
+        startPoint: route.startPoint,
+        endPoint: route.endPoint,
+        distance: route.distance,
+        duration: route.duration,
+        ascent: route.ascent || 0,
+        descent: route.descent || 0,
+        coordinates: route.coordinates,
+        instructions: route.instructions || []
+      },
+      user.$id
+    )
+    
+    if (result.success) {
+      setSavedRouteId(result.data.$id)
+      return result.data.$id
+    } else {
+      throw new Error('Impossibile salvare il percorso')
+    }
   }
 
   // Avvia tracking
-  const handleStart = () => {
+  const handleStart = async () => {
     if (!isTracking) {
+      // Se il percorso non è salvato, salvalo ora
+      if (!savedRouteId) {
+        try {
+          await ensureRouteSaved()
+          alert('ℹ️ Percorso salvato automaticamente per il tracking')
+        } catch (error) {
+          alert('Errore nel salvare il percorso: ' + error.message)
+          return
+        }
+      }
+      
       // Primo avvio
       startTimeRef.current = Date.now()
       pausedTimeRef.current = 0
       setIsTracking(true)
       setIsPaused(false)
+      setShouldCenterMap(true)
+      setWaitingForGoodFix(true)
       
       // Avvia GPS
       watchIdRef.current = geolocation.start(
@@ -133,7 +202,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
         handlePositionError,
         {
           enableHighAccuracy: true,
-          timeout: 10000,
+          timeout: 30000,
           maximumAge: 0
         }
       )
@@ -167,19 +236,22 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     setIsTracking(false)
     
     try {
+      // Assicura che il percorso sia salvato
+      const routeId = await ensureRouteSaved()
+      
       // Prepara i dati da salvare
       const completedData = {
         status: 'completed',
         completedAt: new Date().toISOString(),
         actualDistance: parseFloat(distance.toFixed(2)),
-        actualDuration: Math.floor(elapsedTime / 60), // Converti in minuti
+        actualDuration: Math.floor(elapsedTime / 60),
         actualAscent: elevationGain,
         actualDescent: elevationLoss,
-        actualCoordinates: JSON.stringify(trackPoints) // Salva la traccia GPS reale
+        actualCoordinates: JSON.stringify(trackPoints)
       }
       
       // Aggiorna il percorso
-      const result = await routesService.updateRoute(route.$id, completedData)
+      const result = await routesService.updateRoute(routeId, completedData)
       
       if (result.success) {
         alert('✅ Percorso completato e salvato!')
@@ -208,6 +280,26 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   // Velocità media
   const avgSpeed = calculateSpeed(distance, elapsedTime)
 
+  // Determina il centro iniziale della mappa
+  // IMPORTANTE: i tuoi percorsi usano {lat, lon} non {lat, lng}!
+  const getInitialCenter = () => {
+    // Usa posizione GPS se disponibile
+    if (currentPosition) {
+      return [currentPosition.lat, currentPosition.lng]
+    }
+    
+    // Altrimenti usa startPoint del percorso
+    if (route.startPoint) {
+      // I tuoi percorsi hanno {lat, lon, name}
+      return [route.startPoint.lat, route.startPoint.lon]
+    }
+    
+    // Fallback: La Spezia
+    return [44.102, 9.824]
+  }
+
+  const initialCenter = getInitialCenter()
+
   return (
     <div className="modal-overlay">
       <div className="modal-content max-w-4xl h-[90vh] flex flex-col">
@@ -217,7 +309,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
             <div className="flex items-center space-x-3">
               <FaMapMarkerAlt className="text-3xl" />
               <div>
-                <h2 className="text-2xl font-bold">{route.name}</h2>
+                <h2 className="text-2xl font-bold">{route.name || 'Tracking GPS'}</h2>
                 <p className="text-sm text-blue-100">
                   {isTracking ? (isPaused ? '⏸️ In pausa' : '🔴 Registrazione in corso') : '⏺️ Pronto per iniziare'}
                 </p>
@@ -232,6 +324,21 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
             </button>
           </div>
         </div>
+
+        {/* GPS Warning se impreciso */}
+        {waitingForGoodFix && gpsAccuracy && gpsAccuracy > 50 && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 mx-4 mt-4 rounded">
+            <div className="flex items-center">
+              <FaExclamationTriangle className="text-yellow-600 mr-3" />
+              <div className="text-sm">
+                <p className="font-bold text-yellow-800">GPS impreciso</p>
+                <p className="text-yellow-700">
+                  Precisione: {Math.round(gpsAccuracy)}m. Vai all'aperto per migliorare il segnale.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Statistiche live */}
         <div className="p-4 bg-gray-50 border-b grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -252,15 +359,17 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
             <p className="text-lg font-bold text-orange-600">{elevationGain} m</p>
           </div>
           <div className="text-center">
-            <p className="text-xs text-gray-500">D- ⛰️</p>
-            <p className="text-lg font-bold text-red-600">{elevationLoss} m</p>
+            <p className="text-xs text-gray-500">Precisione GPS</p>
+            <p className={`text-lg font-bold ${gpsAccuracy && gpsAccuracy < 20 ? 'text-green-600' : gpsAccuracy && gpsAccuracy < 50 ? 'text-yellow-600' : 'text-red-600'}`}>
+              {gpsAccuracy ? `${Math.round(gpsAccuracy)}m` : '---'}
+            </p>
           </div>
         </div>
 
         {/* Mappa */}
         <div className="flex-1 relative">
           <MapContainer
-            center={currentPosition ? [currentPosition.lat, currentPosition.lng] : [45.4642, 9.1900]}
+            center={initialCenter}
             zoom={15}
             className="w-full h-full"
           >
@@ -285,21 +394,29 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
               </Marker>
             )}
             
-            {/* Auto-centra sulla posizione */}
-            {currentPosition && <MapCenterController position={currentPosition} />}
+            {/* Auto-centra sulla posizione solo all'inizio */}
+            {currentPosition && <MapCenterController position={currentPosition} shouldCenter={shouldCenterMap} />}
           </MapContainer>
           
           {/* Info GPS */}
-          <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg p-2 text-xs">
-            <p className="font-bold">Punti GPS: {trackPoints.length}</p>
+          <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg p-2 text-xs z-[1000]">
+            <p className="font-bold">📍 Punti GPS: {trackPoints.length}</p>
             {currentPosition && (
               <>
-                <p>Lat: {currentPosition.lat.toFixed(6)}</p>
-                <p>Lng: {currentPosition.lng.toFixed(6)}</p>
+                <p className="text-gray-600">Lat: {currentPosition.lat.toFixed(6)}</p>
+                <p className="text-gray-600">Lng: {currentPosition.lng.toFixed(6)}</p>
                 {currentPosition.altitude && (
-                  <p>Alt: {Math.round(currentPosition.altitude)}m</p>
+                  <p className="text-gray-600">Alt: {Math.round(currentPosition.altitude)}m</p>
+                )}
+                {gpsAccuracy && (
+                  <p className={gpsAccuracy < 20 ? 'text-green-600 font-bold' : gpsAccuracy < 50 ? 'text-yellow-600' : 'text-red-600'}>
+                    ±{Math.round(gpsAccuracy)}m
+                  </p>
                 )}
               </>
+            )}
+            {waitingForGoodFix && (
+              <p className="text-yellow-600 mt-1 font-bold">🔍 Cercando fix preciso...</p>
             )}
           </div>
         </div>
@@ -319,7 +436,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
               {!isPaused ? (
                 <button
                   onClick={handlePause}
-                  className="btn-warning flex items-center space-x-2 px-6 py-3"
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-lg flex items-center space-x-2 px-6 py-3 transition"
                 >
                   <FaPause />
                   <span>Pausa</span>
@@ -337,7 +454,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
               <button
                 onClick={handleStop}
                 disabled={isSaving || trackPoints.length < 2}
-                className="btn-success flex items-center space-x-2 px-6 py-3 disabled:opacity-50"
+                className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg flex items-center space-x-2 px-6 py-3 disabled:opacity-50 transition"
               >
                 <FaStop />
                 <span>{isSaving ? 'Salvataggio...' : 'Termina e Salva'}</span>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
 import NavigationMode from './NavigationMode'
 import SaveRouteButton from './SaveRouteButton'
-import { FaMapMarkerAlt, FaFlag, FaWalking, FaClock, FaRoute, FaLocationArrow, FaSpinner } from 'react-icons/fa'
+import ActiveTracking from './ActiveTracking'
+import { FaMapMarkerAlt, FaFlag, FaWalking, FaClock, FaRoute, FaLocationArrow, FaSpinner, FaPlay } from 'react-icons/fa'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import useNavigation from '../contexts/NavigationContext'
@@ -39,43 +40,43 @@ const RouteSearchForm = forwardRef(({preloadedRoute, preloadedHike}, ref) => {
   const [routeSaved, setRouteSaved] = useState(false) //indica se l'utente ha già salvato il percorso
   const [gettingLocation, setGettingLocation] = useState(false)//stato ottenimento posizione utente
   const [userLocation, setUserLocation] = useState(null)//posizione utente
+  const [showTracking, setShowTracking] = useState(false) //mostra componente ActiveTracking
+    useEffect(() => {
+      const mapInstance = L.map('map').setView([45.4642, 9.1900], 13) //Centro su Milano di default
+      
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(mapInstance)
+      
+      setMap(mapInstance) //Salva l'istanza della mappa nello stato
 
-  useEffect(() => {
-    const mapInstance = L.map('map').setView([45.4642, 9.1900], 13) //Centro su Milano di default
-    
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(mapInstance)
-    
-    setMap(mapInstance) //Salva l'istanza della mappa nello stato
-
-    return () => {
-      //quando il componente viene smontato, rimuovi la mappa
-      if (mapInstance) {
-        mapInstance.remove()
+      return () => {
+        //quando il componente viene smontato, rimuovi la mappa
+        if (mapInstance) {
+          mapInstance.remove()
+        }
       }
-    }
-  }, [])
+    }, [])
 
-  // useEffect per caricare percorsi salvati
-  useEffect(() => {
-    if (preloadedRoute && map) {
-      loadSavedRoute(preloadedRoute)
-    }
-  }, [preloadedRoute, map])
+      // useEffect per caricare percorsi salvati
+      useEffect(() => {
+        if (preloadedRoute && map) {
+          loadSavedRoute(preloadedRoute)
+        }
+      }, [preloadedRoute, map])
 
-  // useEffect per caricare percorsi hiking
-useEffect(() => {
-  if (preloadedHike && map) {
-    loadHikingRoute(preloadedHike)
-  }
-}, [preloadedHike, map])
+      // useEffect per caricare percorsi hiking
+    useEffect(() => {
+      if (preloadedHike && map) {
+        loadHikingRoute(preloadedHike)
+      }
+    }, [preloadedHike, map])
 
-  // Espongo la funzione di reset al componente genitore
-  useImperativeHandle(ref, () => ({
-  reset: handleReset
-  }))
+      // Espongo la funzione di reset al componente genitore
+      useImperativeHandle(ref, () => ({
+      reset: handleReset
+      }))
 
   // Funzione per caricare e visualizzare un percorso salvato
   const loadSavedRoute = (route) => {
@@ -355,6 +356,10 @@ const getCurrentLocation = () => {
       const lat = position.coords.latitude
       const lon = position.coords.longitude
       
+      // Centro la mappa sulla posizione dell'utente
+      if (map) {
+      map.setView([lat, lon], 13)
+    }
       // Imposta le coordinate come punto di partenza
       setStartPoint({
         lat,
@@ -673,6 +678,23 @@ const handleReset = () => {
     setLoading(false)
   }
 
+
+  // Handlers per ActiveTracking (FUORI da handleSubmit!)
+  const handleStartTracking = () => {
+    setShowTracking(true)
+  }
+
+  const handleCloseTracking = () => {
+    setShowTracking(false)
+  }
+
+  const handleTrackingComplete = () => {
+    setShowTracking(false)
+    // Opzionalmente ricarica o aggiorna qualcosa
+  }
+
+    
+
   return (
     <div className="flex flex-col space-y-4">
   {!isNavigating ? (
@@ -875,30 +897,40 @@ const handleReset = () => {
               </div>
 
               <div className="mt-4 pt-4 border-t space-y-2">
-                 
-                 {fullRouteData && (!isPreloaded || preloadedHike) && !routeSaved && (
-                   <SaveRouteButton
-                     routeData={fullRouteData}
-                     onSaved={(savedId) => {
-                       // Segna il percorso come salvato
-                       setRouteSaved(true)
-                       if (savedId) {
-                         setFullRouteData((prev) => ({ ...(prev || {}), savedId }))
-                       }
-                     }}
-                   />
-                 )}
-                
-                <button
-                  onClick={() => startNavigation()}
-                  className="route-gps-btn"
-                >
-                  <FaLocationArrow />
-                  <span>Inizia Navigazione GPS</span>
-                </button>
-              </div>
-            </div>
+               {fullRouteData && (!isPreloaded || preloadedHike) && !routeSaved && (
+    <SaveRouteButton
+      routeData={fullRouteData}
+      onSaved={(savedId) => {
+        setRouteSaved(true)
+        if (savedId) {
+          setFullRouteData((prev) => ({ ...(prev || {}), savedId }))
+        }
+      }}
+    />
+  )}
+          
+  
+  {/* NUOVO: Pulsante per ActiveTracking */}
+  <button
+    onClick={handleStartTracking}
+    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center space-x-2 transition"
+  >
+    <FaPlay />
+    <span>🎯 Tracking GPS con Statistiche</span>
+  </button>
+  
+  {/* Pulsante Navigazione guidata (quello esistente) */}
+  <button
+    onClick={() => startNavigation()}
+    className="route-gps-btn"
+  >
+    <FaLocationArrow />
+    <span>🧭 Navigazione Guidata</span>
+  </button>
+</div>
+</div>  
           )}
+
 
           {/* Turn-by-turn Instructions */}
           {instructions.length > 0 && (
@@ -928,20 +960,30 @@ const handleReset = () => {
           )}
         </>
       ) : (
-        <NavigationMode
-          map={map}
-          routeLayer={routeLayer}
-          instructions={instructions}
-          endPoint={endPoint}
-          currentPosition={currentPosition}
-          heading={heading}
-          onStop={() => stopNavigation()}
-        />
-      )}
+  <NavigationMode
+    map={map}
+    routeLayer={routeLayer}
+    instructions={instructions}
+    endPoint={endPoint}
+    currentPosition={currentPosition}
+    heading={heading}
+    onStop={() => stopNavigation()}
+  />
+)}
 
-      <div id="map" className="w-full h-[400px] rounded-lg shadow-md" />
+{/* Modal ActiveTracking */}
+{showTracking && fullRouteData && (
+  <ActiveTracking
+    route={fullRouteData}
+    onClose={handleCloseTracking}
+    onComplete={handleTrackingComplete}
+  />
+)}
+
+<div id="map" className="w-full h-[400px] rounded-lg shadow-md" />
     </div>
   )
 })
+
 
 export default RouteSearchForm
