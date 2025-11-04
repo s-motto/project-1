@@ -61,7 +61,6 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   const startTimeRef = useRef(null)
   const pausedTimeRef = useRef(0)
   const timerRef = useRef(null)
-  const watchIdRef = useRef(null)
   const mapRef = useRef(null) // Riferimento alla mappa Leaflet
 
   // Gestisce il blur della mappa quando la modale è aperta
@@ -96,9 +95,7 @@ useEffect(() => {
 // Cleanup: ferma GPS quando il componente viene smontato
 useEffect(() => {
   return () => {
-    if (watchIdRef.current) {
-      geolocation.stop()
-    }
+    geolocation.stop()
   }
 }, [geolocation])
 
@@ -179,7 +176,7 @@ useEffect(() => {
         ascent: route.ascent || 0,
         descent: route.descent || 0,
         coordinates: route.coordinates,
-        instructions: JSON.stringify(route.instructions || []) // ✅ FIX: Converti in stringa JSON
+        instructions: JSON.stringify(route.instructions || []) //  Converti in stringa JSON
       },
       user.$id
     )
@@ -214,7 +211,7 @@ useEffect(() => {
       setWaitingForGoodFix(true)
       
       // Avvia GPS
-      watchIdRef.current = geolocation.start(
+      geolocation.start(
         handlePositionUpdate,
         handlePositionError,
         {
