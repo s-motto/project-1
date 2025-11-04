@@ -60,18 +60,7 @@ function App() {
   return (
     <AuthProvider>
       <ToastContainer />
-       {/* BOTTONE TEST - RIMUOVERE DOPO */}
-    <button 
-      onClick={() => {
-        toast.success('✅ Toast Success!')
-        setTimeout(() => toast.error('❌ Toast Error!'), 500)
-        setTimeout(() => toast.warning('⚠️ Toast Warning!'), 1000)
-        setTimeout(() => toast.info('ℹ️ Toast Info!'), 1500)
-      }}
-      className="fixed bottom-20 right-4 bg-purple-600 text-white px-4 py-2 rounded-lg shadow-lg z-[9999] hover:bg-purple-700 transition"
-    >
-      🧪 Test Toast
-    </button>
+       
       <div className="page-container">
         {/* Header */}
         <header className="app-header">
