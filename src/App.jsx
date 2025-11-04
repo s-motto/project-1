@@ -3,6 +3,8 @@ import './App.css'
 import { AuthProvider } from './contexts/AuthContext'
 import BottomNav from './components/BottomNav'
 import UserMenu from './components/UserMenu'
+import ToastContainer from './components/ToastContainer'
+import { useToast } from './contexts/ToastContext'
 
 // LAZY LOADING dei componenti pesanti
 const RouteSearchForm = lazy(() => import('./components/RouteSearchForm'))
@@ -21,6 +23,7 @@ function App() {
   const [preloadedRoute, setPreloadedRoute] = useState(null)
   const [preloadedHike, setPreloadedHike] = useState(null)
   const routeFormRef = useRef()
+  const { toast } = useToast()
 
   // Gestori eventi per la navigazione
   const handleHomeClick = () => {
@@ -56,6 +59,19 @@ function App() {
   // Render del componente
   return (
     <AuthProvider>
+      <ToastContainer />
+       {/* BOTTONE TEST - RIMUOVERE DOPO */}
+    <button 
+      onClick={() => {
+        toast.success('✅ Toast Success!')
+        setTimeout(() => toast.error('❌ Toast Error!'), 500)
+        setTimeout(() => toast.warning('⚠️ Toast Warning!'), 1000)
+        setTimeout(() => toast.info('ℹ️ Toast Info!'), 1500)
+      }}
+      className="fixed bottom-20 right-4 bg-purple-600 text-white px-4 py-2 rounded-lg shadow-lg z-[9999] hover:bg-purple-700 transition"
+    >
+      🧪 Test Toast
+    </button>
       <div className="page-container">
         {/* Header */}
         <header className="app-header">
