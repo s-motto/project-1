@@ -62,30 +62,45 @@
     overflow: hidden;
   }
 
-  /* Hide elements when modal is open*/
-  body.modal-open .leaflet-marker-pane {
-    display: none !important;
-  }
+  /* Hide elements when modal is open - MA NON nella modale stessa! */
+body.modal-open #map .leaflet-marker-pane {
+  display: none !important;
+}
 
-  body.modal-open .custom-map-marker {
-    display: none !important;
-  }
+body.modal-open #map .custom-map-marker {
+  display: none !important;
+}
 
-  body.modal-open .custom-html-marker {
-    display: none !important;
-  }
+body.modal-open #map .custom-html-marker {
+  display: none !important;
+}
 
-  body.modal-open .leaflet-control-container {
-    display: none !important;
-  }
+body.modal-open #map .leaflet-control-container {
+  display: none !important;
+}
 
-  body.modal-open .leaflet-pane {
-    display: none !important;
-  }
+/* IMPORTANTE: Nascondi SOLO la mappa di sfondo, NON quella nella modale */
+body.modal-open > #map .leaflet-pane {
+  display: none !important;
+}
 
-  body.modal-open .leaflet-overlay-pane {
-    display: none !important;
-  }
+body.modal-open > #map .leaflet-overlay-pane {
+  display: none !important;
+}
+
+/* La mappa DENTRO la modale deve essere visibile */
+.modal-content .leaflet-pane {
+  display: block !important;
+}
+
+.modal-content .leaflet-tile-pane {
+  display: block !important;
+}
+
+.modal-content .leaflet-tile {
+  visibility: visible !important;
+  opacity: 1 !important;
+}
 
   /* Hide BottomNav when modal is open */
   body.modal-open .bottom-nav {

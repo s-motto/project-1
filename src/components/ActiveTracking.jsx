@@ -15,11 +15,17 @@ import {
 import 'leaflet/dist/leaflet.css'
 
 // Componente per centrare la mappa sulla posizione corrente
-function MapCenterController({ position, shouldCenter }) {
+function MapCenterController({ position, shouldCenter, onMapReady }) {
   const map = useMap()
   
   useEffect(() => {
-    if (position && shouldCenter) {
+    if (onMapReady) {
+      onMapReady(map) // Passa l'istanza della mappa
+    }
+  }, [map, onMapReady])
+  
+  useEffect(() => {
+    if (position && shouldCenter && map) {
       map.setView([position.lat, position.lng], 16)
     }
   }, [position, shouldCenter, map])
@@ -35,25 +41,26 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   const geolocation = useGeolocation()
   
   // Stati
-  const [isTracking, setIsTracking] = useState(false) // Se il tracking è attivo
-  const [isPaused, setIsPaused] = useState(false) // Se il tracking è in pausa
-  const [trackPoints, setTrackPoints] = useState([])// Punti GPS tracciati
-  const [currentPosition, setCurrentPosition] = useState(null) // Posizione corrente
-  const [gpsAccuracy, setGpsAccuracy] = useState(null) // Precisione GPS in metri
-  const [elapsedTime, setElapsedTime] = useState(0) // Tempo trascorso in secondi
-  const [distance, setDistance] = useState(0) // Distanza totale in km
-  const [elevationGain, setElevationGain] = useState(0) // Dislivello positivo in metri
-  const [elevationLoss, setElevationLoss] = useState(0) // Dislivello negativo in metri
-  const [isSaving, setIsSaving] = useState(false) // Se sta salvando i dati
-  const [savedRouteId, setSavedRouteId] = useState(route.$id || null) // ID del percorso salvato
-  const [shouldCenterMap, setShouldCenterMap] = useState(true) // Se centrare la mappa sulla posizione
-  const [waitingForGoodFix, setWaitingForGoodFix] = useState(true) // Se si aspetta un fix GPS preciso
+  const [isTracking, setIsTracking] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
+  const [trackPoints, setTrackPoints] = useState([])
+  const [currentPosition, setCurrentPosition] = useState(null)
+  const [gpsAccuracy, setGpsAccuracy] = useState(null)
+  const [elapsedTime, setElapsedTime] = useState(0)
+  const [distance, setDistance] = useState(0)
+  const [elevationGain, setElevationGain] = useState(0)
+  const [elevationLoss, setElevationLoss] = useState(0)
+  const [isSaving, setIsSaving] = useState(false)
+  const [savedRouteId, setSavedRouteId] = useState(route.$id || null)
+  const [shouldCenterMap, setShouldCenterMap] = useState(true)
+  const [waitingForGoodFix, setWaitingForGoodFix] = useState(true)
   
   // Refs
-  const startTimeRef = useRef(null) // Timestamp di inizio tracking
-  const pausedTimeRef = useRef(0) // Tempo totale in pausa in ms
-  const timerRef = useRef(null) // Timer per aggiornare il tempo trascorso
-  const watchIdRef = useRef(null) // ID del watchPosition
+  const startTimeRef = useRef(null)
+  const pausedTimeRef = useRef(0)
+  const timerRef = useRef(null)
+  const watchIdRef = useRef(null)
+  const mapRef = useRef(null) // Riferimento alla mappa Leaflet
 
   // Gestisce il blur della mappa quando la modale è aperta
   useEffect(() => {
@@ -161,7 +168,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
         ascent: route.ascent || 0,
         descent: route.descent || 0,
         coordinates: route.coordinates,
-        instructions: route.instructions || []
+        instructions: JSON.stringify(route.instructions || []) // ✅ FIX: Converti in stringa JSON
       },
       user.$id
     )
@@ -281,24 +288,30 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   const avgSpeed = calculateSpeed(distance, elapsedTime)
 
   // Determina il centro iniziale della mappa
-  // IMPORTANTE: i tuoi percorsi usano {lat, lon} non {lat, lng}!
   const getInitialCenter = () => {
-    // Usa posizione GPS se disponibile
     if (currentPosition) {
       return [currentPosition.lat, currentPosition.lng]
     }
     
-    // Altrimenti usa startPoint del percorso
     if (route.startPoint) {
-      // I tuoi percorsi hanno {lat, lon, name}
       return [route.startPoint.lat, route.startPoint.lon]
     }
     
-    // Fallback: La Spezia
-    return [44.102, 9.824]
+    return [44.102, 9.824] // La Spezia
   }
 
   const initialCenter = getInitialCenter()
+
+  //  Callback quando la mappa è pronta
+  const handleMapReady = (map) => {
+    mapRef.current = map
+    // Forza ricalcolo dimensioni dopo 300ms
+    setTimeout(() => {
+      if (map) {
+        map.invalidateSize()
+      }
+    }, 300)
+  }
 
   return (
     <div className="modal-overlay">
@@ -394,8 +407,14 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
               </Marker>
             )}
             
-            {/* Auto-centra sulla posizione solo all'inizio */}
-            {currentPosition && <MapCenterController position={currentPosition} shouldCenter={shouldCenterMap} />}
+            {/* Auto-centra sulla posizione solo all'inizio + Fix mappa */}
+            {currentPosition && (
+              <MapCenterController 
+                position={currentPosition} 
+                shouldCenter={shouldCenterMap}
+                onMapReady={handleMapReady}
+              />
+            )}
           </MapContainer>
           
           {/* Info GPS */}

@@ -3,7 +3,8 @@ const urlsToCache = [
   '/',
   '/index.html',
   '/icon-192.png',
-  '/icon-512.png'
+  '/icon-512.png',
+   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
 ]
 
 // Installazione - cache delle risorse
@@ -36,6 +37,7 @@ self.addEventListener('fetch', (event) => {
   // NON cachare le tile delle mappe
   if (url.hostname.includes('tile.openstreetmap.org') ||
       url.hostname.includes('tile.thunderforest.com') ||
+      url.hostname.includes('unpkg.com') ||
       url.hostname.includes('openrouteservice.org')) {
     // Lascia passare direttamente alla rete
     return event.respondWith(fetch(event.request))
