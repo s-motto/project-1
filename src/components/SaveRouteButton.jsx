@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { FaBookmark, FaCheck, FaSpinner } from 'react-icons/fa'
 import { useAuth } from '../contexts/AuthContext'
 import routesService from '../services/routesService'
+import { useToast } from '../contexts/ToastContext'
 
 const SaveRouteButton = ({ routeData, onSaved }) => {
   const { user } = useAuth()
@@ -9,10 +10,11 @@ const SaveRouteButton = ({ routeData, onSaved }) => {
   const [saved, setSaved] = useState(false)
   const [showNameInput, setShowNameInput] = useState(false)
   const [routeName, setRouteName] = useState('')
+  const { toast } = useToast()
 
   const handleSave = async () => {
     if (!user) {
-      alert('Devi essere loggato per salvare un percorso')
+      toast.info('Devi essere loggato per salvare un percorso')
       return
     }
 
@@ -22,7 +24,7 @@ const SaveRouteButton = ({ routeData, onSaved }) => {
     }
 
     if (!routeName.trim()) {
-      alert('Inserisci un nome per il percorso')
+      toast.info('Inserisci un nome per il percorso')
       return
     }
 
@@ -40,7 +42,7 @@ const SaveRouteButton = ({ routeData, onSaved }) => {
       if (onSaved) onSaved(savedId)
       setTimeout(() => setSaved(false), 3000)
     } else {
-      alert('Errore nel salvataggio: ' + result.error)
+      toast.error('Errore nel salvataggio: ' + result.error)
     }
     setSaving(false)
   }
@@ -48,7 +50,7 @@ const SaveRouteButton = ({ routeData, onSaved }) => {
   if (!user) {
     return (
       <button
-        onClick={() => alert('Effettua il login per salvare i percorsi')}
+        onClick={() => toast.info('Effettua il login per salvare i percorsi')}
         className="w-full bg-gray-400 text-white py-3 px-4 rounded-md font-medium flex items-center justify-center space-x-2"
       >
         <FaBookmark />

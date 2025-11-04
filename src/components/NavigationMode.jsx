@@ -3,12 +3,14 @@ import useNavigation from '../contexts/NavigationContext'
 import { FaLocationArrow, FaRoute, FaFlag, FaExclamationTriangle, FaStop, FaCompass } from 'react-icons/fa'
 import L from 'leaflet'
 import { calculateDistance } from '../utils/gpsUtils'
+import { useToast } from '../contexts/ToastContext'
 
 const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, currentPosition, heading }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [distanceToEnd, setDistanceToEnd] = useState(null)
   const [isOffRoute, setIsOffRoute] = useState(false)
   const userMarkerRef = useRef(null)
+  const { toast } = useToast()
 
  
 
@@ -121,7 +123,7 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
   }
 
   const handleArrival = () => {
-    alert('🎉 Sei arrivato a destinazione!')
+    toast.success('🎉 Sei arrivato a destinazione!')
     onStop()
   }
 

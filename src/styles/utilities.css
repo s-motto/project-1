@@ -175,4 +175,9 @@ body.modal-open > #map .leaflet-overlay-pane {
   animation: fade-out 0.2s ease-in;
 }
 
+/* Toast sempre sopra tutto */
+.fixed.top-4.right-4 {
+  z-index: 10001 !important;
+}
+
 }

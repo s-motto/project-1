@@ -13,6 +13,7 @@ import {
   calculateSpeed
 } from '../utils/gpsUtils'
 import 'leaflet/dist/leaflet.css'
+import { useToast } from '../contexts/ToastContext'
 
 // Componente per centrare la mappa sulla posizione corrente
 function MapCenterController({ position, shouldCenter, onMapReady }) {
@@ -39,6 +40,7 @@ function MapCenterController({ position, shouldCenter, onMapReady }) {
 const ActiveTracking = ({ route, onClose, onComplete }) => {
   const { user } = useAuth()
   const geolocation = useGeolocation()
+  const { toast } = useToast()
   
   // Stati
   const [isTracking, setIsTracking] = useState(false)
@@ -148,7 +150,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     } else {
       errorMsg += error.message
     }
-    alert(errorMsg)
+    toast.error(errorMsg)
   }
 
   // Salva il percorso se non è ancora salvato
@@ -188,10 +190,9 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       if (!savedRouteId) {
         try {
           await ensureRouteSaved()
-          alert('ℹ️ Percorso salvato automaticamente per il tracking')
+          toast.info('Percorso salvato automaticamente per il tracking')
         } catch (error) {
-          alert('Errore nel salvare il percorso: ' + error.message)
-          return
+          toast.error('Errore nel salvare il percorso: ' + error.message)
         }
       }
       
@@ -261,7 +262,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       const result = await routesService.updateRoute(routeId, completedData)
       
       if (result.success) {
-        alert('✅ Percorso completato e salvato!')
+        toast.success('Percorso completato e salvato!')
         if (onComplete) onComplete()
         onClose()
       } else {
@@ -269,7 +270,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       }
     } catch (error) {
       console.error('Error saving track:', error)
-      alert('Errore nel salvare il percorso: ' + error.message)
+      toast.error('Errore nel salvare il percorso: ' + error.message)
     } finally {
       setIsSaving(false)
     }

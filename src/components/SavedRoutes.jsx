@@ -3,6 +3,7 @@ import { FaRoute, FaTrash, FaMapMarkedAlt, FaSpinner, FaCheckCircle, FaPlay } fr
 import { useAuth } from '../contexts/AuthContext'
 import routesService from '../services/routesService'
 import ActiveTracking from './ActiveTracking'
+import { useToast } from '../contexts/ToastContext'
 
 const SavedRoutes = ({ onLoadRoute }) => {
   const { user } = useAuth()
@@ -11,6 +12,7 @@ const SavedRoutes = ({ onLoadRoute }) => {
   const [deleting, setDeleting] = useState(null)
   const [completing, setCompleting] = useState(null)
   const [activeRoute, setActiveRoute] = useState(null) // Percorso in tracking
+  const { toast } = useToast()
 
   useEffect(() => {
     if (user) {
@@ -35,7 +37,7 @@ const SavedRoutes = ({ onLoadRoute }) => {
     if (result.success) {
       setRoutes(routes.filter(r => r.$id !== routeId))
     } else {
-      alert('Errore durante l\'eliminazione: ' + result.error)
+      toast.error('Errore durante l\'eliminazione: ' + result.error)
     }
     setDeleting(null)
   }
@@ -48,9 +50,9 @@ const SavedRoutes = ({ onLoadRoute }) => {
     const result = await routesService.completeRoute(routeId)
     if (result.success) {
       setRoutes(routes.filter(r => r.$id !== routeId))
-      alert('✅ Percorso segnato come completato! Controlla la Dashboard per le statistiche.')
+      toast.success('✅ Percorso segnato come completato! Controlla la Dashboard per le statistiche.')
     } else {
-      alert('Errore durante il completamento: ' + result.error)
+      toast.error('Errore durante il completamento: ' + result.error)
     }
     setCompleting(null)
   }
