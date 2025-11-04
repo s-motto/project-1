@@ -51,10 +51,12 @@
   }
 
   .route-suggestions-dropdown {
-    @apply absolute z-20 left-0 right-0 bg-white rounded shadow mt-1
-           max-h-40 overflow-y-auto;
-    border: 2px solid #EFECCA;
-  }
+  @apply absolute left-0 right-0 bg-white rounded shadow mt-1
+         max-h-40 overflow-y-auto;
+  border: 2px solid #EFECCA;
+  z-index: 1000 !important; /* Sopra la mappa */
+  position: absolute;
+}
 
   .route-suggestion-item {
     @apply p-2 cursor-pointer text-sm transition-colors;
