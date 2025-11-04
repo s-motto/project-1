@@ -70,28 +70,37 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     return () => {
       document.body.classList.remove('modal-open')
     }
-  }, [])
+   }, [])
 
-  // Timer per tempo trascorso
-  useEffect(() => {
-    if (isTracking && !isPaused) {
-      timerRef.current = setInterval(() => {
-        const now = Date.now()
-        const elapsed = Math.floor((now - startTimeRef.current - pausedTimeRef.current) / 1000)
-        setElapsedTime(elapsed)
-      }, 1000)
-    } else {
-      if (timerRef.current) {
-        clearInterval(timerRef.current)
-      }
+   // Timer per tempo trascorso
+useEffect(() => {
+  if (isTracking && !isPaused) {
+    timerRef.current = setInterval(() => {
+      const now = Date.now()
+      const elapsed = Math.floor((now - startTimeRef.current - pausedTimeRef.current) / 1000)
+      setElapsedTime(elapsed)
+    }, 1000)
+  } else {
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
     }
-    
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current)
-      }
+  }
+  
+  return () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
     }
-  }, [isTracking, isPaused])
+  }
+}, [isTracking, isPaused])
+
+// Cleanup: ferma GPS quando il componente viene smontato
+useEffect(() => {
+  return () => {
+    if (watchIdRef.current) {
+      geolocation.stop()
+    }
+  }
+}, [geolocation])
 
   // Gestione posizione GPS
   const handlePositionUpdate = (position) => {
@@ -234,47 +243,48 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   }
 
   // Termina e salva
-  const handleStop = async () => {
-    if (!confirm('Vuoi terminare il percorso e salvare i dati?')) return
-    
-    setIsSaving(true)
-    
-    // Ferma GPS
+const handleStop = async () => {
+  if (!confirm('Vuoi terminare il percorso e salvare i dati?')) return
+  
+  setIsSaving(true)
+  
+  try {
+    // PRIMA ferma GPS
     geolocation.stop()
     setIsTracking(false)
     
-    try {
-      // Assicura che il percorso sia salvato
-      const routeId = await ensureRouteSaved()
-      
-      // Prepara i dati da salvare
-      const completedData = {
-        status: 'completed',
-        completedAt: new Date().toISOString(),
-        actualDistance: parseFloat(distance.toFixed(2)),
-        actualDuration: Math.floor(elapsedTime / 60),
-        actualAscent: elevationGain,
-        actualDescent: elevationLoss,
-        actualCoordinates: JSON.stringify(trackPoints)
-      }
-      
-      // Aggiorna il percorso
-      const result = await routesService.updateRoute(routeId, completedData)
-      
-      if (result.success) {
-        toast.success('Percorso completato e salvato!')
-        if (onComplete) onComplete()
-        onClose()
-      } else {
-        throw new Error(result.error)
-      }
-    } catch (error) {
-      console.error('Error saving track:', error)
-      toast.error('Errore nel salvare il percorso: ' + error.message)
-    } finally {
-      setIsSaving(false)
+    // Assicura che il percorso sia salvato
+    const routeId = await ensureRouteSaved()
+    
+    // Prepara i dati da salvare
+    const completedData = {
+      status: 'completed',
+      completedAt: new Date().toISOString(),
+      actualDistance: parseFloat(distance.toFixed(2)),
+      actualDuration: Math.floor(elapsedTime / 60),
+      actualAscent: elevationGain,
+      actualDescent: elevationLoss,
+      actualCoordinates: JSON.stringify(trackPoints)
     }
+    
+    // Aggiorna il percorso
+    const result = await routesService.updateRoute(routeId, completedData)
+    
+    if (result.success) {
+      toast.success('Percorso completato e salvato!')
+      if (onComplete) onComplete()
+      onClose()
+    } else {
+      throw new Error(result.error)
+    }
+  } catch (error) {
+    console.error('Error saving track:', error)
+    toast.error('Errore nel salvare il percorso: ' + error.message)
+    // Riavvia GPS se c'è errore? O lascia fermo?
+  } finally {
+    setIsSaving(false)
   }
+}
 
   // Annulla tracking
   const handleCancel = () => {

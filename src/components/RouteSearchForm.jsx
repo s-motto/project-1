@@ -6,6 +6,8 @@ import { FaMapMarkerAlt, FaFlag, FaWalking, FaClock, FaRoute, FaLocationArrow, F
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import useNavigation from '../contexts/NavigationContext'
+import { useToast } from '../contexts/ToastContext'
+import { useAuth } from '../contexts/AuthContext'
 
 const RouteSearchForm = forwardRef(({preloadedRoute, preloadedHike}, ref) => {
   const [startPoint, setStartPoint] = useState(null) //latitudine e longitudine
@@ -27,6 +29,8 @@ const RouteSearchForm = forwardRef(({preloadedRoute, preloadedHike}, ref) => {
   const ORS_KEY = import.meta.env.VITE_OPENROUTE_API_KEY || '' //chiave API OpenRouteService
   const startInputRef = useRef() //riferimento input partenza
   const endInputRef = useRef() //riferimento input arrivo
+  const { toast } = useToast() //sistema di notifiche
+  const { user } = useAuth() //dati utente
   
  
   const startMarkerRef = useRef(null) //marcatore partenza
@@ -680,9 +684,14 @@ const handleReset = () => {
 
 
   // Handlers per ActiveTracking (FUORI da handleSubmit!)
-  const handleStartTracking = () => {
-    setShowTracking(true)
+ const handleStartTracking = () => {
+  // Controlla se l'utente è loggato
+  if (!user) {
+    toast.warning('Devi effettuare il login per usare il tracking GPS con statistiche')
+    return
   }
+  setShowTracking(true)
+}
 
   const handleCloseTracking = () => {
     setShowTracking(false)
