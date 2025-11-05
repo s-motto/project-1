@@ -1,7 +1,9 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { FaHiking, FaTimes, FaMapMarkedAlt, FaRoute, FaBookmark, FaLocationArrow } from 'react-icons/fa'
+import PrivacyPolicy from './PrivacyPolicy'
 
 const InfoModal = ({ onClose }) => {
+  const [showPrivacy, setShowPrivacy] = useState(false)
   return (
     <div className="modal-overlay">
       <div className="modal-content">
@@ -120,6 +122,12 @@ const InfoModal = ({ onClose }) => {
               <p>
                 I dati di posizione sono utilizzati solo per registrare i tuoi percorsi. Puoi interrompere il tracking in qualsiasi momento.
               </p>
+              <button
+                className="text-blue-600 hover:underline font-medium"
+                onClick={() => setShowPrivacy(true)}
+              >
+                Leggi la Privacy Policy
+              </button>
             </div>
           </section>
 
@@ -195,6 +203,7 @@ const InfoModal = ({ onClose }) => {
           </div>
         </div>
       </div>
+      {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
     </div>
   )
 }
