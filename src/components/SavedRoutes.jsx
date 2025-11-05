@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { FaRoute, FaTrash, FaMapMarkedAlt, FaSpinner, FaCheckCircle, FaPlay } from 'react-icons/fa'
+import { FaRoute, FaTrash, FaMapMarkedAlt, FaSpinner, FaCheckCircle, FaPlay, FaEdit, FaCheck, FaTimes } from 'react-icons/fa'
+
 import { useAuth } from '../contexts/AuthContext'
 import routesService from '../services/routesService'
 import ActiveTracking from './ActiveTracking'
@@ -12,6 +13,10 @@ const SavedRoutes = ({ onLoadRoute }) => {
   const [deleting, setDeleting] = useState(null)
   const [completing, setCompleting] = useState(null)
   const [activeRoute, setActiveRoute] = useState(null) // Percorso in tracking
+  const [editingId, setEditingId] = useState(null)
+  const [nameDraft, setNameDraft] = useState('')
+  const [savingNameId, setSavingNameId] = useState(null)
+
   const { toast } = useToast()
 
   useEffect(() => {
@@ -60,6 +65,38 @@ const SavedRoutes = ({ onLoadRoute }) => {
   // Avvia tracking GPS
   const handleStartTracking = (route) => {
     setActiveRoute(route)
+  }
+
+  // Inizia rinomina
+  const startRename = (route) => {
+    setEditingId(route.$id)
+    setNameDraft(route.name || '')
+  }
+
+  // Annulla rinomina
+  const cancelRename = () => {
+    setEditingId(null)
+    setNameDraft('')
+  }
+
+  // Salva nuovo nome
+  const saveRename = async (routeId) => {
+    const trimmed = nameDraft.trim()
+    if (!trimmed) {
+      toast.error('Il nome non può essere vuoto')
+      return
+    }
+    setSavingNameId(routeId)
+    const res = await routesService.updateRouteName(routeId, trimmed)
+    if (res.success) {
+      setRoutes(prev => prev.map(r => r.$id === routeId ? { ...r, name: trimmed } : r))
+      toast.success('Nome aggiornato')
+      setEditingId(null)
+      setNameDraft('')
+    } else {
+      toast.error('Errore durante la rinomina: ' + res.error)
+    }
+    setSavingNameId(null)
   }
 
   // Chiudi tracking
@@ -111,7 +148,42 @@ const SavedRoutes = ({ onLoadRoute }) => {
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <h4 className="font-bold text-gray-800">{route.name}</h4>
+                  {editingId === route.$id ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        className="input w-full max-w-xs"
+                        value={nameDraft}
+                        onChange={e => setNameDraft(e.target.value)}
+                        placeholder="Nome percorso"
+                      />
+                      <button
+                        onClick={() => saveRename(route.$id)}
+                        disabled={savingNameId === route.$id}
+                        className="text-green-600 hover:text-green-800 p-1"
+                        title="Salva"
+                      >
+                        {savingNameId === route.$id ? <FaSpinner className="animate-spin" /> : <FaCheck />}
+                      </button>
+                      <button
+                        onClick={cancelRename}
+                        className="text-gray-600 hover:text-gray-800 p-1"
+                        title="Annulla"
+                      >
+                        <FaTimes />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-gray-800">{route.name}</h4>
+                      <button
+                        onClick={() => startRename(route)}
+                        className="text-gray-500 hover:text-gray-700 p-1"
+                        title="Rinomina"
+                      >
+                        <FaEdit />
+                      </button>
+                    </div>
+                  )}
                   <div className="text-xs text-gray-500 mt-1 space-y-1">
                     <p>📍 {route.startPoint.name?.substring(0, 50)}...</p>
                     <p>🏁 {route.endPoint.name?.substring(0, 50)}...</p>
