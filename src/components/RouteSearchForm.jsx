@@ -10,6 +10,7 @@ import useNavigation from '../contexts/NavigationContext'
 import { useToast } from '../contexts/ToastContext'
 import { useAuth } from '../contexts/AuthContext'
 import { calculateDistance } from '../utils/gpsUtils'
+import logger from '../utils/logger'
 
 const RouteSearchForm = forwardRef(({preloadedRoute, preloadedHike}, ref) => {
   const [startPoint, setStartPoint] = useState(null) //latitudine e longitudine
@@ -144,7 +145,7 @@ useEffect(() => {
         if (tempMarkerRef.current) tempMarkerRef.current.remove()
       }
     } catch (error) {
-      console.error('Reverse geocoding error:', error)
+      logger.error('Reverse geocoding error:', error)
       toast.error('Errore nel recupero dell\'indirizzo')
       if (tempMarkerRef.current) tempMarkerRef.current.remove()
     }
@@ -267,10 +268,10 @@ useEffect(() => {
       // Salvo i dati completi del percorso
       setFullRouteData(route)
   setIsPreloaded(true) //indico che il percorso è pre-caricato
-  setRouteSaved(true) // this route was loaded from saved routes -> already saved
+      setRouteSaved(true) // this route was loaded from saved routes -> already saved
 
     } catch (error) {
-      console.error('Error loading saved route:', error)
+      logger.error('Error loading saved route:', error)
       setErrorMsg('Errore nel caricamento del percorso salvato')
     }
   }
@@ -278,7 +279,7 @@ useEffect(() => {
   // Funzione per caricare e visualizzare un percorso di hiking da Overpass con elevazione
 const loadHikingRoute = (hike) => {
   try {
-    console.log('Loading hike with elevation data:', hike) // Debug
+    logger.log('Loading hike with elevation data:', hike) // Debug
     
     // Pulisco eventuali percorsi precedenti
     if (routeLayer && map) map.removeLayer(routeLayer)
@@ -410,7 +411,7 @@ const loadHikingRoute = (hike) => {
   
 
   } catch (error) {
-    console.error('Error loading hiking route:', error)
+    logger.error('Error loading hiking route:', error)
     setErrorMsg('Errore nel caricamento del percorso di hiking')
   }
 }
@@ -466,7 +467,7 @@ const getCurrentLocation = () => {
           setStartText('📍 La tua posizione')
         }
       } catch (error) {
-        console.error('Reverse geocoding error:', error)
+        logger.error('Reverse geocoding error:', error)
         setStartText('📍 La tua posizione')
       }
       
@@ -474,7 +475,7 @@ const getCurrentLocation = () => {
       setUserLocation({ lat, lon })
     },
     (error) => {
-      console.error('Geolocation error:', error)
+      logger.error('Geolocation error:', error)
       switch(error.code) {
         case error.PERMISSION_DENIED:
           setErrorMsg('Permesso di geolocalizzazione negato')
@@ -515,7 +516,7 @@ const getCurrentLocation = () => {
     }
     return null
   } catch (err) {
-    console.error('Geocoding error:', err)
+    logger.error('Geocoding error:', err)
     return null
   }
 }
@@ -534,7 +535,7 @@ const fetchSuggestions = async (text) => {
       place_id: feature.properties.id
     }))
   } catch (err) {
-    console.error('Suggestions error:', err)
+    logger.error('Suggestions error:', err)
     return []
   }
 }
@@ -632,7 +633,7 @@ const handleReset = () => {
       )
 
       if (!response.ok) {// Gestione errori dalla API
-        console.error('ORS API error:', response.status)
+        logger.error('ORS API error:', response.status)
         setErrorMsg('Errore nel calcolo del percorso. Verifica la tua API key.')
         setLoading(false)
         return
@@ -750,7 +751,7 @@ const handleReset = () => {
         setErrorMsg('Non è stato possibile calcolare un percorso.')
       }
     } catch (error) { // Gestione errori generali
-      console.error('Error:', error)
+      logger.error('Error:', error)
       setErrorMsg('Errore nel calcolo del percorso.')
     }
     setLoading(false)

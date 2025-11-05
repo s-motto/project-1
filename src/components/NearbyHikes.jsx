@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { FaHiking, FaTimes, FaSpinner, FaMapMarkerAlt, FaRulerCombined, FaChevronRight, FaMountain } from 'react-icons/fa'
+import logger from '../utils/logger'
 
 // Componente per mostrare i percorsi di hiking nelle vicinanze
 const NearbyHikes = ({ onClose, onSelectHike }) => {
@@ -34,7 +35,7 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
         await fetchNearbyHikes(lat, lon)
       },
       (error) => {
-        console.error('Geolocation error:', error)
+        logger.error('Geolocation error:', error)
         setError('Non è stato possibile ottenere la tua posizione. Assicurati di aver dato i permessi.')
         setLoading(false)
       },
@@ -85,7 +86,7 @@ const fetchNearbyHikes = async (lat, lon) => {
         ${radiusKm < 20 ? 'Suggerimento: prova con 20 o 50 km.' : ''}`);
     }
   } catch (err) {
-    console.error('Error fetching hikes:', err);
+    logger.error('Error fetching hikes:', err);
     setError('Errore nel caricamento dei percorsi o server Overpass sovraccarico. Riprova tra qualche minuto.');
   } finally {
     setLoading(false);
@@ -191,7 +192,7 @@ const processOverpassData = (data, userLat, userLon) => {
       const ORS_KEY = import.meta.env.VITE_OPENROUTE_API_KEY
       
       if (!ORS_KEY) {
-        console.error('OpenRouteService API key non trovata')
+        logger.error('OpenRouteService API key non trovata')
         return { ascent: 0, descent: 0 }
       }
 
@@ -256,7 +257,7 @@ const processOverpassData = (data, userLat, userLon) => {
         elevations: elevations
       }
     } catch (error) {
-      console.error('Errore calcolo elevazione:', error)
+      logger.error('Errore calcolo elevazione:', error)
       return { ascent: 0, descent: 0 }
     }
   }
@@ -279,7 +280,7 @@ const processOverpassData = (data, userLat, userLon) => {
       
       onSelectHike(hikeWithElevation)
     } catch (error) {
-      console.error('Errore durante la selezione:', error)
+      logger.error('Errore durante la selezione:', error)
       // Passa comunque il percorso senza elevazione
       onSelectHike(hike)
     } finally {

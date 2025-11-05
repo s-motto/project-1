@@ -9,6 +9,7 @@ import L from 'leaflet'
 import icon from 'leaflet/dist/images/marker-icon.png'
 import iconShadow from 'leaflet/dist/images/marker-shadow.png'
 import { ToastProvider } from './contexts/ToastContext'
+import logger from './utils/logger'
 
 let DefaultIcon = L.icon({
   iconUrl: icon,
@@ -37,10 +38,10 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
     navigator.serviceWorker.register('/service-worker.js')
       .then((registration) => {
         // Registration successful
-        console.log('ServiceWorker registration successful with scope: ', registration.scope)
+        logger.log('ServiceWorker registration successful with scope: ', registration.scope)
       })
       .catch((err) => {
-        console.warn('ServiceWorker registration failed: ', err)
+        logger.warn('ServiceWorker registration failed: ', err)
       })
   })
 }

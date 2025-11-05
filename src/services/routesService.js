@@ -1,5 +1,6 @@
 import { databases } from '../appwrite'
 import { ID, Query } from 'appwrite'
+import logger from '../utils/logger'
 
 // Configurazione database 
 const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID || 'hiking_db'
@@ -30,7 +31,7 @@ class RoutesService {
       )
       return { success: true, data: document }
     } catch (error) {
-      console.error('Error saving route:', error)
+      logger.error('Error saving route:', error)
       return { success: false, error: error.message }
     }
   }
@@ -58,7 +59,7 @@ class RoutesService {
         }))
       }
     } catch (error) {
-      console.error('Error fetching routes:', error)
+      logger.error('Error fetching routes:', error)
       return { success: false, error: error.message }
     }
   }
@@ -87,7 +88,7 @@ class RoutesService {
         }))
       }
     } catch (error) {
-      console.error('Error fetching saved routes:', error)
+      logger.error('Error fetching saved routes:', error)
       return { success: false, error: error.message }
     }
   }
@@ -116,7 +117,7 @@ class RoutesService {
         }))
       }
     } catch (error) {
-      console.error('Error fetching completed routes:', error)
+      logger.error('Error fetching completed routes:', error)
       return { success: false, error: error.message }
     }
   }
@@ -131,7 +132,7 @@ class RoutesService {
       )
       return { success: true }
     } catch (error) {
-      console.error('Error deleting route:', error)
+      logger.error('Error deleting route:', error)
       return { success: false, error: error.message }
     }
   }
@@ -155,7 +156,7 @@ class RoutesService {
         }
       }
     } catch (error) {
-      console.error('Error fetching route:', error)
+      logger.error('Error fetching route:', error)
       return { success: false, error: error.message }
     }
   }
@@ -171,7 +172,7 @@ class RoutesService {
       )
       return { success: true, data: document }
     } catch (error) {
-      console.error('Error updating route:', error)
+      logger.error('Error updating route:', error)
       return { success: false, error: error.message }
     }
   }
@@ -218,7 +219,7 @@ class RoutesService {
     )
     return { success: true, data: document }
   } catch (error) {
-    console.error('Error completing route:', error)
+    logger.error('Error completing route:', error)
     return { success: false, error: error.message }
   }
  }

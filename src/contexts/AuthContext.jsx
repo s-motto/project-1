@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { account } from '../appwrite'
 import { ID } from 'appwrite'
+import logger from '../utils/logger'
 
 const AuthContext = createContext()
 
@@ -40,7 +41,7 @@ export const AuthProvider = ({ children }) => {
       setUser(currentUser)
       return { success: true }
     } catch (error) {
-      console.error('Login error:', error)
+      logger.error('Login error:', error)
       return { success: false, error: error.message }
     }
   }
@@ -52,7 +53,7 @@ export const AuthProvider = ({ children }) => {
       await login(email, password)
       return { success: true }
     } catch (error) {
-      console.error('Registration error:', error)
+      logger.error('Registration error:', error)
       return { success: false, error: error.message }
     }
   }
@@ -64,7 +65,7 @@ export const AuthProvider = ({ children }) => {
       setUser(null)
       return { success: true }
     } catch (error) {
-      console.error('Logout error:', error)
+      logger.error('Logout error:', error)
       return { success: false, error: error.message }
     }
   }

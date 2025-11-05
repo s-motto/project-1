@@ -14,6 +14,7 @@ import {
 } from '../utils/gpsUtils'
 import 'leaflet/dist/leaflet.css'
 import { useToast } from '../contexts/ToastContext'
+import logger from '../utils/logger'
 
 // Componente per centrare la mappa sulla posizione corrente
 function MapCenterController({ position, shouldCenter, onMapReady }) {
@@ -164,7 +165,7 @@ useEffect(() => {
   }
 
   const handlePositionError = (error) => {
-    console.error('GPS Error:', error)
+    logger.error('GPS Error:', error)
     let errorMsg = 'Errore GPS: '
     if (error.code === 1) {
       errorMsg += 'Permesso negato. Abilita il GPS nelle impostazioni del browser.'
@@ -299,7 +300,7 @@ const handleStop = async () => {
       throw new Error(result.error)
     }
   } catch (error) {
-    console.error('Error saving track:', error)
+    logger.error('Error saving track:', error)
     toast.error('Errore nel salvare il percorso: ' + error.message)
     // Riavvia GPS se c'è errore? O lascia fermo?
   } finally {
