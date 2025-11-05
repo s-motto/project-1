@@ -5,6 +5,8 @@ import { useAuth } from '../contexts/AuthContext'
 import routesService from '../services/routesService'
 import statsService from '../services/statsService'
 import StatsCard from './StatsCard'
+import { generateGpxFromTrack } from '../utils/gpx'
+import { trackToPng } from '../utils/trackImage'
 
 // Componente Dashboard per visualizzare le statistiche dell'utente
 const Dashboard = ({ onClose }) => {
@@ -12,6 +14,61 @@ const Dashboard = ({ onClose }) => {
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState(null)
   const [routes, setRoutes] = useState([])
+
+  const handleExportGpx = (route) => {
+    const name = route.name || 'Percorso'
+    let points = []
+    if (Array.isArray(route.actualCoordinates) && route.actualCoordinates.length > 0) {
+      points = route.actualCoordinates
+    } else if (Array.isArray(route.coordinates)) {
+      points = route.coordinates.map(c => {
+        if (Array.isArray(c)) {
+          return { lat: c[1], lng: c[0] }
+        }
+        return { lat: c.lat, lng: c.lng }
+      })
+    }
+    const gpx = generateGpxFromTrack(name, points)
+    const blob = new Blob([gpx], { type: 'application/gpx+xml' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    const dateStr = (route.completedAt || new Date().toISOString()).slice(0,10)
+    a.href = url
+    a.download = `${name.replace(/\s+/g, '_')}_${dateStr}.gpx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
+
+  const handleExportImage = async (route) => {
+    const name = route.name || 'Percorso'
+    let points = []
+    if (Array.isArray(route.actualCoordinates) && route.actualCoordinates.length > 0) {
+      points = route.actualCoordinates
+    } else if (Array.isArray(route.coordinates)) {
+      points = route.coordinates.map(c => {
+        if (Array.isArray(c)) {
+          return { lat: c[1], lng: c[0] }
+        }
+        return { lat: c.lat, lng: c.lng }
+      })
+    }
+    const basemapKey = import.meta.env.VITE_MAPTILER_KEY
+    const staticTileUrl = import.meta.env.VITE_STATIC_TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+    const tileAttribution = import.meta.env.VITE_TILE_ATTRIBUTION || '© OpenStreetMap contributors'
+    // Let the exporter choose a reliable default style (streets-v2). Also pass OSM tile template fallback (no key required).
+    const blob = await trackToPng(name, points, { width: 1600, height: 1000, basemapKey, staticTileUrl, tileAttribution })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    const dateStr = (route.completedAt || new Date().toISOString()).slice(0,10)
+    a.href = url
+    a.download = `${name.replace(/\s+/g, '_')}_${dateStr}.png`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
 
   // Gestisce il blur della mappa quando la modale è aperta
   useEffect(() => {
@@ -188,6 +245,41 @@ const Dashboard = ({ onClose }) => {
                     Nessun dato disponibile per gli ultimi 6 mesi
                   </p>
                 )}
+              </div>
+
+              {/* Esporta GPX */}
+              <div className="mt-6">
+                <h3 className="dashboard-section-title">📤 Esporta GPX dei percorsi completati</h3>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {routes.map(r => (
+                    <div key={r.$id} className="flex items-center justify-between border rounded px-3 py-2">
+                      <div className="text-sm">
+                        <div className="font-semibold text-gray-800">{r.name}</div>
+                        <div className="text-gray-500">
+                          {(r.completedAt || r.createdAt || '').slice(0,10)} • {r.actualDistance ?? r.distance} km
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleExportGpx(r)}
+                          className="btn-primary px-3 py-1.5"
+                          disabled={!(Array.isArray(r.actualCoordinates) && r.actualCoordinates.length > 1) && !(Array.isArray(r.coordinates) && r.coordinates.length > 1)}
+                          title={Array.isArray(r.actualCoordinates) && r.actualCoordinates.length > 1 ? 'Esporta traccia GPX' : 'Esporta GPX del percorso pianificato'}
+                        >
+                          Esporta GPX
+                        </button>
+                        <button
+                          onClick={() => handleExportImage(r)}
+                          className="bg-gray-800 hover:bg-gray-900 text-white rounded px-3 py-1.5"
+                          disabled={!(Array.isArray(r.actualCoordinates) && r.actualCoordinates.length > 1) && !(Array.isArray(r.coordinates) && r.coordinates.length > 1)}
+                          title="Esporta immagine del percorso"
+                        >
+                          Esporta Immagine
+                        </button>
+                      </div>
+                    </div>)
+                  )}
+                </div>
               </div>
 
               {/* Footer con info */}

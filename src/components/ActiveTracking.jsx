@@ -154,13 +154,13 @@ useEffect(() => {
           }
         }
         
+        // Dopo i primi punti, disabilita auto-center
+        if (updated.length > 3) {
+          setShouldCenterMap(false)
+        }
+        
         return updated
       })
-      
-      // Dopo i primi punti, disabilita auto-center
-      if (updated.length > 3) {
-        setShouldCenterMap(false)
-      }
     }
   }
 

@@ -113,7 +113,8 @@ class RoutesService {
           startPoint: JSON.parse(doc.startPoint),
           endPoint: JSON.parse(doc.endPoint),
           coordinates: JSON.parse(doc.coordinates),
-          instructions: JSON.parse(doc.instructions)
+          instructions: JSON.parse(doc.instructions),
+          actualCoordinates: doc.actualCoordinates ? JSON.parse(doc.actualCoordinates) : undefined
         }))
       }
     } catch (error) {
