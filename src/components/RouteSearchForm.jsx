@@ -108,7 +108,8 @@ const RouteSearchForm = forwardRef(({preloadedRoute, preloadedHike}, ref) => {
       })
 
       // Imposto le istruzioni
-      setInstructions(route.instructions || [])
+      setInstructions(Array.isArray(route.instructions) ? route.instructions : [])
+
 
       // Creo il GeoJSON dal percorso salvato
       const geojson = {
@@ -319,11 +320,13 @@ const loadHikingRoute = (hike) => {
       ascent: hike.ascent || 0,
       descent: hike.descent || 0,
       coordinates: hike.coordinates,
-      instructions: hike.instructions || []
+      instructions: Array.isArray(hike.instructions) ? hike.instructions : []
+
     }
 
   setFullRouteData(hikingFullData)
   setRouteSaved(false) // hiking routes are not saved by default
+  
 
   } catch (error) {
     console.error('Error loading hiking route:', error)
@@ -656,7 +659,8 @@ const handleReset = () => {
 
         // Estraggo e imposto le istruzioni passo-passo
         if (props.segments && props.segments[0].steps) {
-          setInstructions(props.segments[0].steps)
+          setInstructions(Array.isArray(props.segments?.[0]?.steps) ? props.segments[0].steps : [])
+
         }
 
         // Salvo tutti i dati del percorso 
@@ -668,7 +672,8 @@ const handleReset = () => {
           ascent: routeData.ascent,
           descent: routeData.descent,
           coordinates: feature.geometry.coordinates,
-          instructions: props.segments && props.segments[0].steps ? props.segments[0].steps : []
+         instructions: Array.isArray(props.segments?.[0]?.steps) ? props.segments[0].steps : []
+
         })
         // Newly calculated route is not saved yet
         setRouteSaved(false)
@@ -942,7 +947,7 @@ const handleReset = () => {
 
 
           {/* Turn-by-turn Instructions */}
-          {instructions.length > 0 && (
+          {Array.isArray(instructions) && instructions.length > 0 && (
             <div className="route-instructions-container">
   <h3 className="route-instructions-title">Indicazioni Stradali</h3>
   <div className="route-instructions-list">
