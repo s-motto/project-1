@@ -3,13 +3,10 @@ import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
 export default defineConfig(({ command, mode }) => {
-  //  in sviluppo (vite serve) o in anteprima (vite preview)
-  const isDev = command === 'serve' || mode === 'development'
+  const isLocal = command === 'serve' || command === 'preview' || mode === 'development'
 
   return {
-    // In locale usa percorsi relativi, su Netlify percorsi assoluti
-    base: isDev ? './' : '/',
-
+    base: isLocal ? './' : '/',
     plugins: [react()],
 
     build: {
