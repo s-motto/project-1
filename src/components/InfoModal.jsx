@@ -90,6 +90,49 @@ const InfoModal = ({ onClose }) => {
             </div>
           </section>
 
+          {/* Tracking GPS */}
+          <section className="info-section">
+            <h3 className="info-section-title">📍 Tracking GPS in tempo reale</h3>
+            <div className="space-y-2 text-gray-600">
+              <p>
+                Avvia il tracking per registrare il percorso effettivo. Puoi mettere in pausa e riprendere in qualsiasi momento.
+              </p>
+              <p>
+                Durante il tracking vedrai: distanza, tempo, velocità media, dislivello e precisione del GPS.
+              </p>
+            </div>
+          </section>
+
+          {/* Esporta */}
+          <section className="info-section">
+            <h3 className="info-section-title">📤 Esporta</h3>
+            <div className="space-y-2 text-gray-600">
+              <p>
+                Puoi esportare i percorsi completati in formato <strong>GPX</strong> oppure come <strong>immagine</strong> con la mappa di sfondo.
+              </p>
+            </div>
+          </section>
+
+          {/* Privacy */}
+          <section className="info-section">
+            <h3 className="info-section-title">🔐 Privacy</h3>
+            <div className="space-y-2 text-gray-600">
+              <p>
+                I dati di posizione sono utilizzati solo per registrare i tuoi percorsi. Puoi interrompere il tracking in qualsiasi momento.
+              </p>
+            </div>
+          </section>
+
+          {/* Suggerimenti GPS/Batteria */}
+          <section className="info-section">
+            <h3 className="info-section-title">⚡ Suggerimenti GPS e batteria</h3>
+            <ul className="list-disc list-inside space-y-1 text-gray-600">
+              <li>Consenti l'accesso alla posizione e attendi una buona precisione (idealmente &lt; 50 m).</li>
+              <li>All'aperto il segnale è più stabile.</li>
+              <li>Le modalità risparmio energetico possono rallentare gli aggiornamenti GPS.</li>
+            </ul>
+          </section>
+
           {/* Credits */}
           <section className="info-section border-t pt-6">
             <h3 className="info-section-title">🙏 Credits</h3>
