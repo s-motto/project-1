@@ -5,6 +5,7 @@ import ActiveTracking from './ActiveTracking'
 import { FaMapMarkerAlt, FaFlag, FaWalking, FaClock, FaRoute, FaLocationArrow, FaSpinner, FaPlay } from 'react-icons/fa'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import MapPointSelector from './MapPointSelector'
 import useNavigation from '../contexts/NavigationContext'
 import { useToast } from '../contexts/ToastContext'
 import { useAuth } from '../contexts/AuthContext'
@@ -45,6 +46,9 @@ const RouteSearchForm = forwardRef(({preloadedRoute, preloadedHike}, ref) => {
   const [gettingLocation, setGettingLocation] = useState(false)//stato ottenimento posizione utente
   const [userLocation, setUserLocation] = useState(null)//posizione utente
   const [showTracking, setShowTracking] = useState(false) //mostra componente ActiveTracking
+  const [showMapPointSelector, setShowMapPointSelector] = useState(false)//mostra selettore punti mappa
+  const [selectedMapPoint, setSelectedMapPoint] = useState(null)//punto selezionato nella mappa
+  const tempMarkerRef = useRef(null)//riferimento marcatore temporaneo
     useEffect(() => {
       const mapInstance = L.map('map').setView([45.4642, 9.1900], 13) //Centro su Milano di default
       
@@ -76,6 +80,82 @@ const RouteSearchForm = forwardRef(({preloadedRoute, preloadedHike}, ref) => {
         loadHikingRoute(preloadedHike)
       }
     }, [preloadedHike, map])
+
+    // Gestione click sulla mappa per selezione punto
+useEffect(() => {
+  if (!map) return
+  
+  const handleMapClick = async (e) => {
+    const { lat, lng } = e.latlng
+    
+    // Mostra marker temporaneo pulsante
+    if (tempMarkerRef.current) {
+      tempMarkerRef.current.remove()
+    }
+    
+    const tempMarkerDiv = document.createElement('div')
+    tempMarkerDiv.className = 'temp-map-marker fade-in-marker'
+    tempMarkerDiv.style.position = 'absolute'
+    tempMarkerDiv.style.zIndex = '1000'
+    tempMarkerDiv.style.pointerEvents = 'none'
+    tempMarkerDiv.innerHTML = '📍'
+    
+    const pixel = map.latLngToContainerPoint([lat, lng])
+    tempMarkerDiv.style.left = `${pixel.x}px`
+    tempMarkerDiv.style.top = `${pixel.y}px`
+    tempMarkerDiv.style.transform = 'translate(-50%, -100%)'
+    
+    document.getElementById('map').appendChild(tempMarkerDiv)
+    tempMarkerRef.current = tempMarkerDiv
+    
+    // Update marker position on map move
+    const updateTempMarker = () => {
+      if (tempMarkerRef.current) {
+        const newPixel = map.latLngToContainerPoint([lat, lng])
+        tempMarkerRef.current.style.left = `${newPixel.x}px`
+        tempMarkerRef.current.style.top = `${newPixel.y}px`
+      }
+    }
+    map.on('move zoom', updateTempMarker)
+    
+    // Mostra loading toast
+    toast.info('Ricerca indirizzo...')
+    
+    try {
+      // Reverse geocoding
+      const response = await fetch(
+        `https://api.openrouteservice.org/geocode/reverse?api_key=${ORS_KEY}&point.lat=${lat}&point.lon=${lng}&size=1`
+      )
+      
+      if (response.ok) {
+        const data = await response.json()
+        const placeName = data.features?.[0]?.properties?.label || 'Punto selezionato sulla mappa'
+        
+        // Mostra modal di selezione
+        setSelectedMapPoint({
+          lat,
+          lng,
+          name: placeName
+        })
+        setShowMapPointSelector(true)
+      } else {
+        toast.error('Impossibile trovare l\'indirizzo')
+        if (tempMarkerRef.current) tempMarkerRef.current.remove()
+      }
+    } catch (error) {
+      console.error('Reverse geocoding error:', error)
+      toast.error('Errore nel recupero dell\'indirizzo')
+      if (tempMarkerRef.current) tempMarkerRef.current.remove()
+    }
+  }
+  
+  map.on('click', handleMapClick)
+  
+  return () => {
+    map.off('click', handleMapClick)
+    if (tempMarkerRef.current) tempMarkerRef.current.remove()
+  }
+}, [map, ORS_KEY, toast])
 
       // Espongo la funzione di reset al componente genitore
       useImperativeHandle(ref, () => ({
@@ -707,6 +787,57 @@ const handleReset = () => {
     // Opzionalmente ricarica o aggiorna qualcosa
   }
 
+  // Handlers per MapPointSelector
+const handleSetAsStart = () => {
+  if (selectedMapPoint) {
+    setStartPoint({
+      lat: selectedMapPoint.lat,
+      lon: selectedMapPoint.lng,
+      name: selectedMapPoint.name
+    })
+    setStartText(selectedMapPoint.name)
+    toast.success('🚩 Punto di partenza impostato!')
+  }
+  setShowMapPointSelector(false)
+  if (tempMarkerRef.current) tempMarkerRef.current.remove()
+}
+
+const handleSetAsEnd = () => {
+  if (selectedMapPoint) {
+    setEndPoint({
+      lat: selectedMapPoint.lat,
+      lon: selectedMapPoint.lng,
+      name: selectedMapPoint.name
+    })
+    setEndText(selectedMapPoint.name)
+    toast.success('🏁 Punto di arrivo impostato!')
+  }
+  setShowMapPointSelector(false)
+  if (tempMarkerRef.current) tempMarkerRef.current.remove()
+}
+
+const handleSwapPoints = () => {
+  if (startPoint && endPoint) {
+    // Swap
+    const temp = { ...startPoint }
+    setStartPoint(endPoint)
+    setEndPoint(temp)
+    
+    const tempText = startText
+    setStartText(endText)
+    setEndText(tempText)
+    
+    toast.success('🔄 Punti invertiti!')
+  }
+  setShowMapPointSelector(false)
+  if (tempMarkerRef.current) tempMarkerRef.current.remove()
+}
+
+const handleCloseSelector = () => {
+  setShowMapPointSelector(false)
+  if (tempMarkerRef.current) tempMarkerRef.current.remove()
+}
+
     
 
   return (
@@ -866,7 +997,16 @@ const handleReset = () => {
   </button>
 )}
           </form>
-
+{/* Modal Selezione Punto Mappa */}
+{showMapPointSelector && selectedMapPoint && (
+  <MapPointSelector
+    location={selectedMapPoint}
+    onSetStart={handleSetAsStart}
+    onSetEnd={handleSetAsEnd}
+    onSwap={startPoint && endPoint ? handleSwapPoints : null}
+    onClose={handleCloseSelector}
+  />
+)}
           {/* Indicatore visuale gps */}
 {userLocation && startPoint && startPoint.lat === userLocation.lat && (
   <div className="flex items-center space-x-2 px-4 py-2 bg-green-50 rounded-lg text-sm text-green-700">

@@ -179,5 +179,39 @@ body.modal-open > #map .leaflet-overlay-pane {
 .fixed.top-4.right-4 {
   z-index: 10001 !important;
 }
+/* ===== MAP MARKER ANIMATIONS ===== */
 
+/* Marker temporaneo pulsante */
+@keyframes pulse-marker {
+  0%, 100% {
+    transform: translate(-50%, -100%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translate(-50%, -100%) scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+.temp-map-marker {
+  animation: pulse-marker 1.5s ease-in-out infinite;
+  font-size: 32px;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+}
+
+/* Fade in del marker */
+@keyframes fade-in-marker {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -100%) scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%) scale(1);
+  }
+}
+
+.fade-in-marker {
+  animation: fade-in-marker 0.3s ease-out;
+}
 }
