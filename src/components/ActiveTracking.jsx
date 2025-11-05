@@ -62,6 +62,8 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   const pausedTimeRef = useRef(0)
   const timerRef = useRef(null)
   const mapRef = useRef(null) // Riferimento alla mappa Leaflet
+  const isTrackingRef = useRef(false)
+  const isPausedRef = useRef(false)
 
   // Gestisce il blur della mappa quando la modale è aperta
   useEffect(() => {
@@ -118,7 +120,7 @@ useEffect(() => {
     }
     
     // Aggiungi punto solo se non in pausa e se tracking è iniziato
-    if (!isPaused && isTracking) {
+    if (!isPausedRef.current && isTrackingRef.current) {
       setTrackPoints(prev => {
         const updated = [...prev, newPoint]
         
@@ -138,7 +140,7 @@ useEffect(() => {
       })
       
       // Dopo i primi punti, disabilita auto-center
-      if (trackPoints.length > 3) {
+      if (updated.length > 3) {
         setShouldCenterMap(false)
       }
     }
@@ -207,6 +209,8 @@ useEffect(() => {
       pausedTimeRef.current = 0
       setIsTracking(true)
       setIsPaused(false)
+      isTrackingRef.current = true
+      isPausedRef.current = false
       setShouldCenterMap(true)
       setWaitingForGoodFix(true)
       
@@ -229,6 +233,7 @@ useEffect(() => {
       const now = Date.now()
       pausedTimeRef.current += now - startTimeRef.current - elapsedTime * 1000
       setIsPaused(true)
+      isPausedRef.current = true
     }
   }
 
@@ -236,6 +241,7 @@ useEffect(() => {
   const handleResume = () => {
     if (isPaused) {
       setIsPaused(false)
+      isPausedRef.current = false
     }
   }
 
@@ -249,6 +255,7 @@ const handleStop = async () => {
     // PRIMA ferma GPS
     geolocation.stop()
     setIsTracking(false)
+    isTrackingRef.current = false
     
     // Assicura che il percorso sia salvato
     const routeId = await ensureRouteSaved()
@@ -289,6 +296,7 @@ const handleStop = async () => {
     
     geolocation.stop()
     setIsTracking(false)
+    isTrackingRef.current = false
     onClose()
   }
 
