@@ -128,7 +128,7 @@ useEffect(() => {
           setDistance(newDistance)
           
           // Calcola dislivelli se disponibile altitudine
-          if (newPoint.altitude) {
+          if (newPoint.altitude !== undefined && newPoint.altitude !== null) {
             setElevationGain(calculateElevationGain(updated))
             setElevationLoss(calculateElevationLoss(updated))
           }
@@ -176,7 +176,7 @@ useEffect(() => {
         ascent: route.ascent || 0,
         descent: route.descent || 0,
         coordinates: route.coordinates,
-        instructions: JSON.stringify(route.instructions || []) //  Converti in stringa JSON
+        instructions: Array.isArray(route.instructions) ? route.instructions : []
       },
       user.$id
     )

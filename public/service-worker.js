@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lets-walk-v1'
+const CACHE_NAME = 'lets-walk-v2'
 const urlsToCache = [
   '/',
   '/index.html',
@@ -13,6 +13,7 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(urlsToCache))
   )
+  self.skipWaiting()
 })
 
 // Attivazione - pulizia vecchie cache
@@ -26,26 +27,36 @@ self.addEventListener('activate', (event) => {
           }
         })
       )
-    })
+    }).then(() => self.clients.claim())
   )
 })
 
 // Fetch - gestione delle richieste
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
-  
-  // NON cachare le tile delle mappe
+
+  // Skip cross-origin third-party map tiles and APIs
   if (url.hostname.includes('tile.openstreetmap.org') ||
       url.hostname.includes('tile.thunderforest.com') ||
       url.hostname.includes('unpkg.com') ||
       url.hostname.includes('openrouteservice.org')) {
-    // Lascia passare direttamente alla rete
     return event.respondWith(fetch(event.request))
   }
-  
-  // Per tutto il resto, usa cache-first
+
+  // Network-first for HTML/doc to avoid stale index.html
+  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+    event.respondWith(
+      fetch(event.request).then((res) => {
+        const resClone = res.clone()
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, resClone))
+        return res
+      }).catch(() => caches.match(event.request))
+    )
+    return
+  }
+
+  // Cache-first for all other requests (JS/CSS/assets)
   event.respondWith(
-    caches.match(event.request)
-      .then((response) => response || fetch(event.request))
+    caches.match(event.request).then((cached) => cached || fetch(event.request))
   )
 })

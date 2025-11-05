@@ -1,6 +1,5 @@
 import { useState, useRef, lazy, Suspense } from 'react'
 import './App.css'
-import { AuthProvider } from './contexts/AuthContext'
 import BottomNav from './components/BottomNav'
 import UserMenu from './components/UserMenu'
 import ToastContainer from './components/ToastContainer'
@@ -58,7 +57,7 @@ function App() {
 
   // Render del componente
   return (
-    <AuthProvider>
+    <>
       <ToastContainer />
        
       <div className="page-container">
@@ -100,7 +99,7 @@ function App() {
           onRouteSelected={handleRouteSelected}
         />
       </div>
-    </AuthProvider>
+    </>
   )
 }
 
