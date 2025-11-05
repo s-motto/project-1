@@ -18,16 +18,33 @@ import { useToast } from '../contexts/ToastContext'
 // Componente per centrare la mappa sulla posizione corrente
 function MapCenterController({ position, shouldCenter, onMapReady }) {
   const map = useMap()
+  const hasCenteredRef = useRef(false)
+  const userHasInteractedRef = useRef(false)
   
   useEffect(() => {
     if (onMapReady) {
-      onMapReady(map) // Passa l'istanza della mappa
+      onMapReady(map)
+      
+      // Track user interactions (zoom and pan)
+      const handleZoom = () => { userHasInteractedRef.current = true }
+      const handleDrag = () => { userHasInteractedRef.current = true }
+      
+      map.on('zoomstart', handleZoom)
+      map.on('dragstart', handleDrag)
+      
+      return () => {
+        map.off('zoomstart', handleZoom)
+        map.off('dragstart', handleDrag)
+      }
     }
   }, [map, onMapReady])
   
   useEffect(() => {
-    if (position && shouldCenter && map) {
-      map.setView([position.lat, position.lng], 16)
+    // Only center once at the start, preserve user's zoom level
+    if (position && shouldCenter && map && !hasCenteredRef.current && !userHasInteractedRef.current) {
+      const currentZoom = map.getZoom()
+      map.setView([position.lat, position.lng], currentZoom || 16)
+      hasCenteredRef.current = true
     }
   }, [position, shouldCenter, map])
   
@@ -331,7 +348,7 @@ const handleStop = async () => {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content max-w-4xl h-[90vh] flex flex-col">
+      <div className="modal-content max-w-4xl h-[95vh] flex flex-col">
         {/* Header */}
         <div className="modal-header-primary">
           <div className="flex items-center justify-between">
@@ -370,26 +387,26 @@ const handleStop = async () => {
         )}
 
         {/* Statistiche live */}
-        <div className="p-4 bg-gray-50 border-b grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="p-3 bg-gray-50 border-b grid grid-cols-2 md:grid-cols-5 gap-2">
           <div className="text-center">
             <p className="text-xs text-gray-500">Distanza</p>
-            <p className="text-lg font-bold text-blue-600">{distance.toFixed(2)} km</p>
+            <p className="text-base font-bold text-blue-600">{distance.toFixed(2)} km</p>
           </div>
           <div className="text-center">
             <p className="text-xs text-gray-500">Tempo</p>
-            <p className="text-lg font-bold text-purple-600">{formatTime(elapsedTime)}</p>
+            <p className="text-base font-bold text-purple-600">{formatTime(elapsedTime)}</p>
           </div>
           <div className="text-center">
             <p className="text-xs text-gray-500">Velocità</p>
-            <p className="text-lg font-bold text-green-600">{avgSpeed} km/h</p>
+            <p className="text-base font-bold text-green-600">{avgSpeed} km/h</p>
           </div>
           <div className="text-center">
             <p className="text-xs text-gray-500">D+ ⛰️</p>
-            <p className="text-lg font-bold text-orange-600">{elevationGain} m</p>
+            <p className="text-base font-bold text-orange-600">{elevationGain} m</p>
           </div>
           <div className="text-center">
             <p className="text-xs text-gray-500">Precisione GPS</p>
-            <p className={`text-lg font-bold ${gpsAccuracy && gpsAccuracy < 20 ? 'text-green-600' : gpsAccuracy && gpsAccuracy < 50 ? 'text-yellow-600' : 'text-red-600'}`}>
+            <p className={`text-base font-bold ${gpsAccuracy && gpsAccuracy < 20 ? 'text-green-600' : gpsAccuracy && gpsAccuracy < 50 ? 'text-yellow-600' : 'text-red-600'}`}>
               {gpsAccuracy ? `${Math.round(gpsAccuracy)}m` : '---'}
             </p>
           </div>
