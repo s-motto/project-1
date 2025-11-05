@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { FaPlay, FaPause, FaStop, FaTimes, FaMapMarkerAlt, FaExclamationTriangle } from 'react-icons/fa'
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet'
 import useGeolocation from '../hooks/useGeolocation'
@@ -407,15 +407,38 @@ const handleStop = async () => {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             
-            {/* Traccia GPS */}
-            {trackPoints.length > 1 && (
+            {/* Route pianificata (se disponibile) - riferimento */}
+            {route.coordinates && route.coordinates.length > 1 && (
               <Polyline 
-                positions={trackPoints.map(p => [p.lat, p.lng])}
-                color="#3B82F6"
-                weight={4}
-                opacity={0.8}
+                positions={route.coordinates.map(coord => {
+                  // Handle both [lon, lat] and {lat, lng} formats
+                  if (Array.isArray(coord)) {
+                    return [coord[1], coord[0]] // [lat, lng] from [lon, lat]
+                  }
+                  return [coord.lat, coord.lng]
+                })}
+                color="#ef4444" // Red - planned route
+                weight={3}
+                opacity={0.5}
+                dashArray="10, 10" // Dashed line
               />
             )}
+            
+            {/* Traccia GPS - il percorso effettivamente tracciato */}
+            {useMemo(() => {
+              if (trackPoints.length < 2) return null
+              
+              return (
+                <Polyline 
+                  key={`track-${trackPoints.length}`} // Force re-render when points change
+                  positions={trackPoints.map(p => [p.lat, p.lng])}
+                  color="#10b981" // Green - more visible for hiking
+                  weight={5} // Thicker line
+                  opacity={0.9}
+                  smoothFactor={1} // Less smoothing for more accurate trail
+                />
+              )
+            }, [trackPoints])}
             
             {/* Posizione corrente */}
             {currentPosition && (
