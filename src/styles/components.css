@@ -225,6 +225,8 @@
   .modal-overlay {
     @apply fixed inset-0 bg-black/50 backdrop-blur-sm 
            flex items-center justify-center z-modal p-4;
+    /* Ensure above Leaflet map and controls */
+    z-index: 2000;
   }
   
   .modal-content {

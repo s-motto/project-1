@@ -15,6 +15,7 @@ import {
 import 'leaflet/dist/leaflet.css'
 import { useToast } from '../contexts/ToastContext'
 import logger from '../utils/logger'
+import { useSettings } from '../contexts/SettingsContext'
 
 // Componente per centrare la mappa sulla posizione corrente
 function MapCenterController({ position, shouldCenter, onMapReady }) {
@@ -59,6 +60,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   const { user } = useAuth()
   const geolocation = useGeolocation()
   const { toast } = useToast()
+  const { settings } = useSettings()
   
   // Stati
   const [isTracking, setIsTracking] = useState(false)
@@ -132,14 +134,31 @@ useEffect(() => {
     setCurrentPosition(newPoint)
     setGpsAccuracy(position.coords.accuracy)
     
-    // Se accuracy è buona (< 50m), considera il GPS "fixed"
-    if (position.coords.accuracy < 50) {
+    // Se accuracy è buona (< soglia impostazioni), considera il GPS "fixed"
+    if (position.coords.accuracy < (settings?.gpsAccuracyMax ?? 50)) {
       setWaitingForGoodFix(false)
     }
     
     // Aggiungi punto solo se non in pausa e se tracking è iniziato
     if (!isPausedRef.current && isTrackingRef.current) {
+      // Filtra per accuratezza massima
+      if (settings?.gpsAccuracyMax && position.coords.accuracy > settings.gpsAccuracyMax) {
+        return
+      }
       setTrackPoints(prev => {
+        // Filtra spostamenti minimi per ridurre il rumore
+        if (settings?.minPointDistanceMeters && prev.length > 0) {
+          const last = prev[prev.length - 1]
+          const R = 6371000 // raggio terrestre in metri
+          const dLat = (newPoint.lat - last.lat) * Math.PI / 180
+          const dLon = (newPoint.lng - last.lng) * Math.PI / 180
+          const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(last.lat * Math.PI/180) * Math.cos(newPoint.lat * Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2)
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+          const meters = R * c
+          if (meters < settings.minPointDistanceMeters) {
+            return prev
+          }
+        }
         const updated = [...prev, newPoint]
         
         // Calcola distanza

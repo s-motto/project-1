@@ -80,11 +80,11 @@ body.modal-open #map .leaflet-control-container {
 }
 
 /* IMPORTANTE: Nascondi SOLO la mappa di sfondo, NON quella nella modale */
-body.modal-open > #map .leaflet-pane {
+body.modal-open .leaflet-pane {
   display: none !important;
 }
 
-body.modal-open > #map .leaflet-overlay-pane {
+body.modal-open .leaflet-overlay-pane {
   display: none !important;
 }
 
@@ -94,6 +94,14 @@ body.modal-open > #map .leaflet-overlay-pane {
 }
 
 .modal-content .leaflet-tile-pane {
+  display: block !important;
+}
+
+.modal-content .leaflet-overlay-pane {
+  display: block !important;
+}
+
+.modal-content .leaflet-control-container {
   display: block !important;
 }
 

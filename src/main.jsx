@@ -9,6 +9,7 @@ import L from 'leaflet'
 import icon from 'leaflet/dist/images/marker-icon.png'
 import iconShadow from 'leaflet/dist/images/marker-shadow.png'
 import { ToastProvider } from './contexts/ToastContext'
+import { SettingsProvider } from './contexts/SettingsContext'
 import logger from './utils/logger'
 
 let DefaultIcon = L.icon({
@@ -23,11 +24,13 @@ L.Marker.prototype.options.icon = DefaultIcon
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <ToastProvider>
-    <AuthProvider>
-      <NavigationProvider>
-        <App />
-      </NavigationProvider>
-    </AuthProvider>
+      <SettingsProvider>
+        <AuthProvider>
+          <NavigationProvider>
+            <App />
+          </NavigationProvider>
+        </AuthProvider>
+      </SettingsProvider>
     </ToastProvider>
   </StrictMode>,
 )

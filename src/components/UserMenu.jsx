@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
-import { FaUser, FaSignOutAlt, FaBookmark, FaChevronDown, FaChartLine } from 'react-icons/fa'
+import { FaUser, FaSignOutAlt, FaBookmark, FaChevronDown, FaChartLine, FaCog } from 'react-icons/fa'
 import { useAuth } from '../contexts/AuthContext'
 import AuthPage from './AuthPage'
 import Dashboard from './Dashboard'
+import SettingsModal from './SettingsModal'
 
 // Componente UserMenu per la gestione dell'utente
 const UserMenu = ({ onShowSavedRoutes }) => {
@@ -10,6 +11,8 @@ const UserMenu = ({ onShowSavedRoutes }) => {
   const [showMenu, setShowMenu] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [showDashboard, setShowDashboard] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+
 // Gestore del logout
   const handleLogout = async () => {
     const result = await logout()
@@ -97,6 +100,18 @@ const UserMenu = ({ onShowSavedRoutes }) => {
               <span>Percorsi salvati</span>
             </button>
 
+            {/* Bottone "Impostazioni" */}
+            <button
+              onClick={() => {
+                setShowMenu(false)
+                setShowSettings(true)
+              }}
+              className="user-dropdown-item"
+            >
+              <FaCog className="w-4" />
+              <span>Impostazioni</span>
+            </button>
+
             {/* Bottone di logout */}
             <button
               onClick={handleLogout}
@@ -112,6 +127,9 @@ const UserMenu = ({ onShowSavedRoutes }) => {
     {/* Modal Dashboard */}
       {showDashboard && (
         <Dashboard onClose={() => setShowDashboard(false)} />
+      )}
+      {showSettings && (
+        <SettingsModal onClose={() => setShowSettings(false)} />
       )}
     </>
   )
