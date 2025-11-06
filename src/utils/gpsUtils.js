@@ -183,3 +183,20 @@ export function formatTimestamp(isoString, timeFormat = '24h') {
     return d.toISOString().slice(0,16).replace('T',' ')
   }
 }
+
+// Filename-safe timestamp: 2025-11-05_23-17 or 2025-11-05_11-17PM
+export function formatTimestampForFilename(isoString, timeFormat = '24h') {
+  if (!isoString) isoString = new Date().toISOString()
+  const d = new Date(isoString)
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  let hh = d.getHours()
+  const min = String(d.getMinutes()).padStart(2, '0')
+  if (timeFormat === '12h') {
+    const ampm = hh >= 12 ? 'PM' : 'AM'
+    const hour12 = String((hh % 12) || 12).padStart(2, '0')
+    return `${yyyy}-${mm}-${dd}_${hour12}-${min}${ampm}`
+  }
+  return `${yyyy}-${mm}-${dd}_${String(hh).padStart(2, '0')}-${min}`
+}

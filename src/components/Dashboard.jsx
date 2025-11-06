@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import routesService from '../services/routesService'
 import statsService from '../services/statsService'
 import { useSettings } from '../contexts/SettingsContext'
-import { formatDistance, formatElevation, KM_TO_MI, formatDurationMinutes, formatTimestamp } from '../utils/gpsUtils'
+import { formatDistance, formatElevation, KM_TO_MI, formatDurationMinutes, formatTimestamp, formatTimestampForFilename } from '../utils/gpsUtils'
 import StatsCard from './StatsCard'
 import { generateGpxFromTrack } from '../utils/gpx'
 import { trackToPng } from '../utils/trackImage'
@@ -35,7 +35,7 @@ const Dashboard = ({ onClose }) => {
     const blob = new Blob([gpx], { type: 'application/gpx+xml' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    const dateStr = (route.completedAt || new Date().toISOString()).slice(0,10)
+    const dateStr = formatTimestampForFilename(route.completedAt || new Date().toISOString(), settings?.timeFormat || '24h')
     a.href = url
     a.download = `${name.replace(/\s+/g, '_')}_${dateStr}.gpx`
     document.body.appendChild(a)
@@ -64,7 +64,7 @@ const Dashboard = ({ onClose }) => {
     const blob = await trackToPng(name, points, { width: 1600, height: 1000, basemapKey, staticTileUrl, tileAttribution })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    const dateStr = (route.completedAt || new Date().toISOString()).slice(0,10)
+    const dateStr = formatTimestampForFilename(route.completedAt || new Date().toISOString(), settings?.timeFormat || '24h')
     a.href = url
     a.download = `${name.replace(/\s+/g, '_')}_${dateStr}.png`
     document.body.appendChild(a)

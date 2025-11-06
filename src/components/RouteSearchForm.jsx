@@ -10,7 +10,7 @@ import MapPointSelector from './MapPointSelector'
 import useNavigation from '../contexts/NavigationContext'
 import { useToast } from '../contexts/ToastContext'
 import { useAuth } from '../contexts/AuthContext'
-import { calculateDistance, formatDistance, formatElevation, KM_TO_MI, M_TO_FT } from '../utils/gpsUtils'
+import { calculateDistance, formatDistance, formatElevation, KM_TO_MI, M_TO_FT, formatDurationSeconds } from '../utils/gpsUtils'
 import { useSettings } from '../contexts/SettingsContext'
 
 import logger from '../utils/logger'
@@ -1104,7 +1104,7 @@ const handleCloseSelector = () => {
                 if (dKm >= 1) return `${dKm.toFixed(2)} km`
                 return `${Math.round(dKm * 1000)} m`
               }
-            })()} · {Math.round(step.duration / 60)} min
+            })()} · {formatDurationSeconds(Math.round(step.duration || 0), settings?.durationFormat || 'hms')}
                       </p>
                     </div>
                   </div>
