@@ -80,11 +80,11 @@ body.modal-open #map .leaflet-control-container {
 }
 
 /* IMPORTANTE: Nascondi SOLO la mappa di sfondo, NON quella nella modale */
-body.modal-open .leaflet-pane {
+body.modal-open #map .leaflet-pane {
   display: none !important;
 }
 
-body.modal-open .leaflet-overlay-pane {
+body.modal-open #map .leaflet-overlay-pane {
   display: none !important;
 }
 

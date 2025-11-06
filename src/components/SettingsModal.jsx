@@ -1,8 +1,42 @@
-import React, { useMemo, useState, useEffect } from 'react'
+import React, { useMemo, useState, useEffect, useRef } from 'react'
 import { FaTimes, FaTrash, FaDownload, FaInfoCircle } from 'react-icons/fa'
 import { useSettings } from '../contexts/SettingsContext'
 import { useAuth } from '../contexts/AuthContext'
 import routesService from '../services/routesService'
+
+// Minimal, compact custom select to avoid oversized native dropdowns
+const CustomSelect = ({ value, options, onChange, label }) => {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  useEffect(() => {
+    const onDoc = (e) => {
+      if (!ref.current || ref.current.contains(e.target)) return
+      setOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    return () => document.removeEventListener('mousedown', onDoc)
+  }, [])
+  const selected = options.find(o => o.value === value)
+  return (
+    <div className="custom-select" ref={ref}>
+      <button type="button" className="input w-full custom-select-button" onClick={() => setOpen(o => !o)} aria-haspopup="listbox" aria-expanded={open}>
+        <span>{selected ? selected.label : ''}</span>
+        <span className="chevron">▾</span>
+      </button>
+      {open && (
+        <ul className="select-dropdown" role="listbox">
+          {options.map(opt => (
+            <li key={opt.value} role="option" aria-selected={opt.value === value}
+                className={`select-option ${opt.disabled ? 'select-option-disabled' : ''}`}
+                onClick={() => { if (opt.disabled) return; onChange(opt.value); setOpen(false) }}>
+              {opt.label}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
 
 const SettingsModal = ({ onClose }) => {
   const { settings, setSettings } = useSettings()
@@ -34,7 +68,7 @@ const SettingsModal = ({ onClose }) => {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `lets-walk-export_${new Date().toISOString().slice(0,10)}.json`
+      a.download = `lets-walk-export_${new Date().toISOString().slice(0, 10)}.json`
       document.body.appendChild(a)
       a.click()
       a.remove()
@@ -108,26 +142,25 @@ const SettingsModal = ({ onClose }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm text-gray-600 mb-1">Formato orario</label>
-                <select
-                  className="input w-full"
+                <CustomSelect
                   value={settings.timeFormat}
-                  onChange={(e) => handleChange({ timeFormat: e.target.value })}
-                >
-                  <option value="24h">24 ore</option>
-                  <option value="12h">12 ore</option>
-                </select>
+                  onChange={(v) => handleChange({ timeFormat: v })}
+                  options={[
+                    { value: '24h', label: '24 ore' },
+                    { value: '12h', label: '12 ore' },
+                  ]}
+                />
               </div>
               <div>
                 <label className="block text-sm text-gray-600 mb-1">Tema</label>
-                <select
-                  className="input w-full"
+                <CustomSelect
                   value={settings.theme}
-                  onChange={(e) => handleChange({ theme: e.target.value })}
-                >
-                  <option value="system">Sistema</option>
-                  <option value="light">Chiaro</option>
-                  <option value="dark">Scuro</option>
-                </select>
+                  onChange={(v) => handleChange({ theme: v })}
+                  options={[
+                    { value: 'system', label: 'Sistema' },
+                    { value: 'dark', label: 'Dark Mode (coming soon)', disabled: true },
+                  ]}
+                />
               </div>
             </div>
           </section>

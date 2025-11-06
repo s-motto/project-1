@@ -1,5 +1,5 @@
 @layer components {
-  
+
   /*
      Beige:            #EFECCA
      Cambridge blue:   #A9CBB7
@@ -7,62 +7,67 @@
      Atomic tangerine: #FF934F
      Wenge:            #5E565A
     */
-  
+
   /* ===== BUTTONS ===== */
-  
+
   .btn {
-    @apply px-4 py-3 rounded-lg font-medium transition-all
-           disabled:opacity-50 disabled:cursor-not-allowed
-           flex items-center justify-center space-x-2;
+    @apply px-4 py-3 rounded-lg font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2;
   }
-  
 
 
-/* Pulsanti tracking */
-.btn-warning {
-  @apply bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-lg px-4 py-2 transition duration-200;
-}
 
-.btn-success {
-  @apply bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-4 py-2 transition duration-200;
-}
+  /* Pulsanti tracking */
+  .btn-warning {
+    @apply bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-lg px-4 py-2 transition duration-200;
+  }
 
-/* Animazione GPS */
-@keyframes pulse-gps {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(1.05); }
-}
+  .btn-success {
+    @apply bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg px-4 py-2 transition duration-200;
+  }
 
-.gps-badge.active {
-  animation: pulse-gps 2s infinite;
-}
+  /* Animazione GPS */
+  @keyframes pulse-gps {
+
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    50% {
+      opacity: 0.7;
+      transform: scale(1.05);
+    }
+  }
+
+  .gps-badge.active {
+    animation: pulse-gps 2s infinite;
+  }
+
   .btn-primary {
-    @apply btn text-white hover:brightness-110
-           disabled:opacity-50;
+    @apply btn text-white hover:brightness-110 disabled:opacity-50;
     background-color: #A9CBB7;
   }
-  
+
   .btn-primary:hover:not(:disabled) {
     background-color: #98baa7;
   }
-  
+
   .btn-secondary {
     @apply btn text-gray-800 hover:bg-opacity-80;
     background-color: #EFECCA;
   }
-  
+
   .btn-success {
-    @apply btn text-white hover:brightness-110
-           disabled:opacity-50;
+    @apply btn text-white hover:brightness-110 disabled:opacity-50;
     background-color: #A9CBB7;
   }
-  
+
   .btn-danger {
-    @apply btn text-white hover:brightness-110
-           disabled:opacity-50;
+    @apply btn text-white hover:brightness-110 disabled:opacity-50;
     background-color: #FF934F;
   }
-  
+
   .btn-ghost {
     @apply btn bg-transparent hover:bg-gray-100;
     color: #5E565A;
@@ -74,42 +79,38 @@
 
   /* Bottone CTA speciale */
   .btn-cta {
-    @apply btn text-white font-bold shadow-lg hover:shadow-xl
-           disabled:opacity-50;
+    @apply btn text-white font-bold shadow-lg hover:shadow-xl disabled:opacity-50;
     background-color: #FF934F;
   }
 
-  
+
   /* ===== INPUTS & FORMS ===== */
-  
+
   .input {
-    @apply w-full px-4 py-3 rounded-lg
-           focus:outline-none focus:ring-2 focus:border-transparent
-           disabled:bg-gray-100 disabled:cursor-not-allowed
-           text-base;
+    @apply w-full px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-base;
     border: 2px solid #EFECCA;
     background-color: white;
     color: #5E565A;
   }
-  
+
   .input:focus {
     border-color: #A9CBB7;
     ring-color: #A9CBB7;
   }
-  
+
   .input-with-icon {
     @apply input pl-10;
   }
-  
+
   .input-error {
     @apply input;
     border-color: #FF934F;
   }
-  
+
   .input-error:focus {
     ring-color: #FF934F;
   }
-  
+
   .label {
     @apply block text-sm font-medium mb-1;
     color: #5E565A;
@@ -119,18 +120,18 @@
     @apply space-y-1;
   }
 
-  
+
   /* ===== CARDS ===== */
-  
+
   .card {
     @apply rounded-lg shadow-md p-4;
     background-color: white;
   }
-  
+
   .card-lg {
     @apply card p-6;
   }
-  
+
   .card-hover {
     @apply card hover:shadow-lg transition-shadow cursor-pointer;
   }
@@ -144,43 +145,41 @@
     background-color: #EFECCA;
   }
 
-  
+
   /* ===== ROUTE INFO CARDS ===== */
-  
+
   .route-info-card {
     @apply card w-full max-w-xl;
   }
-  
+
   .route-stat {
     @apply flex items-center space-x-2;
   }
-  
+
   .route-stat-icon {
     @apply flex-shrink-0;
     color: #A9CBB7;
   }
-  
+
   .route-stat-label {
     @apply text-xs;
     color: #5E565A;
     opacity: 0.7;
   }
-  
+
   .route-stat-value {
     @apply font-semibold;
     color: #5E565A;
   }
 
-  
+
   /* ===== DROPDOWN & SUGGESTIONS ===== */
-  
+
   .dropdown {
-    @apply absolute z-dropdown left-0 right-0 
-           bg-white rounded-lg shadow-lg 
-           max-h-40 overflow-y-auto mt-1;
+    @apply absolute z-dropdown left-0 right-0 bg-white rounded-lg shadow-lg max-h-40 overflow-y-auto mt-1;
     border: 2px solid #EFECCA;
   }
-  
+
   .dropdown-item {
     @apply p-2 cursor-pointer text-sm transition-colors;
     color: #5E565A;
@@ -196,16 +195,14 @@
     color: white;
   }
 
-  
+
   /* ===== NAVIGATION ===== */
-  
+
   .bottom-nav {
-    @apply fixed bottom-4 left-1/2 transform -translate-x-1/2
-           backdrop-blur-md shadow-lg rounded-xl
-           px-4 py-2 flex items-center gap-6 z-nav;
+    @apply fixed bottom-4 left-1/2 transform -translate-x-1/2 backdrop-blur-md shadow-lg rounded-xl px-4 py-2 flex items-center gap-6 z-nav;
     background-color: rgba(239, 236, 202, 0.95);
   }
-  
+
   .nav-item {
     @apply flex flex-col items-center text-sm transition-colors;
     color: #5E565A;
@@ -214,144 +211,212 @@
   .nav-item:hover {
     color: #A9CBB7;
   }
-  
+
   .nav-item-label {
     @apply text-[10px];
   }
 
-  
+
   /* ===== MODAL ===== */
-  
+
   .modal-overlay {
-    @apply fixed inset-0 bg-black/50 backdrop-blur-sm 
-           flex items-center justify-center z-modal p-4;
+    @apply fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-modal p-4;
     /* Ensure above Leaflet map and controls */
     z-index: 2000;
   }
-  
+
   .modal-content {
-    @apply bg-white rounded-2xl shadow-2xl 
-           w-full max-w-2xl max-h-[90vh] overflow-hidden
-           flex flex-col;
+    @apply bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col;
   }
-  
+
   .modal-header {
     @apply p-6 flex-shrink-0;
     color: white;
   }
-  
+
   .modal-header-primary {
     @apply modal-header;
     background: linear-gradient(135deg, #A9CBB7 0%, #FF934F 100%);
   }
-  
+
   .modal-header-success {
     @apply modal-header;
     background: linear-gradient(135deg, #A9CBB7 0%, #98baa7 100%);
   }
-  
+
   .modal-body {
     @apply p-6 space-y-6 overflow-y-auto flex-1;
   }
 
-  .modal-close-btn {
-    @apply text-white hover:bg-white/20 rounded-full p-2 
-           transition-colors;
+  /* Compact selects inside modals */
+  .modal-content select.input {
+    padding-top: 0.5rem;
+    /* py-2 */
+    padding-bottom: 0.5rem;
+    font-size: 0.8125rem;
+    /* ~13px */
+    line-height: 1.25rem;
   }
 
-  
+  .modal-content select.input option {
+    font-size: 0.8125rem;
+    /* ~13px, shrink dropdown rows */
+    line-height: 1.25rem;
+  }
+
+  /* Custom compact select (SettingsModal) */
+  .custom-select {
+    position: relative;
+  }
+
+  .custom-select .custom-select-button {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 2.25rem;
+    /* ~36px */
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+
+  .custom-select .chevron {
+    opacity: 0.6;
+    margin-left: 0.5rem;
+  }
+
+  .select-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 2050;
+    /* above modal content */
+    background: #fff;
+    border: 2px solid #EFECCA;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    max-height: 200px;
+    overflow: auto;
+    padding: 4px 0;
+    font-size: 0.875rem;
+  }
+
+  .select-option {
+    padding: 6px 10px;
+    cursor: pointer;
+    color: #5E565A;
+  }
+
+  .select-option:hover {
+    background: #EFECCA;
+  }
+
+  .select-option[aria-selected="true"] {
+    background: rgba(169,203,183,0.25);
+  }
+
+  .select-option-disabled {
+    color: #9ca3af;
+    cursor: not-allowed;
+  }
+
+  .modal-close-btn {
+    @apply text-white hover:bg-white/20 rounded-full p-2 transition-colors;
+  }
+
+
   /* ===== BADGES & PILLS ===== */
-  
+
   .badge {
     @apply px-2 py-0.5 rounded text-xs font-medium;
   }
-  
+
   .badge-primary {
     @apply badge;
     background-color: rgba(169, 203, 183, 0.2);
     color: #5E565A;
   }
-  
+
   .badge-success {
     @apply badge;
     background-color: rgba(169, 203, 183, 0.3);
     color: #5E565A;
   }
-  
+
   .badge-warning {
     @apply badge;
     background-color: rgba(247, 255, 88, 0.3);
     color: #5E565A;
   }
-  
+
   .badge-danger {
     @apply badge;
     background-color: rgba(255, 147, 79, 0.2);
     color: #5E565A;
   }
-  
+
   .badge-gray {
     @apply badge;
     background-color: #EFECCA;
     color: #5E565A;
   }
 
-  
+
   /* ===== DIFFICULTY BADGES (per hiking) ===== */
-  
+
   .difficulty-badge {
     @apply badge text-white;
   }
-  
+
   .difficulty-easy {
     @apply difficulty-badge;
     background-color: #A9CBB7;
   }
-  
+
   .difficulty-medium {
     @apply difficulty-badge;
     background-color: #FF934F;
   }
-  
+
   .difficulty-hard {
     @apply difficulty-badge;
     background-color: #F7FF58;
     color: #5E565A;
   }
-  
+
   .difficulty-expert {
     @apply difficulty-badge;
     background-color: #5E565A;
   }
 
-  
+
   /* ===== ALERTS & MESSAGES ===== */
-  
+
   .alert {
     @apply px-4 py-3 rounded-lg text-sm;
   }
-  
+
   .alert-error {
     @apply alert;
     background-color: rgba(255, 147, 79, 0.1);
     border: 2px solid #FF934F;
     color: #5E565A;
   }
-  
+
   .alert-success {
     @apply alert;
     background-color: rgba(169, 203, 183, 0.1);
     border: 2px solid #A9CBB7;
     color: #5E565A;
   }
-  
+
   .alert-warning {
     @apply alert;
     background-color: rgba(247, 255, 88, 0.2);
     border: 2px solid #F7FF58;
     color: #5E565A;
   }
-  
+
   .alert-info {
     @apply alert;
     background-color: rgba(169, 203, 183, 0.1);
@@ -359,13 +424,13 @@
     color: #5E565A;
   }
 
-  
+
   /* ===== LOADING ===== */
-  
+
   .loading-spinner {
     @apply flex items-center justify-center py-12;
   }
-  
+
   .spinner {
     @apply animate-spin rounded-full h-12 w-12 border-b-2;
     border-color: #A9CBB7;
@@ -375,9 +440,9 @@
     @apply animate-spin rounded-full h-4 w-4 border-b-2 border-current;
   }
 
-  
+
   /* ===== INSTRUCTIONS LIST ===== */
-  
+
   .instruction-item {
     @apply flex items-start space-x-3 p-2 rounded transition-colors;
   }
@@ -385,59 +450,54 @@
   .instruction-item:hover {
     background-color: #EFECCA;
   }
-  
+
   .instruction-number {
-    @apply flex-shrink-0 w-6 h-6 text-white 
-           rounded-full flex items-center justify-center 
-           text-xs font-bold;
+    @apply flex-shrink-0 w-6 h-6 text-white rounded-full flex items-center justify-center text-xs font-bold;
     background-color: #A9CBB7;
   }
-  
+
   .instruction-text {
     @apply text-sm font-medium;
     color: #5E565A;
   }
-  
+
   .instruction-details {
     @apply text-xs;
     color: #5E565A;
     opacity: 0.7;
   }
 
-  
+
   /* ===== HEADER ===== */
-  
+
   .app-header {
     @apply sticky top-0 z-50 shadow-lg;
     background: linear-gradient(135deg, #A9CBB7 0%, #FF934F 100%);
   }
-  
+
   /* Container principale header */
   .header-container {
-    @apply max-w-7xl mx-auto px-4 py-4
-           flex items-center justify-between;
+    @apply max-w-7xl mx-auto px-4 py-4 flex items-center justify-between;
   }
-  
+
   /* Container logo + testo */
   .logo-container {
     @apply flex items-center space-x-3;
   }
-  
+
   /* Icona logo */
   .logo-icon {
-    @apply w-12 h-12 backdrop-blur-sm
-           rounded-2xl flex items-center justify-center 
-           font-bold text-2xl shadow-xl;
+    @apply w-12 h-12 backdrop-blur-sm rounded-2xl flex items-center justify-center font-bold text-2xl shadow-xl;
     background-color: rgba(255, 255, 255, 0.25);
     border: 2px solid rgba(255, 255, 255, 0.4);
     color: #5E565A;
   }
-  
+
   /* Container del testo */
   .logo-text-container {
     @apply flex flex-col;
   }
-  
+
   /* Titolo principale */
   .logo-title {
     @apply text-2xl font-black;
@@ -446,7 +506,7 @@
     color: white;
     text-shadow: 2px 2px 4px rgba(94, 86, 90, 0.3);
   }
-  
+
   /* Sottotitolo */
   .logo-subtitle {
     @apply text-xs font-medium;
@@ -454,14 +514,11 @@
     text-shadow: 1px 1px 2px rgba(94, 86, 90, 0.2);
   }
 
-  
+
   /* ===== USER MENU ===== */
-  
+
   .user-menu-button {
-    @apply backdrop-blur-sm
-           px-4 py-2 rounded-lg font-medium 
-           flex items-center space-x-2 transition-all
-           shadow-md hover:shadow-lg;
+    @apply backdrop-blur-sm px-4 py-2 rounded-lg font-medium flex items-center space-x-2 transition-all shadow-md hover:shadow-lg;
     background-color: rgba(255, 255, 255, 0.15);
     border: 2px solid rgba(255, 255, 255, 0.3);
     color: white;
@@ -470,26 +527,21 @@
   .user-menu-button:hover {
     background-color: rgba(255, 255, 255, 0.25);
   }
-  
+
   .user-avatar {
-    @apply w-8 h-8 rounded-full 
-           flex items-center justify-center font-bold;
+    @apply w-8 h-8 rounded-full flex items-center justify-center font-bold;
     background-color: rgba(255, 255, 255, 0.3);
     border: 2px solid rgba(255, 255, 255, 0.5);
     color: #5E565A;
   }
-  
+
   .user-dropdown {
-    @apply absolute right-0 mt-2 w-56 
-           bg-white rounded-lg shadow-xl 
-           py-2 z-dropdown;
+    @apply absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl py-2 z-dropdown;
     border: 2px solid #EFECCA;
   }
-  
+
   .user-dropdown-item {
-    @apply w-full px-4 py-2 text-left 
-           flex items-center space-x-2
-           transition-colors;
+    @apply w-full px-4 py-2 text-left flex items-center space-x-2 transition-colors;
     color: #5E565A;
   }
 
@@ -497,9 +549,9 @@
     background-color: #EFECCA;
   }
 
-  
+
   /* ===== SAVED ROUTES LIST ===== */
-  
+
   .saved-route-card {
     @apply rounded-lg p-3 transition-colors;
     border: 2px solid #EFECCA;
@@ -508,114 +560,109 @@
   .saved-route-card:hover {
     background-color: #EFECCA;
   }
-  
+
   .saved-route-title {
     @apply font-bold mb-1;
     color: #5E565A;
   }
-  
+
   .saved-route-info {
     @apply text-xs space-y-1;
     color: #5E565A;
     opacity: 0.8;
   }
-  
+
   .saved-route-stats {
     @apply flex space-x-3 mt-2;
   }
 
-  
+
   /* ===== NEARBY HIKES ===== */
-  
+
   .hike-card {
-    @apply rounded-lg p-4 
-           cursor-pointer transition-colors;
+    @apply rounded-lg p-4 cursor-pointer transition-colors;
     border: 2px solid #EFECCA;
   }
 
   .hike-card:hover {
     background-color: #EFECCA;
   }
-  
+
   .hike-card-loading {
     @apply hike-card cursor-wait;
     background-color: rgba(169, 203, 183, 0.1);
   }
-  
+
   .hike-title {
     @apply font-bold mb-1;
     color: #5E565A;
   }
-  
+
   .hike-details {
     @apply flex items-center flex-wrap gap-3 text-sm mb-2;
     color: #5E565A;
   }
 
-  
+
   /* ===== NAVIGATION MODE ===== */
-  
+
   .nav-status-bar {
-    @apply text-white rounded-lg shadow-lg p-4 
-           w-full max-w-xl;
+    @apply text-white rounded-lg shadow-lg p-4 w-full max-w-xl;
     background-color: #A9CBB7;
   }
-  
+
   .nav-instruction-card {
-    @apply bg-white rounded-lg shadow-lg p-4 
-           w-full max-w-xl;
+    @apply bg-white rounded-lg shadow-lg p-4 w-full max-w-xl;
     border-left: 4px solid #A9CBB7;
   }
-  
+
   .nav-warning {
-    @apply rounded-lg shadow-md p-4
-           w-full max-w-xl;
+    @apply rounded-lg shadow-md p-4 w-full max-w-xl;
     background-color: rgba(247, 255, 88, 0.2);
     border-left: 4px solid #F7FF58;
   }
 
-  
+
   /* ===== INFO MODAL SECTIONS ===== */
-  
+
   .info-section {
     @apply space-y-3;
   }
-  
+
   .info-section-title {
     @apply text-lg font-bold mb-3;
     color: #5E565A;
   }
-  
+
   .info-step {
     @apply flex items-start space-x-3;
   }
-  
+
   .info-step-icon {
-    @apply flex-shrink-0 w-8 h-8
-           rounded-full flex items-center justify-center;
+    @apply flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center;
     background-color: rgba(169, 203, 183, 0.2);
     color: #A9CBB7;
   }
-  
+
   .info-step-title {
     @apply font-semibold;
     color: #5E565A;
   }
-  
+
   .info-step-description {
     @apply text-sm;
     color: #5E565A;
     opacity: 0.8;
   }
 
-  
+
   /* ===== FOOTER ===== */
-  
+
   .footer {
     @apply text-center py-4 text-sm;
     color: #5E565A;
   }
-  
+
   .footer-link {
     @apply hover:underline transition-colors;
     color: #A9CBB7;
@@ -625,13 +672,13 @@
     color: #98baa7;
   }
 
-  
+
   /* ===== UTILITIES CUSTOM ===== */
-  
+
   .container-app {
     @apply max-w-7xl mx-auto px-4;
   }
-  
+
   .page-section {
     @apply py-6 space-y-4;
   }

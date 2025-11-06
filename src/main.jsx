@@ -12,6 +12,12 @@ import { ToastProvider } from './contexts/ToastContext'
 import { SettingsProvider } from './contexts/SettingsContext'
 import logger from './utils/logger'
 
+// Ensure dark mode is disabled if previously set
+if (typeof document !== 'undefined') {
+  document.documentElement.classList.remove('theme-dark')
+  document.body.classList.remove('modal-open')
+}
+
 let DefaultIcon = L.icon({
   iconUrl: icon,
   shadowUrl: iconShadow,
