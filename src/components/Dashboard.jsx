@@ -268,22 +268,22 @@ const Dashboard = ({ onClose }) => {
                           {formatTimestamp(r.completedAt || r.createdAt, settings?.timeFormat || '24h')} • {formatDistance(r.actualDistance ?? r.distance, settings?.distanceUnit || 'km')}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 flex-wrap justify-end">
                         <button
                           onClick={() => handleExportGpx(r)}
-                          className="btn-primary px-3 py-1.5"
+                          className="btn-primary px-2.5 py-1 text-sm rounded-md"
                           disabled={!(Array.isArray(r.actualCoordinates) && r.actualCoordinates.length > 1) && !(Array.isArray(r.coordinates) && r.coordinates.length > 1)}
                           title={Array.isArray(r.actualCoordinates) && r.actualCoordinates.length > 1 ? 'Esporta traccia GPX' : 'Esporta GPX del percorso pianificato'}
                         >
-                          Esporta GPX
+                          GPX
                         </button>
                         <button
                           onClick={() => handleExportImage(r)}
-                          className="bg-gray-800 hover:bg-gray-900 text-white rounded px-3 py-1.5"
+                          className="bg-gray-800 hover:bg-gray-900 text-white rounded-md px-2.5 py-1 text-sm"
                           disabled={!(Array.isArray(r.actualCoordinates) && r.actualCoordinates.length > 1) && !(Array.isArray(r.coordinates) && r.coordinates.length > 1)}
                           title="Esporta immagine del percorso"
                         >
-                          Esporta Immagine
+                          Immagine
                         </button>
                       </div>
                     </div>)
