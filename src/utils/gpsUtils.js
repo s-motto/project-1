@@ -116,3 +116,39 @@ export function calculateSpeed(distanceKm, timeSeconds) {
   const timeHours = timeSeconds / 3600
   return parseFloat((distanceKm / timeHours).toFixed(1))
 }
+
+// ====== UNIT CONVERSION & FORMATTING ======
+export const KM_TO_MI = 0.621371
+export const M_TO_FT = 3.28084
+
+/** Convert km to display unit ("km" | "mi") and return number */
+export function convertDistance(distanceKm, unit) {
+  return unit === 'mi' ? distanceKm * KM_TO_MI : distanceKm
+}
+
+/** Convert meters to display unit ("m" | "ft") and return number */
+export function convertElevation(meters, unit) {
+  return unit === 'ft' ? meters * M_TO_FT : meters
+}
+
+/** Format distance using given unit label ("km" | "mi") */
+export function formatDistance(distanceKm, unit) {
+  const v = convertDistance(distanceKm, unit)
+  const decimals = v < 10 ? 2 : 1
+  return `${v.toFixed(decimals)} ${unit}`
+}
+
+/** Format elevation using given unit label ("m" | "ft") */
+export function formatElevation(meters, unit) {
+  const v = convertElevation(meters, unit)
+  return `${Math.round(v)} ${unit}`
+}
+
+/** Format speed based on distance unit: km/h or mph */
+export function formatSpeedKmh(kmh, distanceUnit) {
+  if (distanceUnit === 'mi') {
+    const mph = kmh * KM_TO_MI
+    return `${mph.toFixed(1)} mph`
+  }
+  return `${kmh.toFixed(1)} km/h`
+}

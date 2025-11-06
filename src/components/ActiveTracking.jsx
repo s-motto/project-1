@@ -10,7 +10,10 @@ import {
   calculateElevationGain,
   calculateElevationLoss,
   formatTime,
-  calculateSpeed
+  calculateSpeed,
+  formatDistance,
+  formatElevation,
+  formatSpeedKmh
 } from '../utils/gpsUtils'
 import 'leaflet/dist/leaflet.css'
 import { useToast } from '../contexts/ToastContext'
@@ -339,6 +342,9 @@ const handleStop = async () => {
 
   // Velocità media
   const avgSpeed = calculateSpeed(distance, elapsedTime)
+  const distanceLabel = formatDistance(distance, settings?.distanceUnit || 'km')
+  const speedLabel = formatSpeedKmh(avgSpeed, settings?.distanceUnit || 'km')
+  const gainLabel = formatElevation(elevationGain, settings?.elevationUnit || 'm')
 
   // Determina il centro iniziale della mappa
   const getInitialCenter = () => {
@@ -399,7 +405,7 @@ const handleStop = async () => {
               <div className="text-sm">
                 <p className="font-bold text-yellow-800">GPS impreciso</p>
                 <p className="text-yellow-700">
-                  Precisione: {Math.round(gpsAccuracy)}m. Vai all'aperto per migliorare il segnale.
+                  Precisione: {formatElevation(Math.round(gpsAccuracy), settings?.elevationUnit || 'm')}. Vai all'aperto per migliorare il segnale.
                 </p>
               </div>
             </div>
@@ -410,24 +416,27 @@ const handleStop = async () => {
         <div className="p-3 bg-gray-50 border-b grid grid-cols-2 md:grid-cols-5 gap-2">
           <div className="text-center">
             <p className="text-xs text-gray-500">Distanza</p>
-            <p className="text-base font-bold text-blue-600">{distance.toFixed(2)} km</p>
+            <p className="text-base font-bold text-blue-600">{formatDistance(distance, settings?.distanceUnit || 'km')}</p>
           </div>
+
           <div className="text-center">
             <p className="text-xs text-gray-500">Tempo</p>
             <p className="text-base font-bold text-purple-600">{formatTime(elapsedTime)}</p>
           </div>
           <div className="text-center">
             <p className="text-xs text-gray-500">Velocità</p>
-            <p className="text-base font-bold text-green-600">{avgSpeed} km/h</p>
+            <p className="text-base font-bold text-green-600">{formatSpeedKmh(avgSpeed, settings?.distanceUnit || 'km')}</p>
           </div>
+
           <div className="text-center">
             <p className="text-xs text-gray-500">D+ ⛰️</p>
-            <p className="text-base font-bold text-orange-600">{elevationGain} m</p>
+            <p className="text-base font-bold text-orange-600">{formatElevation(elevationGain, settings?.elevationUnit || 'm')}</p>
           </div>
+
           <div className="text-center">
             <p className="text-xs text-gray-500">Precisione GPS</p>
             <p className={`text-base font-bold ${gpsAccuracy && gpsAccuracy < 20 ? 'text-green-600' : gpsAccuracy && gpsAccuracy < 50 ? 'text-yellow-600' : 'text-red-600'}`}>
-              {gpsAccuracy ? `${Math.round(gpsAccuracy)}m` : '---'}
+              {gpsAccuracy ? `${formatElevation(Math.round(gpsAccuracy), settings?.elevationUnit || 'm')}` : '---'}
             </p>
           </div>
         </div>
@@ -501,11 +510,11 @@ const handleStop = async () => {
                 <p className="text-gray-600">Lat: {currentPosition.lat.toFixed(6)}</p>
                 <p className="text-gray-600">Lng: {currentPosition.lng.toFixed(6)}</p>
                 {currentPosition.altitude && (
-                  <p className="text-gray-600">Alt: {Math.round(currentPosition.altitude)}m</p>
+                  <p className="text-gray-600">Alt: {formatElevation(Math.round(currentPosition.altitude), settings?.elevationUnit || 'm')}</p>
                 )}
                 {gpsAccuracy && (
                   <p className={gpsAccuracy < 20 ? 'text-green-600 font-bold' : gpsAccuracy < 50 ? 'text-yellow-600' : 'text-red-600'}>
-                    ±{Math.round(gpsAccuracy)}m
+                    ±{formatElevation(Math.round(gpsAccuracy), settings?.elevationUnit || 'm')}
                   </p>
                 )}
               </>

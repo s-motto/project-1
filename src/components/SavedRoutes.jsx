@@ -5,6 +5,8 @@ import { useAuth } from '../contexts/AuthContext'
 import routesService from '../services/routesService'
 import ActiveTracking from './ActiveTracking'
 import { useToast } from '../contexts/ToastContext'
+import { useSettings } from '../contexts/SettingsContext'
+import { formatDistance, formatElevation } from '../utils/gpsUtils'
 
 const SavedRoutes = ({ onLoadRoute }) => {
   const { user } = useAuth()
@@ -18,6 +20,7 @@ const SavedRoutes = ({ onLoadRoute }) => {
   const [savingNameId, setSavingNameId] = useState(null)
 
   const { toast } = useToast()
+  const { settings } = useSettings()
 
   useEffect(() => {
     if (user) {
@@ -188,9 +191,9 @@ const SavedRoutes = ({ onLoadRoute }) => {
                     <p>📍 {route.startPoint.name?.substring(0, 50)}...</p>
                     <p>🏁 {route.endPoint.name?.substring(0, 50)}...</p>
                     <div className="flex space-x-3 mt-2">
-                      <span>📏 {route.distance} km</span>
+                      <span>📏 {formatDistance(route.distance, settings?.distanceUnit || 'km')}</span>
                       <span>⏱️ {route.duration} min</span>
-                      <span>⛰️ {route.ascent} m</span>
+                      <span>⛰️ {formatElevation(route.ascent, settings?.elevationUnit || 'm')}</span>
                     </div>
                   </div>
                 </div>

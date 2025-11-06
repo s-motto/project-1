@@ -4,6 +4,8 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useAuth } from '../contexts/AuthContext'
 import routesService from '../services/routesService'
 import statsService from '../services/statsService'
+import { useSettings } from '../contexts/SettingsContext'
+import { formatDistance, formatElevation, KM_TO_MI } from '../utils/gpsUtils'
 import StatsCard from './StatsCard'
 import { generateGpxFromTrack } from '../utils/gpx'
 import { trackToPng } from '../utils/trackImage'
@@ -11,6 +13,7 @@ import { trackToPng } from '../utils/trackImage'
 // Componente Dashboard per visualizzare le statistiche dell'utente
 const Dashboard = ({ onClose }) => {
   const { user } = useAuth()
+  const { settings } = useSettings()
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState(null)
   const [routes, setRoutes] = useState([])
@@ -109,7 +112,9 @@ const Dashboard = ({ onClose }) => {
         <div className="dashboard-tooltip">
           <p className="dashboard-tooltip-label">{payload[0].payload.month}</p>
           <p className="dashboard-tooltip-value">
-            {payload[0].value.toFixed(1)} km
+            {settings?.distanceUnit === 'mi'
+              ? `${(payload[0].value * KM_TO_MI).toFixed(1)} mi`
+              : `${payload[0].value.toFixed(1)} km`}
           </p>
         </div>
       )
@@ -187,8 +192,10 @@ const Dashboard = ({ onClose }) => {
                   />
                   <StatsCard
                     icon={<FaChartLine />}
-                    label="Chilometri totali"
-                    value={statsService.formatKm(stats.totalKm)}
+                    label={settings?.distanceUnit === 'mi' ? 'Miglia totali' : 'Chilometri totali'}
+                    value={settings?.distanceUnit === 'mi' 
+                      ? (() => { const mi = stats.totalKm * KM_TO_MI; return mi >= 1000 ? `${(mi/1000).toFixed(1)}k mi` : `${mi.toFixed(1)} mi` })()
+                      : statsService.formatKm(stats.totalKm)}
                     color="text-blue-600"
                   />
                   <StatsCard
@@ -200,7 +207,9 @@ const Dashboard = ({ onClose }) => {
                   <StatsCard
                     icon={<FaMountain />}
                     label="Dislivello totale"
-                    value={statsService.formatMeters(stats.totalAscent)}
+                    value={settings?.elevationUnit === 'ft' 
+                      ? `${Math.round(stats.totalAscent * 3.28084).toLocaleString('it-IT')} ft`
+                      : statsService.formatMeters(stats.totalAscent)}
                     color="text-orange-600"
                   />
                 </div>
@@ -208,7 +217,7 @@ const Dashboard = ({ onClose }) => {
 
               {/* Grafico km per mese */}
               <div className="dashboard-chart-section">
-                <h3 className="dashboard-section-title">📈 Km percorsi per mese</h3>
+                <h3 className="dashboard-section-title">📈 {settings?.distanceUnit === 'mi' ? 'Mi' : 'Km'} percorsi per mese</h3>
                 <div className="dashboard-chart-container">
                   <ResponsiveContainer width="100%" height={250}>
                     <LineChart
@@ -224,7 +233,7 @@ const Dashboard = ({ onClose }) => {
                       <YAxis 
                         stroke="#5E565A"
                         style={{ fontSize: '12px' }}
-                        label={{ value: 'km', angle: -90, position: 'insideLeft' }}
+                        label={{ value: settings?.distanceUnit === 'mi' ? 'mi' : 'km', angle: -90, position: 'insideLeft' }}
                       />
                       <Tooltip content={<CustomTooltip />} />
                       <Line
@@ -256,7 +265,7 @@ const Dashboard = ({ onClose }) => {
                       <div className="text-sm">
                         <div className="font-semibold text-gray-800">{r.name}</div>
                         <div className="text-gray-500">
-                          {(r.completedAt || r.createdAt || '').slice(0,10)} • {r.actualDistance ?? r.distance} km
+                          {(r.completedAt || r.createdAt || '').slice(0,10)} • {formatDistance(r.actualDistance ?? r.distance, settings?.distanceUnit || 'km')}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">

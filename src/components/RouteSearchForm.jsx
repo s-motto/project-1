@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
+
 import NavigationMode from './NavigationMode'
 import SaveRouteButton from './SaveRouteButton'
 import ActiveTracking from './ActiveTracking'
@@ -9,10 +10,14 @@ import MapPointSelector from './MapPointSelector'
 import useNavigation from '../contexts/NavigationContext'
 import { useToast } from '../contexts/ToastContext'
 import { useAuth } from '../contexts/AuthContext'
-import { calculateDistance } from '../utils/gpsUtils'
+import { calculateDistance, formatDistance, formatElevation, KM_TO_MI, M_TO_FT } from '../utils/gpsUtils'
+import { useSettings } from '../contexts/SettingsContext'
+
 import logger from '../utils/logger'
 
 const RouteSearchForm = forwardRef(({preloadedRoute, preloadedHike}, ref) => {
+  const { settings } = useSettings()
+
   const [startPoint, setStartPoint] = useState(null) //latitudine e longitudine
   const [endPoint, setEndPoint] = useState(null) //latitudine e longitudine
   const [map, setMap] = useState(null) //istanza della mappa
@@ -56,7 +61,7 @@ const RouteSearchForm = forwardRef(({preloadedRoute, preloadedHike}, ref) => {
       
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
-        attribution: '© OpenStreetMap contributors'
+        attribution: ' OpenStreetMap contributors'
       }).addTo(mapInstance)
       
       setMap(mapInstance) //Salva l'istanza della mappa nello stato
@@ -100,7 +105,7 @@ useEffect(() => {
     tempMarkerDiv.style.position = 'absolute'
     tempMarkerDiv.style.zIndex = '1000'
     tempMarkerDiv.style.pointerEvents = 'none'
-    tempMarkerDiv.innerHTML = '📍'
+    tempMarkerDiv.innerHTML = ' '
     
     const pixel = map.latLngToContainerPoint([lat, lng])
     tempMarkerDiv.style.left = `${pixel.x}px`
@@ -454,21 +459,21 @@ const getCurrentLocation = () => {
           const data = await response.json()
           if (data.features && data.features.length > 0) {
             const placeName = data.features[0].properties.label
-            setStartText(`📍 ${placeName}`)
+            setStartText(` ${placeName}`)
             setStartPoint({
               lat,
               lon,
               name: placeName
             })
           } else {
-            setStartText('📍 La tua posizione')
+            setStartText(' La tua posizione')
           }
         } else {
-          setStartText('📍 La tua posizione')
+          setStartText(' La tua posizione')
         }
       } catch (error) {
         logger.error('Reverse geocoding error:', error)
-        setStartText('📍 La tua posizione')
+        setStartText(' La tua posizione')
       }
       
       setGettingLocation(false)
@@ -786,7 +791,7 @@ const handleSetAsStart = () => {
       name: selectedMapPoint.name
     })
     setStartText(selectedMapPoint.name)
-    toast.success('🚩 Punto di partenza impostato!')
+    toast.success(' Punto di partenza impostato!')
   }
   setShowMapPointSelector(false)
   if (tempMarkerRef.current) tempMarkerRef.current.remove()
@@ -800,7 +805,7 @@ const handleSetAsEnd = () => {
       name: selectedMapPoint.name
     })
     setEndText(selectedMapPoint.name)
-    toast.success('🏁 Punto di arrivo impostato!')
+    toast.success(' Punto di arrivo impostato!')
   }
   setShowMapPointSelector(false)
   if (tempMarkerRef.current) tempMarkerRef.current.remove()
@@ -817,7 +822,7 @@ const handleSwapPoints = () => {
     setStartText(endText)
     setEndText(tempText)
     
-    toast.success('🔄 Punti invertiti!')
+    toast.success(' Punti invertiti!')
   }
   setShowMapPointSelector(false)
   if (tempMarkerRef.current) tempMarkerRef.current.remove()
@@ -1014,7 +1019,7 @@ const handleCloseSelector = () => {
   <FaRoute className="route-stat-icon-distance" />
   <div className="route-stat-details">
     <p className="route-stat-label">Distanza</p>
-    <p className="route-stat-value">{routeInfo.distance} km</p>
+    <p className="route-stat-value">{formatDistance(routeInfo.distance, settings?.distanceUnit || 'km')}</p>
   </div>
 </div>
                 <div className="route-stat-card">
@@ -1028,14 +1033,14 @@ const handleCloseSelector = () => {
   <FaWalking className="route-stat-icon-ascent" />
   <div className="route-stat-details">
     <p className="route-stat-label">Salita</p>
-    <p className="route-stat-value">{routeInfo.ascent} m</p>
+    <p className="route-stat-value">{formatElevation(routeInfo.ascent, settings?.elevationUnit || 'm')}</p>
   </div>
 </div>
                 <div className="route-stat-card">
   <FaWalking className="route-stat-icon-descent" />
   <div className="route-stat-details">
     <p className="route-stat-label">Discesa</p>
-    <p className="route-stat-value">{routeInfo.descent} m</p>
+    <p className="route-stat-value">{formatElevation(routeInfo.descent, settings?.elevationUnit || 'm')}</p>
   </div>
 </div>
               </div>
@@ -1060,7 +1065,7 @@ const handleCloseSelector = () => {
     className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center space-x-2 transition"
   >
     <FaPlay />
-    <span>🎯 Tracking GPS con Statistiche</span>
+    <span> Tracking GPS con Statistiche</span>
   </button>
   
   {/* Pulsante Navigazione guidata (quello esistente) */}
@@ -1069,7 +1074,7 @@ const handleCloseSelector = () => {
     className="route-gps-btn"
   >
     <FaLocationArrow />
-    <span>🧭 Navigazione Guidata</span>
+    <span> Navigazione Guidata</span>
   </button>
 </div>
 </div>  
@@ -1089,12 +1094,17 @@ const handleCloseSelector = () => {
         <div className="route-instruction-content">
           <p className="route-instruction-text">{step.instruction}</p>
           <p className="route-instruction-meta">
-                        {step.distance > 0 
-                          ? step.distance >= 1 
-                            ? `${step.distance.toFixed(2)} km` 
-                            : `${(step.distance * 1000).toFixed(0)} m`
-                          : '0 m'
-                        } · {Math.round(step.duration / 60)} min
+                        {(() => {
+              const dKm = step.distance || 0 // ORS returns km when units:'km'
+              if ((settings?.distanceUnit || 'km') === 'mi') {
+                if (dKm >= 0.1) return `${(dKm * KM_TO_MI).toFixed(2)} mi`
+                const feet = Math.round(dKm * 1000 * M_TO_FT)
+                return `${feet} ft`
+              } else {
+                if (dKm >= 1) return `${dKm.toFixed(2)} km`
+                return `${Math.round(dKm * 1000)} m`
+              }
+            })()} · {Math.round(step.duration / 60)} min
                       </p>
                     </div>
                   </div>
