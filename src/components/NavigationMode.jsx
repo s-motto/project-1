@@ -2,17 +2,18 @@ import React, { useState, useEffect, useRef } from 'react'
 import useNavigation from '../contexts/NavigationContext'
 import { FaLocationArrow, FaRoute, FaFlag, FaExclamationTriangle, FaStop, FaCompass } from 'react-icons/fa'
 import L from 'leaflet'
-import { calculateDistance } from '../utils/gpsUtils'
+import { calculateDistance, formatDistance, KM_TO_MI, M_TO_FT, formatDurationSeconds } from '../utils/gpsUtils'
+import { useSettings } from '../contexts/SettingsContext'
 import { useToast } from '../contexts/ToastContext'
 
 const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, currentPosition, heading }) => {
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [distanceToEnd, setDistanceToEnd] = useState(null)
+
   const [isOffRoute, setIsOffRoute] = useState(false)
   const userMarkerRef = useRef(null)
   const { toast } = useToast()
-
- 
+  const { settings } = useSettings()
 
   // Trova il punto più vicino sul percorso
   const findNearestPointOnRoute = (position) => {
@@ -151,15 +152,15 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
         <GPSStatusBadge currentPosition={currentPosition} />
       </div>
       <div className="nav-status-card">
-  <div className="nav-status-header">
-    <div className="nav-status-title">
-      <FaLocationArrow className="nav-status-icon" />
-      <span className="nav-status-text">Navigazione attiva</span>
-    </div>
-    <button
-      onClick={handleStop}
-      className="nav-stop-btn"
-    >
+        <div className="nav-status-header">
+          <div className="nav-status-title">
+            <FaLocationArrow className="nav-status-icon" />
+            <span className="nav-status-text">Navigazione attiva</span>
+          </div>
+          <button
+            onClick={handleStop}
+            className="nav-stop-btn"
+          >
             <FaStop />
             <span>Stop</span>
           </button>
@@ -169,7 +170,7 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
           <div className="flex items-center space-x-2 text-sm">
             <FaFlag />
             <span>
-              Distanza destinazione: <strong>{(distanceToEnd * 1000).toFixed(0)} m</strong>
+              Distanza destinazione: <strong>{formatDistance(distanceToEnd, settings?.distanceUnit || 'km')}</strong>
             </span>
           </div>
         )}
@@ -178,37 +179,42 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
       {/* Off Route Warning */}
       {isOffRoute && (
         <div className="nav-off-route-warning">
-  <div className="nav-warning-content">
-    <FaExclamationTriangle className="nav-warning-icon" />
-    <div className="nav-warning-text-container">
-      <p className="nav-warning-title">Fuori percorso!</p>
-      <p className="nav-warning-description">Torna sul tracciato consigliato</p>
-    </div>
-  </div>
-</div>
+          <div className="nav-warning-content">
+            <FaExclamationTriangle className="nav-warning-icon" />
+            <div className="nav-warning-text-container">
+              <p className="nav-warning-title">Fuori percorso!</p>
+              <p className="nav-warning-description">Torna sul tracciato consigliato</p>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Current Instruction */}
       {currentStep && (
         <div className="nav-current-instruction">
-  <div className="nav-instruction-content">
-    <div className="nav-instruction-number">
-      {currentStepIndex + 1}
-    </div>
-    <div className="nav-instruction-details">
-      <p className="nav-instruction-label">Prossima indicazione</p>
-      <p className="nav-instruction-text">{currentStep.instruction}</p>
-      <div className="nav-instruction-meta">
+          <div className="nav-instruction-content">
+            <div className="nav-instruction-number">
+              {currentStepIndex + 1}
+            </div>
+            <div className="nav-instruction-details">
+              <p className="nav-instruction-label">Prossima indicazione</p>
+              <p className="nav-instruction-text">{currentStep.instruction}</p>
+              <div className="nav-instruction-meta">
                 <span>
                   <FaRoute className="mr-1" />
-                  {currentStep.distance >= 1 
-                    ? `${currentStep.distance.toFixed(2)} km` 
-                    : `${(currentStep.distance * 1000).toFixed(0)} m`}
+                  {(() => {
+                    const dKm = currentStep.distance || 0
+                    if ((settings?.distanceUnit || 'km') === 'mi') {
+                      if (dKm >= 0.1) return `${(dKm * KM_TO_MI).toFixed(2)} mi`
+                      return `${Math.round(dKm * 1000 * M_TO_FT)} ft`
+                    }
+                    if (dKm >= 1) return `${dKm.toFixed(2)} km`
+                    return `${Math.round(dKm * 1000)} m`
+                  })()}
                 </span>
                 <span>
-                 <FaCompass className="mr-1" />
-
-                  {Math.round(currentStep.duration / 60)} min
+                  <FaCompass className="mr-1" />
+                  {formatDurationSeconds(Math.round(currentStep.duration || 0), settings?.durationFormat || 'hms')}
                 </span>
               </div>
             </div>
@@ -219,9 +225,9 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
       {/* Next Instruction Preview */}
       {nextStep && (
         <div className="nav-next-instruction">
-  <p className="nav-next-label">Poi</p>
-  <p className="nav-next-text">{nextStep.instruction}</p>
-</div>
+          <p className="nav-next-label">Poi</p>
+          <p className="nav-next-text">{nextStep.instruction}</p>
+        </div>
       )}
 
       {/* Remaining Steps Counter */}

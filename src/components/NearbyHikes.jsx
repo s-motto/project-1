@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { FaHiking, FaTimes, FaSpinner, FaMapMarkerAlt, FaRulerCombined, FaChevronRight, FaMountain } from 'react-icons/fa'
 import logger from '../utils/logger'
+import { useSettings } from '../contexts/SettingsContext'
+import { formatDistance } from '../utils/gpsUtils'
 
 // Componente per mostrare i percorsi di hiking nelle vicinanze
 const NearbyHikes = ({ onClose, onSelectHike }) => {
@@ -10,12 +12,14 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
   const [userLocation, setUserLocation] = useState(null)
   const [radiusKm, setRadiusKm] = useState(10)
   const [loadingElevation, setLoadingElevation] = useState(null) // ID del percorso in caricamento
+  const { settings } = useSettings()
 
   // Effettua la ricerca dei percorsi quando il componente viene montato o il raggio cambia
   useEffect(() => {
     getUserLocationAndFetchHikes()
   }, [radiusKm])
-// Funzione per ottenere la posizione dell'utente e cercare i percorsi
+
+  // Funzione per ottenere la posizione dell'utente e cercare i percorsi
   const getUserLocationAndFetchHikes = () => {
     setLoading(true)
     setError('')
@@ -26,7 +30,8 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
       setLoading(false)
       return
     }
-// Ottieni la posizione corrente
+
+    // Ottieni la posizione corrente
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         const lat = position.coords.latitude
@@ -46,126 +51,125 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
       }
     )
   }
-// Funzione per cercare i percorsi di hiking nelle vicinanze usando Overpass API
-const fetchNearbyHikes = async (lat, lon) => {
-  try {
-    setLoading(true)
-    setError('')
 
-    // Query principale: percorsi escursionistici (relations e ways)
-    const query = `
-      [out:json][timeout:25];
-      (
-        
-        relation["route"="hiking"]["name"](around:${radiusKm * 1000},${lat},${lon}); 
-        
-        way["highway"="path"]["name"](around:${radiusKm * 1000},${lat},${lon});
-        
-        way["highway"="footway"]["name"](around:${radiusKm * 1000},${lat},${lon});
-      );
-      out tags geom;
-    `;
-// Effettua la richiesta a Overpass API
-    const response = await fetch('https://overpass-api.de/api/interpreter', {
-      method: 'POST',
-      body: query
-    });
+  // Funzione per cercare i percorsi di hiking nelle vicinanze usando Overpass API
+  const fetchNearbyHikes = async (lat, lon) => {
+    try {
+      setLoading(true)
+      setError('')
 
-    if (!response.ok) {
-      throw new Error('Errore dal server Overpass');
-    }
-// Processa i dati ricevuti
-    const data = await response.json();
-    const processedHikes = processOverpassData(data, lat, lon);
+      // Query principale: percorsi escursionistici (relations e ways)
+      const query = `
+        [out:json][timeout:25];
+        (
+          relation["route"="hiking"]["name"](around:${radiusKm * 1000},${lat},${lon}); 
+          way["highway"="path"]["name"](around:${radiusKm * 1000},${lat},${lon});
+          way["highway"="footway"]["name"](around:${radiusKm * 1000},${lat},${lon});
+        );
+        out tags geom;
+      `;
 
-    setHikes(processedHikes);
-
-    if (processedHikes.length === 0) {
-      setError(`Nessun sentiero trovato entro ${radiusKm} km.
-        Prova ad aumentare il raggio o spostarti in una zona più montuosa.
-        ${radiusKm < 20 ? 'Suggerimento: prova con 20 o 50 km.' : ''}`);
-    }
-  } catch (err) {
-    logger.error('Error fetching hikes:', err);
-    setError('Errore nel caricamento dei percorsi o server Overpass sovraccarico. Riprova tra qualche minuto.');
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-// Funzione per processare i dati ricevuti da Overpass API 
-const processOverpassData = (data, userLat, userLon) => {
-  const hikes = [];
-  const processedIds = new Set();
-
-  data.elements.forEach(element => {
-    if (!element.tags || !element.tags.name || processedIds.has(element.id)) return;
-    processedIds.add(element.id);
-
-    let coordinates = [];
-
-    // Usa geometria già fornita da Overpass
-    if (element.geometry && element.geometry.length > 0) {
-      coordinates = element.geometry.map(point => [point.lon, point.lat]);
-    } else if (element.members) {
-      // Se è una relation, prova a costruire le coordinate dai punti dei membri
-      element.members.forEach(member => {
-        if (member.geometry) {
-          member.geometry.forEach(point => {
-            coordinates.push([point.lon, point.lat]);
-          });
-        }
+      // Effettua la richiesta a Overpass API
+      const response = await fetch('https://overpass-api.de/api/interpreter', {
+        method: 'POST',
+        body: query
       });
+
+      if (!response.ok) {
+        throw new Error('Errore dal server Overpass');
+      }
+
+      // Processa i dati ricevuti
+      const data = await response.json();
+      const processedHikes = processOverpassData(data, lat, lon);
+
+      setHikes(processedHikes);
+
+      if (processedHikes.length === 0) {
+        setError(`Nessun sentiero trovato entro ${radiusKm} km.
+          Prova ad aumentare il raggio o spostarti in una zona più montuosa.
+          ${radiusKm < 20 ? 'Suggerimento: prova con 20 o 50 km.' : ''}`);
+      }
+    } catch (err) {
+      logger.error('Error fetching hikes:', err);
+      setError('Errore nel caricamento dei percorsi o server Overpass sovraccarico. Riprova tra qualche minuto.');
+    } finally {
+      setLoading(false);
     }
+  };
 
-    coordinates = removeDuplicatePoints(coordinates);
-    if (coordinates.length < 2) return;
+  // Funzione per processare i dati ricevuti da Overpass API 
+  const processOverpassData = (data, userLat, userLon) => {
+    const hikes = [];
+    const processedIds = new Set();
 
-    // Calcola posizione media e distanza dall'utente
-    const avgLat = coordinates.reduce((sum, c) => sum + c[1], 0) / coordinates.length;
-    const avgLon = coordinates.reduce((sum, c) => sum + c[0], 0) / coordinates.length;
-    const distance = calculateDistance(userLat, userLon, avgLat, avgLon);
-    const length = calculatePathLength(coordinates);
+    data.elements.forEach(element => {
+      if (!element.tags || !element.tags.name || processedIds.has(element.id)) return;
+      processedIds.add(element.id);
 
-    // Cerca di determinare la difficoltà
-    let difficulty = element.tags.sac_scale;
+      let coordinates = [];
 
-    // Se è una relation, prova a vedere se i membri hanno sac_scale
-    if (!difficulty && element.members) {
-      const memberDiff = element.members.find(m => m.tags && m.tags.sac_scale);
-      if (memberDiff) difficulty = memberDiff.tags.sac_scale;
-    }
+      // Usa geometria già fornita da Overpass
+      if (element.geometry && element.geometry.length > 0) {
+        coordinates = element.geometry.map(point => [point.lon, point.lat]);
+      } else if (element.members) {
+        // Se è una relation, prova a costruire le coordinate dai punti dei membri
+        element.members.forEach(member => {
+          if (member.geometry) {
+            member.geometry.forEach(point => {
+              coordinates.push([point.lon, point.lat]);
+            });
+          }
+        });
+      }
+
+      coordinates = removeDuplicatePoints(coordinates);
+      if (coordinates.length < 2) return;
+
+      // Calcola posizione media e distanza dall'utente
+      const avgLat = coordinates.reduce((sum, c) => sum + c[1], 0) / coordinates.length;
+      const avgLon = coordinates.reduce((sum, c) => sum + c[0], 0) / coordinates.length;
+      const distance = calculateDistance(userLat, userLon, avgLat, avgLon);
+      const length = calculatePathLength(coordinates);
+
+      // Cerca di determinare la difficoltà
+      let difficulty = element.tags.sac_scale;
+
+      // Se è una relation, prova a vedere se i membri hanno sac_scale
+      if (!difficulty && element.members) {
+        const memberDiff = element.members.find(m => m.tags && m.tags.sac_scale);
+        if (memberDiff) difficulty = memberDiff.tags.sac_scale;
+      }
       if (length > 1 && length < 80) {
         hikes.push({
-        id: element.id,
-        type: element.type,
-        name: element.tags.name,
-        distance,
-        length,
-        difficulty: difficulty || 'Non specificata',
-        description: element.tags.description || '',
-        operator: element.tags.operator || '',
-        coordinates,
-        center: { lat: avgLat, lon: avgLon }
+          id: element.id,
+          type: element.type,
+          name: element.tags.name,
+          distance,
+          length,
+          difficulty: difficulty || 'Non specificata',
+          description: element.tags.description || '',
+          operator: element.tags.operator || '',
+          coordinates,
+          center: { lat: avgLat, lon: avgLon }
 
-      })};
-  });
+        });
+      }
+    });
 
-  // Ordina per distanza
-  return hikes.sort((a, b) => a.distance - b.distance).slice(0, 20);
-};
-
+    // Ordina per distanza
+    return hikes.sort((a, b) => a.distance - b.distance).slice(0, 20);
+  };
 
   // Rimuovi punti duplicati consecutivi
   const removeDuplicatePoints = (coordinates) => {
     if (coordinates.length <= 1) return coordinates
-    
+
     const filtered = [coordinates[0]]
     for (let i = 1; i < coordinates.length; i++) {
       const prev = coordinates[i - 1]
       const curr = coordinates[i]
-      
+
       // Aggiungi solo se il punto è diverso dal precedente
       if (prev[0] !== curr[0] || prev[1] !== curr[1]) {
         filtered.push(curr)
@@ -179,7 +183,7 @@ const processOverpassData = (data, userLat, userLon) => {
     let length = 0
     for (let i = 1; i < coordinates.length; i++) {
       length += calculateDistance(
-        coordinates[i-1][1], coordinates[i-1][0],
+        coordinates[i - 1][1], coordinates[i - 1][0],
         coordinates[i][1], coordinates[i][0]
       )
     }
@@ -190,7 +194,7 @@ const processOverpassData = (data, userLat, userLon) => {
   const calculateElevation = async (coordinates) => {
     try {
       const ORS_KEY = import.meta.env.VITE_OPENROUTE_API_KEY
-      
+
       if (!ORS_KEY) {
         logger.error('OpenRouteService API key non trovata')
         return { ascent: 0, descent: 0 }
@@ -235,13 +239,13 @@ const processOverpassData = (data, userLat, userLon) => {
       }
 
       const data = await response.json()
-      
+
       // Calcola salita e discesa dalle elevazioni
       let ascent = 0
       let descent = 0
-      
+
       const elevations = data.geometry.coordinates.map(coord => coord[2])
-      
+
       for (let i = 1; i < elevations.length; i++) {
         const diff = elevations[i] - elevations[i - 1]
         if (diff > 0) {
@@ -251,8 +255,8 @@ const processOverpassData = (data, userLat, userLon) => {
         }
       }
 
-      return { 
-        ascent: Math.round(ascent), 
+      return {
+        ascent: Math.round(ascent),
         descent: Math.round(descent),
         elevations: elevations
       }
@@ -265,11 +269,11 @@ const processOverpassData = (data, userLat, userLon) => {
   // Gestisci selezione percorso con calcolo elevazione
   const handleSelectHike = async (hike) => {
     setLoadingElevation(`${hike.type}-${hike.id}`)
-    
+
     try {
       // Calcola elevazione prima di passare al componente padre
       const elevation = await calculateElevation(hike.coordinates)
-      
+
       // Aggiungi i dati di elevazione al percorso
       const hikeWithElevation = {
         ...hike,
@@ -277,7 +281,7 @@ const processOverpassData = (data, userLat, userLon) => {
         descent: elevation.descent,
         elevations: elevation.elevations
       }
-      
+
       onSelectHike(hikeWithElevation)
     } catch (error) {
       logger.error('Errore durante la selezione:', error)
@@ -288,66 +292,66 @@ const processOverpassData = (data, userLat, userLon) => {
     }
   }
 
-// Funzione per calcolare la distanza tra due coordinate geografiche
+  // Funzione per calcolare la distanza tra due coordinate geografiche
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
     const R = 6371 // Raggio della Terra in km
     const dLat = (lat2 - lat1) * Math.PI / 180 // conversione in radianti
     const dLon = (lon2 - lon1) * Math.PI / 180 // conversione in radianti
     // Haversine formula
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon/2) * Math.sin(dLon/2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+      Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
     return R * c
   }
 
-// Funzione per ottenere l'etichetta della difficoltà
+  // Funzione per ottenere l'etichetta della difficoltà
   const getDifficultyLabel = (difficulty) => {
-  if (!difficulty || difficulty === "Non specificata") {
-    return { label: "Non specificata", color: "#EFECCA" }
+    if (!difficulty || difficulty === "Non specificata") {
+      return { label: "Non specificata", color: "#EFECCA" }
+    }
+    const d = difficulty.toLowerCase()
+    if (d.includes("t1") || d === "hiking") {
+      return { label: "Turistico", color: "#A9CBB7" }
+    }
+    if (d.includes("t2") || d.includes("mountain_hiking")) {
+      return { label: "Escursionistico", color: "#F7FF58" }
+    }
+    if (d.includes("t3") || d.includes("demanding")) {
+      return { label: "Esperti (EE)", color: "#FF934F" }
+    }
+    if (d.includes("t4") || d.includes("t5") || d.includes("t6") || d.includes("alpine")) {
+      return { label: "Alpinistico (EEA)", color: "#5E565A" }
+    }
+    return { label: difficulty, color: "#EFECCA" }
   }
-  const d = difficulty.toLowerCase()
-  if (d.includes("t1") || d === "hiking") {
-    return { label: "Turistico", color: "#A9CBB7" }
-  }
-  if (d.includes("t2") || d.includes("mountain_hiking")) {
-    return { label: "Escursionistico", color: "#F7FF58" }
-  }
-  if (d.includes("t3") || d.includes("demanding")) {
-    return { label: "Esperti (EE)", color: "#FF934F" }
-  }
-  if (d.includes("t4") || d.includes("t5") || d.includes("t6") || d.includes("alpine")) {
-    return { label: "Alpinistico (EEA)", color: "#5E565A" }
-  }
-  return { label: difficulty, color: "#EFECCA" }
-}
-// Componente per il badge della difficoltà
-const DifficultyBadge = ({ difficulty }) => {
-  const { label, color } = getDifficultyLabel(difficulty)
-  return (
-    <span
-      className="px-2 py-1 rounded-full text-xs font-medium"
-      style={{ backgroundColor: color, color: "#000" }}
-    >
-      {label}
-    </span>
-  )
-}
 
+  // Componente per il badge della difficoltà
+  const DifficultyBadge = ({ difficulty }) => {
+    const { label, color } = getDifficultyLabel(difficulty)
+    return (
+      <span
+        className="px-2 py-1 rounded-full text-xs font-medium"
+        style={{ backgroundColor: color, color: "#000" }}
+      >
+        {label}
+      </span>
+    )
+  }
 
   return (
     <div className="hikes-modal-overlay">
-  <div className="hikes-modal-content">
+      <div className="hikes-modal-content">
         {/* Header */}
         <div className="hikes-modal-header">
-  <div className="hikes-header-row">
-    <div className="hikes-header-content">
-      <FaHiking className="hikes-header-icon" />
-      <div className="hikes-header-text-container">
-        <h2 className="hikes-header-title">Percorsi nelle vicinanze</h2>
-        <p className="hikes-header-subtitle">
-                  {userLocation ? `📍 Entro ${radiusKm} km da te` : 'Ricerca in corso...'}
+          <div className="hikes-header-row">
+            <div className="hikes-header-content">
+              <FaHiking className="hikes-header-icon" />
+              <div className="hikes-header-text-container">
+                <h2 className="hikes-header-title">Percorsi nelle vicinanze</h2>
+                <p className="hikes-header-subtitle">
+                  {userLocation ? `📍 Entro ${settings?.distanceUnit === 'mi' ? (radiusKm * 0.621371).toFixed(0) + ' mi' : radiusKm + ' km'} da te` : 'Ricerca in corso...'}
                 </p>
               </div>
             </div>
@@ -370,9 +374,9 @@ const DifficultyBadge = ({ difficulty }) => {
                     key={km}
                     onClick={() => setRadiusKm(km)}
                     className={radiusKm === km ? 'hikes-radius-btn-active' : 'hikes-radius-btn-inactive'}
-                    
+
                   >
-                    {km} km
+                    {settings?.distanceUnit === 'mi' ? `${Math.round(km * 0.621371)} mi` : `${km} km`}
                   </button>
                 ))}
               </div>
@@ -383,49 +387,48 @@ const DifficultyBadge = ({ difficulty }) => {
         {/* Content */}
         <div className="hikes-modal-body">
           {loading && (
-           <div className="hikes-loading-container">
-  <FaSpinner className="hikes-loading-icon" />
-  <p className="text-gray-600">Ricerca percorsi in corso...</p>
-  <p className="hikes-loading-text">Può richiedere alcuni secondi</p>
-</div>
+            <div className="hikes-loading-container">
+              <FaSpinner className="hikes-loading-icon" />
+              <p className="text-gray-600">Ricerca percorsi in corso...</p>
+              <p className="hikes-loading-text">Può richiedere alcuni secondi</p>
+            </div>
           )}
 
           {error && !loading && (
             <div className="hikes-error-message">
-  <p>⚠️ {error}</p>
-</div>
+              <p>⚠️ {error}</p>
+            </div>
           )}
 
           {!loading && !error && hikes.length > 0 && (
-           <div className="hikes-list">
-  {hikes.map((hike) => {
-    const isLoadingThis = loadingElevation === `${hike.type}-${hike.id}`
-    
-    return (
-      <div
-        key={`${hike.type}-${hike.id}`}
-        className={isLoadingThis ? 'hike-card-loading' : 'hike-card'}
-        onClick={() => !isLoadingThis && handleSelectHike(hike)}
-      >
-        <div className="hike-card-content">
-          <div className="hike-card-main">
-            <h3 className="hike-title">{hike.name}</h3>
-                        
+            <div className="hikes-list">
+              {hikes.map((hike) => {
+                const isLoadingThis = loadingElevation === `${hike.type}-${hike.id}`
+
+                return (
+                  <div
+                    key={`${hike.type}-${hike.id}`}
+                    className={isLoadingThis ? 'hike-card-loading' : 'hike-card'}
+                    onClick={() => !isLoadingThis && handleSelectHike(hike)}
+                  >
+                    <div className="hike-card-content">
+                      <div className="hike-card-main">
+                        <h3 className="hike-title">{hike.name}</h3>
+
                         <div className="flex items-center flex-wrap gap-3 text-sm text-gray-600 mb-2">
                           <span className="hike-detail-item">
-  <FaMapMarkerAlt className="hike-detail-icon-location" />
-  <span>{hike.distance.toFixed(1)} km da te</span>
-</span>
-                          
+                            <FaMapMarkerAlt className="hike-detail-icon-location" />
+                            <span>{formatDistance(hike.distance, settings?.distanceUnit || 'km')} da te</span>
+                          </span>
+
                           {hike.length > 0 && (
-  <span className="hike-detail-item">
-    <FaRulerCombined className="hike-detail-icon-length" />
-    <span>{hike.length.toFixed(1)} km</span>
-  </span>
-)}
-                          
-                          
-      <DifficultyBadge difficulty={hike.difficulty} />
+                            <span className="hike-detail-item">
+                              <FaRulerCombined className="hike-detail-icon-length" />
+                              <span>{formatDistance(hike.length, settings?.distanceUnit || 'km')}</span>
+                            </span>
+                          )}
+
+                          <DifficultyBadge difficulty={hike.difficulty} />
 
 
                         </div>
