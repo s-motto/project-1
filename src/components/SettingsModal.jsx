@@ -112,8 +112,8 @@ const SettingsModal = ({ onClose }) => {
           {/* Unità */}
           <section>
             <h3 className="info-section-title">📏 Unità</h3>
-            <div className="flex items-center gap-4">
-              <label className="flex items-center gap-2">
+            <div className="flex items-center gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
                   name="distanceUnit"
@@ -121,9 +121,12 @@ const SettingsModal = ({ onClose }) => {
                   checked={settings.distanceUnit === 'km'}
                   onChange={() => handleChange({ distanceUnit: 'km', elevationUnit: 'm' })}
                 />
-                <span>Metriche (km, m)</span>
+                <span className="leading-tight">
+                  <span className="block font-medium whitespace-nowrap">Metriche</span>
+                  <span className="block text-xs text-gray-500 whitespace-nowrap">km, m</span>
+                </span>
               </label>
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="radio"
                   name="distanceUnit"
@@ -131,7 +134,10 @@ const SettingsModal = ({ onClose }) => {
                   checked={settings.distanceUnit === 'mi'}
                   onChange={() => handleChange({ distanceUnit: 'mi', elevationUnit: 'ft' })}
                 />
-                <span>Imperiali (mi, ft)</span>
+                <span className="leading-tight">
+                  <span className="block font-medium whitespace-nowrap">Imperiali</span>
+                  <span className="block text-xs text-gray-500 whitespace-nowrap">mi, ft</span>
+                </span>
               </label>
             </div>
           </section>
