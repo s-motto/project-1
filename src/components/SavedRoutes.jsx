@@ -6,7 +6,7 @@ import routesService from '../services/routesService'
 import ActiveTracking from './ActiveTracking'
 import { useToast } from '../contexts/ToastContext'
 import { useSettings } from '../contexts/SettingsContext'
-import { formatDistance, formatElevation } from '../utils/gpsUtils'
+import { formatDistance, formatElevation, formatDurationMinutes, formatTimestamp } from '../utils/gpsUtils'
 
 const SavedRoutes = ({ onLoadRoute }) => {
   const { user } = useAuth()
@@ -192,8 +192,11 @@ const SavedRoutes = ({ onLoadRoute }) => {
                     <p>🏁 {route.endPoint.name?.substring(0, 50)}...</p>
                     <div className="flex space-x-3 mt-2">
                       <span>📏 {formatDistance(route.distance, settings?.distanceUnit || 'km')}</span>
-                      <span>⏱️ {route.duration} min</span>
+                      <span>⏱️ {formatDurationMinutes(route.duration, settings?.durationFormat || 'hms')}</span>
                       <span>⛰️ {formatElevation(route.ascent, settings?.elevationUnit || 'm')}</span>
+                      {route.completedAt && (
+                        <span>🕒 {formatTimestamp(route.completedAt, settings?.timeFormat || '24h')}</span>
+                      )}
                     </div>
                   </div>
                 </div>

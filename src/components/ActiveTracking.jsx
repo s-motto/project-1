@@ -13,7 +13,8 @@ import {
   calculateSpeed,
   formatDistance,
   formatElevation,
-  formatSpeedKmh
+  formatSpeedKmh,
+  formatDurationSeconds
 } from '../utils/gpsUtils'
 import 'leaflet/dist/leaflet.css'
 import { useToast } from '../contexts/ToastContext'
@@ -421,7 +422,7 @@ const handleStop = async () => {
 
           <div className="text-center">
             <p className="text-xs text-gray-500">Tempo</p>
-            <p className="text-base font-bold text-purple-600">{formatTime(elapsedTime)}</p>
+            <p className="text-base font-bold text-purple-600">{formatDurationSeconds(elapsedTime, settings?.durationFormat || 'hms')}</p>
           </div>
           <div className="text-center">
             <p className="text-xs text-gray-500">Velocità</p>

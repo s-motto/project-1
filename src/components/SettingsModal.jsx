@@ -162,6 +162,17 @@ const SettingsModal = ({ onClose }) => {
                   ]}
                 />
               </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Formato durata</label>
+                <CustomSelect
+                  value={settings.durationFormat}
+                  onChange={(v) => handleChange({ durationFormat: v })}
+                  options={[
+                    { value: 'hms', label: 'hh:mm:ss' },
+                    { value: 'short', label: 'breve (es. 1h 23m)' },
+                  ]}
+                />
+              </div>
             </div>
           </section>
 

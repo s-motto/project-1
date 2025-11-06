@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import routesService from '../services/routesService'
 import statsService from '../services/statsService'
 import { useSettings } from '../contexts/SettingsContext'
-import { formatDistance, formatElevation, KM_TO_MI } from '../utils/gpsUtils'
+import { formatDistance, formatElevation, KM_TO_MI, formatDurationMinutes, formatTimestamp } from '../utils/gpsUtils'
 import StatsCard from './StatsCard'
 import { generateGpxFromTrack } from '../utils/gpx'
 import { trackToPng } from '../utils/trackImage'
@@ -201,7 +201,7 @@ const Dashboard = ({ onClose }) => {
                   <StatsCard
                     icon={<FaClock />}
                     label="Tempo totale"
-                    value={statsService.formatTime(stats.totalTime)}
+                    value={formatDurationMinutes(stats.totalTime, settings?.durationFormat || 'hms')}
                     color="text-purple-600"
                   />
                   <StatsCard
@@ -265,7 +265,7 @@ const Dashboard = ({ onClose }) => {
                       <div className="text-sm">
                         <div className="font-semibold text-gray-800">{r.name}</div>
                         <div className="text-gray-500">
-                          {(r.completedAt || r.createdAt || '').slice(0,10)} • {formatDistance(r.actualDistance ?? r.distance, settings?.distanceUnit || 'km')}
+                          {formatTimestamp(r.completedAt || r.createdAt, settings?.timeFormat || '24h')} • {formatDistance(r.actualDistance ?? r.distance, settings?.distanceUnit || 'km')}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">

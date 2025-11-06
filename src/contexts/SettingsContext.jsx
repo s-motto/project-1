@@ -4,6 +4,7 @@ const DEFAULTS = {
   distanceUnit: 'km', // 'km' | 'mi'
   elevationUnit: 'm', // derived from distanceUnit but persisted for flexibility
   timeFormat: '24h', // '24h' | '12h'
+  durationFormat: 'hms', // 'hms' | 'short'
   theme: 'system', // 'system' | 'light' | 'dark'
   language: 'auto', // 'auto' for now
   gpsAccuracyMax: 50, // meters; ignore points worse than this

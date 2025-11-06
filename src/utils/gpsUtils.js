@@ -152,3 +152,34 @@ export function formatSpeedKmh(kmh, distanceUnit) {
   }
   return `${kmh.toFixed(1)} km/h`
 }
+
+// Duration formatting
+export function formatDurationSeconds(seconds, style = 'hms') {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  const s = Math.floor(seconds % 60)
+  if (style === 'short') {
+    if (h > 0) return `${h}h ${m}m`
+    if (m > 0) return `${m}m ${s}s`
+    return `${s}s`
+  }
+  if (h > 0) return `${h}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`
+  return `${m}:${s.toString().padStart(2,'0')}`
+}
+
+export function formatDurationMinutes(minutes, style = 'hms') {
+  const totalSeconds = Math.round((minutes || 0) * 60)
+  return formatDurationSeconds(totalSeconds, style)
+}
+
+// Timestamp formatting (times-of-day)
+export function formatTimestamp(isoString, timeFormat = '24h') {
+  if (!isoString) return ''
+  const d = new Date(isoString)
+  const opts = { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: timeFormat === '12h' }
+  try {
+    return d.toLocaleString('it-IT', opts)
+  } catch {
+    return d.toISOString().slice(0,16).replace('T',' ')
+  }
+}
