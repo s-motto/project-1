@@ -1,0 +1,173 @@
+/* 
+  Variabili di tema CSS per modalità chiara e scura.
+  Definisce colori, sfondi, bordi e ombre per l'interfaccia utente.
+  Utilizza variabili CSS per facilitare il cambio di tema.
+*/
+
+:root {
+  /* ===== LIGHT MODE (default) ===== */
+  
+  /* Backgrounds */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f9fafb;
+  --bg-card: #ffffff;
+  --bg-input: #ffffff;
+  
+  /* Text Colors */
+  --text-primary: #5E565A;
+  --text-secondary: #5E565A;
+  --text-muted: rgba(94, 86, 90, 0.7);
+  --text-on-gradient: #ffffff;
+  
+  /* Brand Colors */
+  --color-green: #A9CBB7;
+  --color-green-hover: #98baa7;
+  --color-beige: #EFECCA;
+  --color-orange: #FF934F;
+  --color-orange-hover: #ff8439;
+  
+  /* Buttons */
+  --btn-save-bg: #A9CBB7;
+  --btn-save-hover: #98baa7;
+  --btn-tracking-bg: #FFB380;
+  --btn-tracking-hover: #FFA366;
+  --btn-navigation-bg: #FF934F;
+  --btn-navigation-hover: #ff8439;
+  
+  /* Borders */
+  --border-color: #EFECCA;
+  --border-color-focus: #A9CBB7;
+  --border-color-input: #EFECCA;
+  
+  /* Gradients */
+  --gradient-header: linear-gradient(135deg, #A9CBB7 0%, #FF934F 100%);
+  --gradient-modal: linear-gradient(135deg, #A9CBB7 0%, #FF934F 100%);
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.15);
+  
+  /* Bottom Nav */
+  --bottom-nav-bg: rgba(239, 236, 202, 0.95);
+  --bottom-nav-text: #5E565A;
+  --bottom-nav-hover: #A9CBB7;
+  
+  /* Stats Icons */
+  --icon-distance: #3b82f6;
+  --icon-duration: #3b82f6;
+  --icon-ascent: #10b981;
+  --icon-descent: #ef4444;
+  
+  /* Status Colors */
+  --status-success: #10b981;
+  --status-error: #ef4444;
+  --status-warning: #f59e0b;
+  --status-info: #3b82f6;
+  
+  /* Overlays */
+  --overlay-bg: rgba(0, 0, 0, 0.5);
+  
+  /* Dropdowns */
+  --dropdown-bg: #ffffff;
+  --dropdown-hover: #EFECCA;
+  --dropdown-border: #EFECCA;
+}
+
+/* ===== DARK MODE ===== */
+.theme-dark {
+  /* Backgrounds */
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #0f0f0f;
+  --bg-card: #2a2a2a;
+  --bg-input: #2a2a2a;
+  
+  /* Text Colors */
+  --text-primary: #e5e5e5;
+  --text-secondary: #b4b4b4;
+  --text-muted: rgba(180, 180, 180, 0.8);
+  --text-on-gradient: #ffffff;
+  
+  /* Brand Colors (darkened) */
+  --color-green: #5a8370;
+  --color-green-hover: #4a6858;
+  --color-beige: #c9c1a8;
+  --color-orange: #d47f42;
+  --color-orange-hover: #a05532;
+  
+  /* Buttons */
+  --btn-save-bg: #5a8370;
+  --btn-save-hover: #4a6858;
+  --btn-tracking-bg: #a67038;
+  --btn-tracking-hover: #8a5a2e;
+  --btn-navigation-bg: #d47f42;
+  --btn-navigation-hover: #a05532;
+  
+  /* Borders */
+  --border-color: #3a3a3a;
+  --border-color-focus: #5a8370;
+  --border-color-input: #3a3a3a;
+  
+  /* Gradients */
+  --gradient-header: linear-gradient(135deg, #4a6858 0%, #a05532 100%);
+  --gradient-modal: linear-gradient(135deg, #4a6858 0%, #a05532 100%);
+  
+  /* Shadows (subtle in dark mode) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.6);
+  
+  /* Bottom Nav */
+  --bottom-nav-bg: rgba(42, 42, 42, 0.95);
+  --bottom-nav-text: #b4b4b4;
+  --bottom-nav-hover: #7da991;
+  
+  /* Stats Icons (slightly desaturated for dark) */
+  --icon-distance: #60a5fa;
+  --icon-duration: #60a5fa;
+  --icon-ascent: #34d399;
+  --icon-descent: #f87171;
+  
+  /* Status Colors (brighter for dark) */
+  --status-success: #34d399;
+  --status-error: #f87171;
+  --status-warning: #fbbf24;
+  --status-info: #60a5fa;
+  
+  /* Overlays */
+  --overlay-bg: rgba(0, 0, 0, 0.7);
+  
+  /* Dropdowns */
+  --dropdown-bg: #2a2a2a;
+  --dropdown-hover: #3a3a3a;
+  --dropdown-border: #3a3a3a;
+}
+
+/* ===== UTILITY CLASSES ===== */
+
+.bg-primary {
+  background-color: var(--bg-primary);
+}
+
+.bg-card {
+  background-color: var(--bg-card);
+}
+
+.text-primary {
+  color: var(--text-primary);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.border-theme {
+  border-color: var(--border-color);
+}
+
+/* Smooth transition for theme changes */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
