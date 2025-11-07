@@ -15,7 +15,7 @@
     display: none;
   }
 
-  /* Custom Scrollbar */
+  /* Custom Scrollbar (sottile e elegante) */
   .scrollbar-thin {
     scrollbar-width: thin;
   }
@@ -63,52 +63,52 @@
   }
 
   /* Hide elements when modal is open - MA NON nella modale stessa! */
-body.modal-open #map .leaflet-marker-pane {
-  display: none !important;
-}
+  body.modal-open #map .leaflet-marker-pane {
+    display: none !important;
+  }
 
-body.modal-open #map .custom-map-marker {
-  display: none !important;
-}
+  body.modal-open #map .custom-map-marker {
+    display: none !important;
+  }
 
-body.modal-open #map .custom-html-marker {
-  display: none !important;
-}
+  body.modal-open #map .custom-html-marker {
+    display: none !important;
+  }
 
-body.modal-open #map .leaflet-control-container {
-  display: none !important;
-}
+  body.modal-open #map .leaflet-control-container {
+    display: none !important;
+  }
 
-/* IMPORTANTE: Nascondi SOLO la mappa di sfondo, NON quella nella modale */
-body.modal-open #map .leaflet-pane {
-  display: none !important;
-}
+  /* IMPORTANTE: Nascondi SOLO la mappa di sfondo, NON quella nella modale */
+  body.modal-open #map .leaflet-pane {
+    display: none !important;
+  }
 
-body.modal-open #map .leaflet-overlay-pane {
-  display: none !important;
-}
+  body.modal-open #map .leaflet-overlay-pane {
+    display: none !important;
+  }
 
-/* La mappa DENTRO la modale deve essere visibile */
-.modal-content .leaflet-pane {
-  display: block !important;
-}
+  /* La mappa DENTRO la modale deve essere visibile */
+  .modal-content .leaflet-pane {
+    display: block !important;
+  }
 
-.modal-content .leaflet-tile-pane {
-  display: block !important;
-}
+  .modal-content .leaflet-tile-pane {
+    display: block !important;
+  }
 
-.modal-content .leaflet-overlay-pane {
-  display: block !important;
-}
+  .modal-content .leaflet-overlay-pane {
+    display: block !important;
+  }
 
-.modal-content .leaflet-control-container {
-  display: block !important;
-}
+  .modal-content .leaflet-control-container {
+    display: block !important;
+  }
 
-.modal-content .leaflet-tile {
-  visibility: visible !important;
-  opacity: 1 !important;
-}
+  .modal-content .leaflet-tile {
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
 
   /* Hide BottomNav when modal is open */
   body.modal-open .bottom-nav {
@@ -127,7 +127,7 @@ body.modal-open #map .leaflet-overlay-pane {
     z-index: 1 !important;
   }
 
-/* Nascondi BottomNav quando modale è aperta */
+  /* Nascondi BottomNav quando modale è aperta */
   body.modal-open .bottom-nav {
     opacity: 0 !important;
     pointer-events: none !important;
@@ -150,76 +150,246 @@ body.modal-open #map .leaflet-overlay-pane {
            from-blue-600 to-cyan-600;
   }
 
-/* ===== TOAST ANIMATIONS ===== */
-/* Toast entrance animation */
-@keyframes slide-in-right {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
+  /* ===== TOAST ANIMATIONS ===== */
+  /* Toast entrance animation */
+  @keyframes slide-in-right {
+    from {
+      transform: translateX(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
   }
-  to {
-    transform: translateX(0);
-    opacity: 1;
+  
+  /* Applicazione dell'animazione */
+  .animate-slide-in-right {
+    animation: slide-in-right 0.3s ease-out;
   }
-}
-/* Applicazione dell'animazione */
-.animate-slide-in-right {
-  animation: slide-in-right 0.3s ease-out;
-}
 
-/* Toast exit animation */
-@keyframes fade-out {
-  from {
-    opacity: 1;
-    transform: scale(1);
+  /* Toast exit animation */
+  @keyframes fade-out {
+    from {
+      opacity: 1;
+      transform: scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: scale(0.95);
+    }
   }
-  to {
-    opacity: 0;
-    transform: scale(0.95);
+  
+  /* Applicazione dell'animazione */
+  .animate-fade-out {
+    animation: fade-out 0.2s ease-in;
   }
-}
-/* Applicazione dell'animazione */
-.animate-fade-out {
-  animation: fade-out 0.2s ease-in;
-}
 
-/* Toast sempre sopra tutto */
-.fixed.top-4.right-4 {
-  z-index: 10001 !important;
-}
-/* ===== MAP MARKER ANIMATIONS ===== */
-
-/* Marker temporaneo pulsante */
-@keyframes pulse-marker {
-  0%, 100% {
-    transform: translate(-50%, -100%) scale(1);
-    opacity: 1;
+  /* Toast sempre sopra tutto */
+  .fixed.top-4.right-4 {
+    z-index: 10001 !important;
   }
-  50% {
-    transform: translate(-50%, -100%) scale(1.2);
-    opacity: 0.8;
-  }
-}
 
-.temp-map-marker {
-  animation: pulse-marker 1.5s ease-in-out infinite;
-  font-size: 32px;
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
-}
-
-/* Fade in del marker */
-@keyframes fade-in-marker {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -100%) scale(0.5);
+  /* ===== MAP MARKER ANIMATIONS ===== */
+  /* Marker temporaneo pulsante */
+  @keyframes pulse-marker {
+    0%, 100% {
+      transform: translate(-50%, -100%) scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: translate(-50%, -100%) scale(1.2);
+      opacity: 0.8;
+    }
   }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -100%) scale(1);
-  }
-}
 
-.fade-in-marker {
-  animation: fade-in-marker 0.3s ease-out;
-}
+  .temp-map-marker {
+    animation: pulse-marker 1.5s ease-in-out infinite;
+    font-size: 32px;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+  }
+
+  /* Fade in del marker */
+  @keyframes fade-in-marker {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -100%) scale(0.5);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -100%) scale(1);
+    }
+  }
+
+  .fade-in-marker {
+    animation: fade-in-marker 0.3s ease-out;
+  }
+
+
+  /* ========================================
+     NUOVE UTILITY CLASSES PER REFACTORING
+     ======================================== */
+
+  /* ===== BUTTON VARIANTS (colors) ===== */
+  .btn-green {
+    @apply btn text-white;
+    background-color: #10b981; /* green-600 */
+  }
+
+  .btn-green:hover:not(:disabled) {
+    background-color: #059669; /* green-700 */
+  }
+
+  .btn-yellow {
+    @apply btn text-white;
+    background-color: #eab308; /* yellow-500 */
+  }
+
+  .btn-yellow:hover:not(:disabled) {
+    background-color: #ca8a04; /* yellow-600 */
+  }
+
+  .btn-blue {
+    @apply btn text-white;
+    background-color: #2563eb; /* blue-600 */
+  }
+
+  .btn-blue:hover:not(:disabled) {
+    background-color: #1d4ed8; /* blue-700 */
+  }
+
+
+  /* ===== CARD VARIANTS ===== */
+  .card-center {
+    @apply card text-center;
+  }
+
+
+  /* ===== FLEX UTILITIES (most common patterns) ===== */
+  .flex-center {
+    @apply flex items-center justify-center;
+  }
+
+  .flex-between {
+    @apply flex items-center justify-between;
+  }
+
+  .flex-start {
+    @apply flex items-start;
+  }
+
+  .flex-col-center {
+    @apply flex flex-col items-center justify-center;
+  }
+
+
+  /* ===== SPACING UTILITIES (common combos) ===== */
+  .space-x-2-items {
+    @apply flex items-center space-x-2;
+  }
+
+  .space-x-3-items {
+    @apply flex items-center space-x-3;
+  }
+
+
+  /* ===== TEXT COLOR UTILITIES ===== */
+  .text-gray-600-custom {
+    @apply text-gray-600;
+  }
+
+  .text-gray-800-custom {
+    @apply text-gray-800;
+  }
+
+  .text-gray-500-custom {
+    @apply text-gray-500;
+  }
+
+
+  /* ===== SIZE UTILITIES ===== */
+  .w-full-max-xl {
+    @apply w-full max-w-xl;
+  }
+
+  .w-full-max-md {
+    @apply w-full max-w-md;
+  }
+
+  .w-full-max-2xl {
+    @apply w-full max-w-2xl;
+  }
+
+  .w-full-max-4xl {
+    @apply w-full max-w-4xl;
+  }
+
+
+  /* ===== MODAL SPECIFIC UTILITIES ===== */
+  .modal-backdrop {
+    @apply absolute inset-0 bg-black/50 backdrop-blur-sm;
+  }
+
+  .modal-container {
+    @apply relative bg-white rounded-2xl shadow-2xl;
+  }
+
+  .modal-header-gradient {
+    @apply p-6 text-white rounded-t-2xl;
+    background: linear-gradient(135deg, #A9CBB7 0%, #FF934F 100%);
+  }
+
+
+  /* ===== ICON BUTTON UTILITIES ===== */
+  .icon-btn-white {
+    @apply text-white hover:bg-white/20 rounded-full p-2 transition-colors;
+  }
+
+  .icon-btn-gray {
+    @apply text-gray-600 hover:text-gray-800 transition-colors;
+  }
+
+
+  /* ===== ANIMATION UTILITIES ===== */
+  .transition-all-smooth {
+    @apply transition-all duration-300 ease-in-out;
+  }
+
+  .hover-scale {
+    @apply transition-transform duration-200;
+  }
+
+  .hover-scale:hover {
+    transform: scale(1.02);
+  }
+
+
+  /* ===== INPUT UTILITIES ===== */
+  .input-group {
+    @apply relative flex-1;
+  }
+
+  .input-icon {
+    @apply absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none z-10;
+  }
+
+
+  /* ===== LIST UTILITIES ===== */
+  .list-container {
+    @apply space-y-3 max-h-96 overflow-y-auto;
+  }
+
+  .list-item-hover {
+    @apply border rounded-lg p-3 hover:bg-gray-50 transition;
+  }
+
+
+  /* ===== GRADIENT UTILITIES ===== */
+  .gradient-primary {
+    background: linear-gradient(135deg, #A9CBB7 0%, #FF934F 100%);
+  }
+
+  .gradient-success {
+    background: linear-gradient(135deg, #A9CBB7 0%, #98baa7 100%);
+  }
 }

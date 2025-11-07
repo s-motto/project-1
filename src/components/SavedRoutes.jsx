@@ -44,6 +44,7 @@ const SavedRoutes = ({ onLoadRoute }) => {
     const result = await routesService.deleteRoute(routeId)
     if (result.success) {
       setRoutes(routes.filter(r => r.$id !== routeId))
+      toast.success('Percorso eliminato')
     } else {
       toast.error('Errore durante l\'eliminazione: ' + result.error)
     }
@@ -113,98 +114,114 @@ const SavedRoutes = ({ onLoadRoute }) => {
     setActiveRoute(null)
   }
 
+  // Stati di caricamento e vuoti
   if (!user) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6 text-center">
-        <p className="text-gray-600">Effettua il login per vedere i tuoi percorsi salvati</p>
+      <div className="card-center card-lg">
+        <p className="text-gray-600-custom">Effettua il login per vedere i tuoi percorsi salvati</p>
       </div>
     )
   }
 
   if (loading) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6 text-center">
-        <FaSpinner className="animate-spin text-2xl text-blue-600 mx-auto" />
-        <p className="mt-2 text-gray-600">Caricamento percorsi...</p>
+      <div className="card-center card-lg">
+        <FaSpinner className="spinner mx-auto" />
+        <p className="mt-2 text-gray-600-custom">Caricamento percorsi...</p>
       </div>
     )
   }
 
   if (routes.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-6 text-center">
+      <div className="card-center card-lg">
         <FaRoute className="text-4xl text-gray-300 mb-3 mx-auto" />
-        <p className="text-gray-600">Non hai ancora salvato nessun percorso</p>
+        <p className="text-gray-600-custom">Non hai ancora salvato nessun percorso</p>
       </div>
     )
   }
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow-md p-4 w-full max-w-xl">
-        <h3 className="text-lg font-bold mb-4 text-gray-800">I tuoi percorsi salvati</h3>
-        <div className="space-y-3 max-h-96 overflow-y-auto">
+      <div className="card w-full-max-xl">
+        <h3 className="text-lg font-bold mb-4 text-gray-800-custom">I tuoi percorsi salvati</h3>
+        
+        <div className="list-container">
           {routes.map(route => (
             <div
               key={route.$id}
-              className="border rounded-lg p-3 hover:bg-gray-50 transition"
+              className="list-item-hover"
             >
-              <div className="flex items-start justify-between">
+              <div className="flex-start">
                 <div className="flex-1">
+                  {/* Nome percorso - editable */}
                   {editingId === route.$id ? (
-                    <div className="flex items-center gap-2">
+                    <div className="space-x-2-items mb-2">
                       <input
-                        className="input w-full max-w-xs"
+                        type="text"
                         value={nameDraft}
-                        onChange={e => setNameDraft(e.target.value)}
-                        placeholder="Nome percorso"
+                        onChange={(e) => setNameDraft(e.target.value)}
+                        className="input flex-1"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveRename(route.$id)
+                          if (e.key === 'Escape') cancelRename()
+                        }}
                       />
                       <button
                         onClick={() => saveRename(route.$id)}
                         disabled={savingNameId === route.$id}
-                        className="text-green-600 hover:text-green-800 p-1"
+                        className="btn-success btn-icon"
                         title="Salva"
                       >
-                        {savingNameId === route.$id ? <FaSpinner className="animate-spin" /> : <FaCheck />}
+                        {savingNameId === route.$id ? (
+                          <FaSpinner className="spinner-sm" />
+                        ) : (
+                          <FaCheck />
+                        )}
                       </button>
                       <button
                         onClick={cancelRename}
-                        className="text-gray-600 hover:text-gray-800 p-1"
+                        className="btn-ghost btn-icon"
                         title="Annulla"
                       >
                         <FaTimes />
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-bold text-gray-800">{route.name}</h4>
+                    <div className="flex-between mb-2">
+                      <h4 className="font-bold text-gray-800-custom">{route.name}</h4>
                       <button
                         onClick={() => startRename(route)}
-                        className="text-gray-500 hover:text-gray-700 p-1"
+                        className="icon-btn-gray"
                         title="Rinomina"
                       >
                         <FaEdit />
                       </button>
                     </div>
                   )}
-                  <div className="text-xs text-gray-500 mt-1 space-y-1">
+                  
+                  {/* Info percorso */}
+                  <div className="text-xs text-gray-500-custom mt-1 space-y-1">
                     <p>📍 {route.startPoint.name?.substring(0, 50)}...</p>
                     <p>🏁 {route.endPoint.name?.substring(0, 50)}...</p>
-                    <div className="flex space-x-3 mt-2">
+                    <div className="space-x-2-items mt-2">
                       <span>📏 {formatDistance(route.distance, settings?.distanceUnit || 'km')}</span>
                       <span>⏱️ {formatDurationMinutes(route.duration, settings?.durationFormat || 'hms')}</span>
                       <span>⛰️ {formatElevation(route.ascent, settings?.elevationUnit || 'm')}</span>
-                      {route.completedAt && (
-                        <span>🕒 {formatTimestamp(route.completedAt, settings?.timeFormat || '24h')}</span>
-                      )}
                     </div>
+                    {route.createdAt && (
+                      <p className="text-muted">Salvato: {formatTimestamp(route.createdAt)}</p>
+                    )}
                   </div>
                 </div>
+
+                {/* Action Buttons */}
                 <div className="flex flex-col space-y-2 ml-3">
-                  {/* Bottone Inizia tracking GPS */}
+                  {/* Bottone Tracking GPS */}
                   <button
                     onClick={() => handleStartTracking(route)}
-                    className="text-blue-600 hover:text-blue-800 p-1"
+                    className="text-blue-600 hover:text-blue-800 p-1 transition-colors"
                     title="Inizia percorso con tracking GPS"
                   >
                     <FaPlay className="text-lg" />
@@ -213,7 +230,7 @@ const SavedRoutes = ({ onLoadRoute }) => {
                   {/* Bottone Carica sulla mappa */}
                   <button
                     onClick={() => onLoadRoute(route)}
-                    className="text-indigo-600 hover:text-indigo-800 p-1"
+                    className="text-indigo-600 hover:text-indigo-800 p-1 transition-colors"
                     title="Visualizza percorso sulla mappa"
                   >
                     <FaMapMarkedAlt className="text-lg" />
@@ -223,11 +240,11 @@ const SavedRoutes = ({ onLoadRoute }) => {
                   <button
                     onClick={() => handleComplete(route.$id)}
                     disabled={completing === route.$id}
-                    className="text-green-600 hover:text-green-800 disabled:text-gray-400 p-1"
+                    className="text-green-600 hover:text-green-800 disabled:text-gray-400 p-1 transition-colors"
                     title="Segna come completato (senza GPS)"
                   >
                     {completing === route.$id ? (
-                      <FaSpinner className="animate-spin text-lg" />
+                      <FaSpinner className="spinner-sm" />
                     ) : (
                       <FaCheckCircle className="text-lg" />
                     )}
@@ -237,11 +254,11 @@ const SavedRoutes = ({ onLoadRoute }) => {
                   <button
                     onClick={() => handleDelete(route.$id)}
                     disabled={deleting === route.$id}
-                    className="text-red-600 hover:text-red-800 disabled:text-gray-400 p-1"
+                    className="text-red-600 hover:text-red-800 disabled:text-gray-400 p-1 transition-colors"
                     title="Elimina percorso"
                   >
                     {deleting === route.$id ? (
-                      <FaSpinner className="animate-spin text-lg" />
+                      <FaSpinner className="spinner-sm" />
                     ) : (
                        <FaTrash className="text-lg" />
                     )}

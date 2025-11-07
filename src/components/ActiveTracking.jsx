@@ -287,49 +287,48 @@ useEffect(() => {
   }
 
   // Termina e salva
-const handleStop = async () => {
-  if (!confirm('Vuoi terminare il percorso e salvare i dati?')) return
-  
-  setIsSaving(true)
-  
-  try {
-    // PRIMA ferma GPS
-    geolocation.stop()
-    setIsTracking(false)
-    isTrackingRef.current = false
+  const handleStop = async () => {
+    if (!confirm('Vuoi terminare il percorso e salvare i dati?')) return
     
-    // Assicura che il percorso sia salvato
-    const routeId = await ensureRouteSaved()
+    setIsSaving(true)
     
-    // Prepara i dati da salvare
-    const completedData = {
-      status: 'completed',
-      completedAt: new Date().toISOString(),
-      actualDistance: parseFloat(distance.toFixed(2)),
-      actualDuration: Math.floor(elapsedTime / 60),
-      actualAscent: elevationGain,
-      actualDescent: elevationLoss,
-      actualCoordinates: JSON.stringify(trackPoints)
+    try {
+      // PRIMA ferma GPS
+      geolocation.stop()
+      setIsTracking(false)
+      isTrackingRef.current = false
+      
+      // Assicura che il percorso sia salvato
+      const routeId = await ensureRouteSaved()
+      
+      // Prepara i dati da salvare
+      const completedData = {
+        status: 'completed',
+        completedAt: new Date().toISOString(),
+        actualDistance: parseFloat(distance.toFixed(2)),
+        actualDuration: Math.floor(elapsedTime / 60),
+        actualAscent: elevationGain,
+        actualDescent: elevationLoss,
+        actualCoordinates: JSON.stringify(trackPoints)
+      }
+      
+      // Aggiorna il percorso
+      const result = await routesService.updateRoute(routeId, completedData)
+      
+      if (result.success) {
+        toast.success('Percorso completato e salvato!')
+        if (onComplete) onComplete()
+        onClose()
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      logger.error('Error saving track:', error)
+      toast.error('Errore nel salvare il percorso: ' + error.message)
+    } finally {
+      setIsSaving(false)
     }
-    
-    // Aggiorna il percorso
-    const result = await routesService.updateRoute(routeId, completedData)
-    
-    if (result.success) {
-      toast.success('Percorso completato e salvato!')
-      if (onComplete) onComplete()
-      onClose()
-    } else {
-      throw new Error(result.error)
-    }
-  } catch (error) {
-    logger.error('Error saving track:', error)
-    toast.error('Errore nel salvare il percorso: ' + error.message)
-    // Riavvia GPS se c'è errore? O lascia fermo?
-  } finally {
-    setIsSaving(false)
   }
-}
 
   // Annulla tracking
   const handleCancel = () => {
@@ -375,70 +374,60 @@ const handleStop = async () => {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content max-w-4xl h-[95vh] flex flex-col">
+      <div className="modal-content w-full-max-4xl h-[95vh] flex flex-col">
         {/* Header */}
         <div className="modal-header-primary">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+          <div className="flex-between">
+            <div className="space-x-3-items">
               <FaMapMarkerAlt className="text-3xl" />
               <div>
                 <h2 className="text-2xl font-bold">{route.name || 'Tracking GPS'}</h2>
                 <p className="text-sm text-blue-100">
-                  {isTracking ? (isPaused ? '⏸️ In pausa' : '🔴 Registrazione in corso') : '⏺️ Pronto per iniziare'}
+                  {isTracking ? (isPaused ? '⏸️ In pausa' : '🟢 Tracking attivo') : '⚪ Pronto per partire'}
                 </p>
               </div>
             </div>
-            <button 
-              onClick={handleCancel} 
-              className="modal-close-btn"
-              aria-label="Chiudi"
+            <button
+              onClick={handleCancel}
+              className="icon-btn-white"
             >
-              <FaTimes className="text-xl" />
+              <FaTimes className="text-lg" />
             </button>
           </div>
         </div>
 
-        {/* GPS Warning se impreciso */}
-        {waitingForGoodFix && gpsAccuracy && gpsAccuracy > 50 && (
-          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-3 mx-4 mt-4 rounded">
-            <div className="flex items-center">
-              <FaExclamationTriangle className="text-yellow-600 mr-3" />
-              <div className="text-sm">
-                <p className="font-bold text-yellow-800">GPS impreciso</p>
-                <p className="text-yellow-700">
-                  Precisione: {formatElevation(Math.round(gpsAccuracy), settings?.elevationUnit || 'm')}. Vai all'aperto per migliorare il segnale.
-                </p>
-              </div>
+        {/* Statistiche GPS */}
+        <div className="card-beige p-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+            {/* Tempo */}
+            <div>
+              <p className="text-xs text-muted">Tempo</p>
+              <p className="text-2xl font-bold text-gray-800-custom">{formatTime(elapsedTime)}</p>
             </div>
-          </div>
-        )}
-
-        {/* Statistiche live */}
-        <div className="p-3 bg-gray-50 border-b grid grid-cols-2 md:grid-cols-5 gap-2">
-          <div className="text-center">
-            <p className="text-xs text-gray-500">Distanza</p>
-            <p className="text-base font-bold text-blue-600">{formatDistance(distance, settings?.distanceUnit || 'km')}</p>
-          </div>
-
-          <div className="text-center">
-            <p className="text-xs text-gray-500">Tempo</p>
-            <p className="text-base font-bold text-purple-600">{formatDurationSeconds(elapsedTime, settings?.durationFormat || 'hms')}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-xs text-gray-500">Velocità</p>
-            <p className="text-base font-bold text-green-600">{formatSpeedKmh(avgSpeed, settings?.distanceUnit || 'km')}</p>
-          </div>
-
-          <div className="text-center">
-            <p className="text-xs text-gray-500">D+ ⛰️</p>
-            <p className="text-base font-bold text-orange-600">{formatElevation(elevationGain, settings?.elevationUnit || 'm')}</p>
-          </div>
-
-          <div className="text-center">
-            <p className="text-xs text-gray-500">Precisione GPS</p>
-            <p className={`text-base font-bold ${gpsAccuracy && gpsAccuracy < 20 ? 'text-green-600' : gpsAccuracy && gpsAccuracy < 50 ? 'text-yellow-600' : 'text-red-600'}`}>
-              {gpsAccuracy ? `${formatElevation(Math.round(gpsAccuracy), settings?.elevationUnit || 'm')}` : '---'}
-            </p>
+            
+            {/* Distanza */}
+            <div>
+              <p className="text-xs text-muted">Distanza</p>
+              <p className="text-2xl font-bold text-gray-800-custom">{distanceLabel}</p>
+            </div>
+            
+            {/* Velocità media */}
+            <div>
+              <p className="text-xs text-muted">Velocità Media</p>
+              <p className="text-2xl font-bold text-gray-800-custom">{speedLabel}</p>
+            </div>
+            
+            {/* Dislivello */}
+            <div>
+              <p className="text-xs text-muted">Dislivello (+/-)</p>
+              <p className="text-2xl font-bold text-gray-800-custom">
+                {gainLabel}
+              </p>
+              <p className={`text-xs font-bold ${gpsAccuracy && gpsAccuracy < 20 ? 
+                'text-green-600' : gpsAccuracy && gpsAccuracy < 50 ? 'text-yellow-600' : 'text-red-600'}`}>
+                {gpsAccuracy ? `±${formatElevation(Math.round(gpsAccuracy), settings?.elevationUnit || 'm')}` : '---'}
+              </p>
+            </div>
           </div>
         </div>
 
@@ -492,7 +481,7 @@ const handleStop = async () => {
               <Marker position={[currentPosition.lat, currentPosition.lng]}>
               </Marker>
             )}
-            
+
             {/* Auto-centra sulla posizione solo all'inizio + Fix mappa */}
             {currentPosition && (
               <MapCenterController 
@@ -504,14 +493,14 @@ const handleStop = async () => {
           </MapContainer>
           
           {/* Info GPS */}
-          <div className="absolute top-4 left-4 bg-white rounded-lg shadow-lg p-2 text-xs z-[1000]">
+          <div className="card absolute top-4 left-4 text-xs z-[1000] p-2">
             <p className="font-bold">📍 Punti GPS: {trackPoints.length}</p>
             {currentPosition && (
               <>
-                <p className="text-gray-600">Lat: {currentPosition.lat.toFixed(6)}</p>
-                <p className="text-gray-600">Lng: {currentPosition.lng.toFixed(6)}</p>
+                <p className="text-gray-600-custom">Lat: {currentPosition.lat.toFixed(6)}</p>
+                <p className="text-gray-600-custom">Lng: {currentPosition.lng.toFixed(6)}</p>
                 {currentPosition.altitude && (
-                  <p className="text-gray-600">Alt: {formatElevation(Math.round(currentPosition.altitude), settings?.elevationUnit || 'm')}</p>
+                  <p className="text-gray-600-custom">Alt: {formatElevation(Math.round(currentPosition.altitude), settings?.elevationUnit || 'm')}</p>
                 )}
                 {gpsAccuracy && (
                   <p className={gpsAccuracy < 20 ? 'text-green-600 font-bold' : gpsAccuracy < 50 ? 'text-yellow-600' : 'text-red-600'}>
@@ -527,11 +516,11 @@ const handleStop = async () => {
         </div>
 
         {/* Controlli */}
-        <div className="p-4 bg-white border-t flex justify-center space-x-3">
+        <div className="card border-t flex-center p-4 space-x-3">
           {!isTracking ? (
             <button
               onClick={handleStart}
-              className="btn-primary flex items-center space-x-2 px-6 py-3"
+              className="btn-primary space-x-2-items px-6 py-3"
             >
               <FaPlay />
               <span>Inizia Percorso</span>
@@ -541,7 +530,7 @@ const handleStop = async () => {
               {!isPaused ? (
                 <button
                   onClick={handlePause}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-lg flex items-center space-x-2 px-6 py-3 transition"
+                  className="btn-yellow space-x-2-items px-6 py-3"
                 >
                   <FaPause />
                   <span>Pausa</span>
@@ -549,7 +538,7 @@ const handleStop = async () => {
               ) : (
                 <button
                   onClick={handleResume}
-                  className="btn-primary flex items-center space-x-2 px-6 py-3"
+                  className="btn-primary space-x-2-items px-6 py-3"
                 >
                   <FaPlay />
                   <span>Riprendi</span>
@@ -559,7 +548,7 @@ const handleStop = async () => {
               <button
                 onClick={handleStop}
                 disabled={isSaving || trackPoints.length < 2}
-                className="bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg flex items-center space-x-2 px-6 py-3 disabled:opacity-50 transition"
+                className="btn-green space-x-2-items px-6 py-3 disabled:opacity-50"
               >
                 <FaStop />
                 <span>{isSaving ? 'Salvataggio...' : 'Termina e Salva'}</span>
