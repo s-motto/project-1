@@ -86,7 +86,7 @@ const SaveRouteButton = ({ routeData, onSaved }) => {
       <button
         onClick={handleSave}
         disabled={saving}
-        className="btn-blue w-full"
+        className="btn-save"
       >
         {saving ? (
           <>

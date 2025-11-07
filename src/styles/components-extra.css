@@ -586,4 +586,40 @@
     @apply font-bold;
     color: #A9CBB7;
   }
+
+    /* ===== BUTTON VARIANTS ===== */
+
+  /* Bottone verde acqua (per Save) */
+  .btn-save {
+    @apply w-full py-3 px-4 rounded-md font-medium 
+          flex items-center justify-center space-x-2 transition-all;
+    background-color: #A9CBB7;
+    color: white;
+  }
+
+  .btn-save:hover:not(:disabled) {
+    background-color: #98baa7;
+  }
+
+  .btn-save:disabled {
+    background-color: #c5d9cd;
+    cursor: not-allowed;
+  }
+
+  /* Bottone arancio chiaro (per Tracking GPS) */
+  .btn-tracking {
+    @apply w-full py-3 px-4 rounded-lg font-semibold
+          flex items-center justify-center space-x-2 transition-all;
+    background-color: #FFB380;
+    color: white;
+  }
+
+  .btn-tracking:hover:not(:disabled) {
+    background-color: #FFA366;
+  }
+
+  .btn-tracking:disabled {
+    background-color: #ffd4b8;
+    cursor: not-allowed;
+  }
 }

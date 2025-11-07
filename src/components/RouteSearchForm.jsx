@@ -1059,16 +1059,16 @@ const handleCloseSelector = () => {
   )}
           
   
-  {/* NUOVO: Pulsante per ActiveTracking */}
+  {/*  Pulsante per ActiveTracking */}
   <button
     onClick={handleStartTracking}
-    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center space-x-2 transition"
+    className="btn-tracking"
   >
     <FaPlay />
     <span> Tracking GPS con Statistiche</span>
   </button>
   
-  {/* Pulsante Navigazione guidata (quello esistente) */}
+  {/* Pulsante Navigazione guidata  */}
   <button
     onClick={() => startNavigation()}
     className="route-gps-btn"
