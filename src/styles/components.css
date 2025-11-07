@@ -123,10 +123,10 @@
 
   /* ===== CARDS ===== */
 
-  .card {
-    @apply rounded-lg shadow-md p-4;
-    background-color: white;
-  }
+ .card {
+  @apply rounded-lg shadow-md p-4;
+  background-color: var(--bg-card);
+}
 
   .card-lg {
     @apply card p-6;
@@ -199,18 +199,20 @@
   /* ===== NAVIGATION ===== */
 
   .bottom-nav {
-    @apply fixed bottom-4 left-1/2 transform -translate-x-1/2 backdrop-blur-md shadow-lg rounded-xl px-4 py-2 flex items-center gap-6 z-nav;
-    background-color: rgba(239, 236, 202, 0.95);
-  }
+  @apply fixed bottom-4 left-1/2 transform -translate-x-1/2
+         backdrop-blur-md shadow-lg rounded-xl
+         px-4 py-2 flex items-center gap-6 z-nav;
+  background-color: var(--bottom-nav-bg);
+}
 
-  .nav-item {
-    @apply flex flex-col items-center text-sm transition-colors;
-    color: #5E565A;
-  }
+.nav-item {
+  @apply flex flex-col items-center text-sm transition-colors;
+  color: var(--bottom-nav-text);
+}
 
-  .nav-item:hover {
-    color: #A9CBB7;
-  }
+.nav-item:hover {
+  color: var(--bottom-nav-hover);
+}
 
   .nav-item-label {
     @apply text-[10px];
@@ -470,16 +472,18 @@
 
   /* ===== HEADER ===== */
 
-  .app-header {
-    @apply sticky top-0 z-50 shadow-lg;
-    background: linear-gradient(135deg, #A9CBB7 0%, #FF934F 100%);
-  }
 
-  /* Container principale header */
-  .header-container {
-    @apply max-w-7xl mx-auto px-4 py-4 flex items-center justify-between;
-  }
+.app-header {
+  @apply sticky top-0 z-50 shadow-lg w-full;
+  background: var(--gradient-header);
+  margin: 0;
+  padding: 0;
+}
 
+.header-container {
+  @apply w-full px-4 py-4
+         flex items-center justify-between;
+}
   /* Container logo + testo */
   .logo-container {
     @apply flex items-center space-x-3;
@@ -553,25 +557,24 @@
   /* ===== SAVED ROUTES LIST ===== */
 
   .saved-route-card {
-    @apply rounded-lg p-3 transition-colors;
-    border: 2px solid #EFECCA;
-  }
+  @apply rounded-lg p-3 transition-colors;
+  background-color: var(--bg-card);
+  border: 2px solid var(--border-color);
+}
 
-  .saved-route-card:hover {
-    background-color: #EFECCA;
-  }
+.saved-route-card:hover {
+  background-color: var(--bg-secondary);
+}
 
-  .saved-route-title {
-    @apply font-bold mb-1;
-    color: #5E565A;
-  }
+.saved-route-title {
+  @apply font-bold mb-1;
+  color: var(--text-primary);
+}
 
-  .saved-route-info {
-    @apply text-xs space-y-1;
-    color: #5E565A;
-    opacity: 0.8;
-  }
-
+.saved-route-info {
+  @apply text-xs space-y-1;
+  color: var(--text-secondary);
+}
   .saved-route-stats {
     @apply flex space-x-3 mt-2;
   }

@@ -144,15 +144,21 @@ const SavedRoutes = ({ onLoadRoute }) => {
 
   return (
     <>
-      <div className="card w-full-max-xl">
-        <h3 className="text-lg font-bold mb-4 text-gray-800-custom">I tuoi percorsi salvati</h3>
+      <div className="rounded-lg shadow-md p-4 w-full max-w-xl" style={{ backgroundColor: 'var(--bg-card)' }}>
+        <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--text-primary)' }}>I tuoi percorsi salvati</h3>
         
         <div className="list-container">
           {routes.map(route => (
             <div
-              key={route.$id}
-              className="list-item-hover"
-            >
+                key={route.$id}
+                className="rounded-lg p-3 transition"
+                style={{ 
+                  border: '2px solid var(--border-color)', 
+                  backgroundColor: 'var(--bg-card)' 
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-card)'}
+              >
               <div className="flex-start">
                 <div className="flex-1">
                   {/* Nome percorso - editable */}
@@ -191,7 +197,7 @@ const SavedRoutes = ({ onLoadRoute }) => {
                     </div>
                   ) : (
                     <div className="flex-between mb-2">
-                      <h4 className="font-bold text-gray-800-custom">{route.name}</h4>
+                      <h4 className="font-bold" style={{ color: 'var(--text-primary)' }}>{route.name}</h4>
                       <button
                         onClick={() => startRename(route)}
                         className="icon-btn-gray"
@@ -203,7 +209,7 @@ const SavedRoutes = ({ onLoadRoute }) => {
                   )}
                   
                   {/* Info percorso */}
-                  <div className="text-xs text-gray-500-custom mt-1 space-y-1">
+                  <div className="text-xs mt-1 space-y-1" style={{ color: 'var(--text-secondary)' }}>
                     <p>📍 {route.startPoint.name?.substring(0, 50)}...</p>
                     <p>🏁 {route.endPoint.name?.substring(0, 50)}...</p>
                     <div className="space-x-2-items mt-2">

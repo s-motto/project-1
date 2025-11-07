@@ -36,6 +36,39 @@ export const SettingsProvider = ({ children }) => {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
     } catch {}
   }, [settings])
+
+  useEffect(() => {
+  const applyTheme = (theme) => {
+    const root = document.documentElement
+    
+    if (theme === 'dark') {
+      root.classList.add('theme-dark')
+    } else if (theme === 'light') {
+      root.classList.remove('theme-dark')
+    } else if (theme === 'system') {
+      // Rileva preferenza sistema
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+      if (prefersDark) {
+        root.classList.add('theme-dark')
+      } else {
+        root.classList.remove('theme-dark')
+      }
+    }
+  }
+  
+  applyTheme(settings.theme)
+  
+  // Listener per cambiamenti preferenza sistema
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+  const handleChange = () => {
+    if (settings.theme === 'system') {
+      applyTheme('system')
+    }
+  }
+  
+  mediaQuery.addEventListener('change', handleChange)
+  return () => mediaQuery.removeEventListener('change', handleChange)
+}, [settings.theme])
 // memoizzo il valore del contesto per evitare render inutili
   const value = useMemo(() => ({ settings, setSettings }), [settings])
   return (

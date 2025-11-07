@@ -161,13 +161,14 @@ const SettingsModal = ({ onClose }) => {
               <div>
                 <label className="block text-sm text-gray-600 mb-1">Tema</label>
                 <CustomSelect
-                  value={settings.theme}
-                  onChange={(v) => handleChange({ theme: v })}
-                  options={[
-                    { value: 'system', label: 'Sistema' },
-                    { value: 'dark', label: 'Dark Mode (coming soon)', disabled: true },
-                  ]}
-                />
+                    value={settings.theme}
+                    onChange={(v) => handleChange({ theme: v })}
+                    options={[
+                      { value: 'light', label: '☀️ Light Mode' },
+                      { value: 'dark', label: '🌙 Dark Mode' },
+                      { value: 'system', label: '💻 Sistema' },
+                    ]}
+                  />
               </div>
               <div>
                 <label className="block text-sm text-gray-600 mb-1">Formato durata</label>
