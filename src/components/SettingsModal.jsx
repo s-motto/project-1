@@ -4,18 +4,19 @@ import { useSettings } from '../contexts/SettingsContext'
 import { useAuth } from '../contexts/AuthContext'
 import routesService from '../services/routesService'
 
-// Minimal, compact custom select to avoid oversized native dropdowns
+// Componente CustomSelect per selezioni personalizzate
 const CustomSelect = ({ value, options, onChange, label }) => {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
   useEffect(() => {
     const onDoc = (e) => {
-      if (!ref.current || ref.current.contains(e.target)) return
+      if (!ref.current || ref.current.contains(e.target)) return // ignoro eventi fuori dal componente
       setOpen(false)
     }
     document.addEventListener('mousedown', onDoc)
     return () => document.removeEventListener('mousedown', onDoc)
   }, [])
+  // Trovo l'opzione selezionata
   const selected = options.find(o => o.value === value)
   return (
     <div className="custom-select" ref={ref}>
@@ -38,21 +39,22 @@ const CustomSelect = ({ value, options, onChange, label }) => {
   )
 }
 
+// Componente SettingsModal per la gestione delle impostazioni
 const SettingsModal = ({ onClose }) => {
   const { settings, setSettings } = useSettings()
   const { user } = useAuth()
   const [busy, setBusy] = useState(false)
 
-  // Add body class to hide map controls/markers while modal is open
+  // Effetto per bloccare lo scroll del body quando il modal è aperto
   useEffect(() => {
     document.body.classList.add('modal-open')
     return () => {
       document.body.classList.remove('modal-open')
     }
   }, [])
-
+  // Funzione per gestire i cambiamenti nelle impostazioni
   const handleChange = (patch) => setSettings({ ...settings, ...patch })
-
+  // Funzione per esportare i dati dell'utente
   const exportData = async () => {
     if (!user) return
     setBusy(true)
@@ -77,7 +79,7 @@ const SettingsModal = ({ onClose }) => {
       setBusy(false)
     }
   }
-
+  // Funzione per eliminare tutti i percorsi dell'utente
   const deleteAllRoutes = async () => {
     if (!user) return
     if (!confirm('Eliminare tutti i percorsi? Questa azione non è reversibile.')) return
@@ -86,8 +88,7 @@ const SettingsModal = ({ onClose }) => {
       const res = await routesService.getUserRoutes(user.$id)
       if (res.success) {
         for (const r of res.data) {
-          // best effort sequential deletion
-          // eslint-disable-next-line no-await-in-loop
+          // Elimino tutti i percorsi
           await routesService.deleteRoute(r.$id)
         }
       }

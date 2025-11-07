@@ -1,4 +1,4 @@
-function normalizePoints(points) {
+function normalizePoints(points) { // normalizzo i punti in oggetti {lat, lng}
   return (points || [])
     .map(p => {
       if (Array.isArray(p)) return { lat: p[1], lng: p[0] }
@@ -6,7 +6,7 @@ function normalizePoints(points) {
     })
     .filter(p => typeof p.lat === 'number' && typeof p.lng === 'number')
 }
-
+// Calcolo i bounds (min/max lat/lng) di un array di punti
 function computeBounds(pts) {
   const lats = pts.map(p => p.lat)
   const lngs = pts.map(p => p.lng)
@@ -18,7 +18,7 @@ function computeBounds(pts) {
   if (minLng === maxLng) { minLng -= 0.0005; maxLng += 0.0005 }
   return { minLat, maxLat, minLng, maxLng }
 }
-
+// Costruisco un proiettore da lat/lng a x/y su canvas
 function buildProjector(pts, width, height, padding) {
   const { minLat, maxLat, minLng, maxLng } = computeBounds(pts)
   const innerW = width - padding * 2
@@ -35,12 +35,12 @@ function buildProjector(pts, width, height, padding) {
   }
   return { toXY, bounds: { minLat, maxLat, minLng, maxLng } }
 }
-
+// Carico un'immagine di basemap da MapTiler Static Maps extent endpoint
 async function loadBasemap(bounds, width, height, { key, style = 'streets-v2' } = {}) {
   if (!key) return null
-  // MapTiler Static Maps extent endpoint. If it fails, we simply skip and fallback.
+  // Espando il bbox di circa il 5% per evitare estensioni a area zero
   const { minLng, minLat, maxLng, maxLat } = bounds
-  // Expand bbox by ~5% (or a tiny epsilon) to avoid zero-area extents
+  
   const dx = Math.max(1e-4, (maxLng - minLng) * 0.05)
   const dy = Math.max(1e-4, (maxLat - minLat) * 0.05)
   const eMinLng = Math.max(-180, minLng - dx)
@@ -54,7 +54,7 @@ async function loadBasemap(bounds, width, height, { key, style = 'streets-v2' } 
     img.onerror = () => resolve(null)
     img.src = `https://api.maptiler.com/maps/${encodeURIComponent(mapStyle)}/static/extent/${eMinLng},${eMinLat},${eMaxLng},${eMaxLat}/${Math.round(width)}x${Math.round(height)}.png?key=${encodeURIComponent(key)}`
   })
-  // Try preferred style, then fallback to streets-v2
+  // Provo a caricare lo stile richiesto, altrimenti uso streets-v2 come fallback
   const first = await tryLoad(style)
   if (first) return first
   return await tryLoad('streets-v2')
@@ -66,7 +66,7 @@ function latToMercatorY(lat) {
 }
 
 function computeCenterZoom(bounds, width, height) {
-  // Compute zoom to fit bounds using Web Mercator approximation
+  // Calcolo il centro e lo zoom per adattare i bounds alla dimensione data
   const paddingRatio = 0.10 // 10% padding
   const innerW = width * (1 - 2 * paddingRatio)
   const innerH = height * (1 - 2 * paddingRatio)
@@ -78,23 +78,20 @@ function computeCenterZoom(bounds, width, height) {
   const centerLat = (minLat + maxLat) / 2
   const centerLng = (minLng + maxLng) / 2
 
-  // Convert to Mercator meters proxy (unitless), compute deltas
+  // Calcolo lo zoom necessario
   const y1 = latToMercatorY(minLat)
   const y2 = latToMercatorY(maxLat)
   const deltaY = Math.abs(y2 - y1)
   const deltaX = Math.abs(maxLng - minLng) * Math.PI / 180 // in radians as proxy
 
-  // World size in pixels at zoom z is 256 * 2^z
-  // Required scale to fit: s = worldPixels / delta
-  // So 256 * 2^z / delta = innerSize => 2^z = innerSize * delta / 256
-  // Choose the limiting dimension
+  // Calcolo lo zoom richiesto per larghezza e altezza della mappa 
   const reqZx = Math.log2((innerW * Math.PI) / (256 * Math.max(deltaX, 1e-6)))
   const reqZy = Math.log2((innerH) / (256 * Math.max(deltaY, 1e-6)))
   let zoom = Math.floor(Math.min(reqZx, reqZy))
   zoom = Math.max(2, Math.min(18, zoom))
   return { centerLat, centerLng, zoom }
 }
-
+// Carico un'immagine di basemap centrata da MapTiler Static Maps center endpoint
 async function loadBasemapCenter(bounds, width, height, { key, style }) {
   const { centerLat, centerLng, zoom } = computeCenterZoom(bounds, width, height)
   const tryLoad = (mapStyle) => new Promise((resolve) => {
@@ -108,7 +105,7 @@ async function loadBasemapCenter(bounds, width, height, { key, style }) {
   if (first) return first
   return await tryLoad('streets-v2')
 }
-
+// Genero un'immagine PNG di un percorso dato un array di punti GPS
 export async function trackToPng(name, points, options = {}) {
   const pts = normalizePoints(points)
   const width = options.width || 1200
@@ -138,7 +135,7 @@ export async function trackToPng(name, points, options = {}) {
 
   const { toXY, bounds } = buildProjector(pts, width, height, padding)
 
-  // Try draw basemap
+  // Basemap (MapTiler or OSM tiles)
   let drewBasemap = false
   if (basemapKey) {
     let basemap = await loadBasemap(bounds, width, height, { key: basemapKey, style: basemapStyle })
@@ -151,7 +148,7 @@ export async function trackToPng(name, points, options = {}) {
     }
   }
 
-  // If no MapTiler basemap, try OSM tiles via template
+  //se non ho disegnato la basemap, provo con le tile OSM
   if (!drewBasemap && staticTileUrl) {
     try {
       await drawTilesFromTemplate(ctx, bounds, width, height, padding, staticTileUrl)
@@ -201,21 +198,21 @@ export async function trackToPng(name, points, options = {}) {
   return new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
 }
 
-// ---------- Tile utilities (OSM template) ----------
+// Funzioni di supporto per il caricamento delle tile
 const TILE_SIZE = 256
-
+// Converti lon in coordinate x a zoom z
 function lon2x(lon, z) {
   const n = 2 ** z
   return ((lon + 180) / 360) * n * TILE_SIZE
 }
-
+// Converti lat in coordinate y a zoom z
 function lat2y(lat, z) {
   const rad = (lat * Math.PI) / 180
   const n = 2 ** z
   const mercY = Math.log(Math.tan(Math.PI / 4 + rad / 2))
   return (1 - mercY / Math.PI) / 2 * n * TILE_SIZE
 }
-
+// Carico un'immagine tile da URL
 async function loadTile(url) {
   return new Promise((resolve, reject) => {
     const img = new Image()
@@ -225,14 +222,14 @@ async function loadTile(url) {
     img.src = url
   })
 }
-
+// Disegno le tile su un canvas dato un template URL
 async function drawTilesFromTemplate(ctx, bounds, width, height, padding, template) {
-  // Compute zoom to fit bounds into inner area
+  
   const innerW = width - padding * 2
   const innerH = height - padding * 2
   const { minLat, maxLat, minLng, maxLng } = bounds
 
-  // Estimate zoom to fit (use same approach as computeCenterZoom but with pixel conversion)
+  // Stima lo zoom necessario
   function estimateZoom() {
     for (let z = 18; z >= 2; z--) {
       const px1 = lon2x(minLng, z)
@@ -258,7 +255,7 @@ async function drawTilesFromTemplate(ctx, bounds, width, height, padding, templa
   const startTileY = Math.floor(topLeftY / TILE_SIZE)
   const endTileX = Math.floor((topLeftX + width) / TILE_SIZE)
   const endTileY = Math.floor((topLeftY + height) / TILE_SIZE)
-
+ // Carico e disegno le tile necessarie
   const promises = []
   for (let x = startTileX; x <= endTileX; x++) {
     for (let y = startTileY; y <= endTileY; y++) {

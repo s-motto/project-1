@@ -1,6 +1,4 @@
-/**
- * Service per calcolare statistiche dai percorsi salvati
- */
+// Servizio per il calcolo delle statistiche dai percorsi
 
 class StatsService {
   /**

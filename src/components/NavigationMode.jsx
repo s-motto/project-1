@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useRef } from 'react'
-import useNavigation from '../contexts/NavigationContext'
-import { FaLocationArrow, FaRoute, FaFlag, FaExclamationTriangle, FaStop, FaCompass } from 'react-icons/fa'
-import L from 'leaflet'
-import { calculateDistance, formatDistance, KM_TO_MI, M_TO_FT, formatDurationSeconds } from '../utils/gpsUtils'
-import { useSettings } from '../contexts/SettingsContext'
-import { useToast } from '../contexts/ToastContext'
+import React, { useState, useEffect, useRef } from 'react' // importo React e gli hook necessari
+import useNavigation from '../contexts/NavigationContext' // importo il contesto di navigazione
+import { FaLocationArrow, FaRoute, FaFlag, FaExclamationTriangle, FaStop, FaCompass } from 'react-icons/fa' // importo le icone necessarie
+import L from 'leaflet' // importo Leaflet per la gestione della mappa
+import { calculateDistance, formatDistance, KM_TO_MI, M_TO_FT, formatDurationSeconds } from '../utils/gpsUtils' // importo le funzioni di utilità GPS
+import { useSettings } from '../contexts/SettingsContext' // importo il contesto delle impostazioni
+import { useToast } from '../contexts/ToastContext' // importo il contesto delle notifiche toast
 
+// Componente NavigationMode per la modalità di navigazione GPS
 const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, currentPosition, heading }) => {
-  const [currentStepIndex, setCurrentStepIndex] = useState(0)
-  const [distanceToEnd, setDistanceToEnd] = useState(null)
+  const [currentStepIndex, setCurrentStepIndex] = useState(0) 
+  const [distanceToEnd, setDistanceToEnd] = useState(null)  
 
   const [isOffRoute, setIsOffRoute] = useState(false)
   const userMarkerRef = useRef(null)
@@ -18,10 +19,10 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
   // Trova il punto più vicino sul percorso
   const findNearestPointOnRoute = (position) => {
     if (!routeLayer) return null
-    
+    // Trova il punto più vicino sul percorso  
     let minDistance = Infinity
     let nearestPoint = null
-    
+    // Calcola la distanza tra il punto e la posizione attuale
     routeLayer.eachLayer(layer => {
       if (layer.feature && layer.feature.geometry) {
         const coords = layer.feature.geometry.coordinates
@@ -43,15 +44,15 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
     return nearestPoint
   }
 
-  // React to external currentPosition prop (managed by parent hook)
+  // Effetto per aggiornare la posizione dell'utente sulla mappa
   useEffect(() => {
-    // Update user marker and map view when position or map/route change
+    // Verifica che la mappa e il layer del percorso siano disponibili
     if (!map || !routeLayer) return
     if (!currentPosition) return
 
     const { lat, lng, accuracy } = currentPosition
 
-    // Update or create user marker
+    // Aggiorna o crea il marcatore della posizione dell'utente
     if (userMarkerRef.current) {
       userMarkerRef.current.setLatLng([lat, lng])
     } else {
@@ -82,28 +83,28 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
         `,
         iconSize: [20, 20]
       })
-      userMarkerRef.current = L.marker([lat, lng], { icon: userIcon }).addTo(map)
-      L.circle([lat, lng], { radius: accuracy, color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.1, weight: 1 }).addTo(map)
+      userMarkerRef.current = L.marker([lat, lng], { icon: userIcon }).addTo(map) // Aggiungo il marcatore alla mappa
+      L.circle([lat, lng], { radius: accuracy, color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.1, weight: 1 }).addTo(map) // Aggiungo il cerchio di accuratezza
     }
 
     map.setView([lat, lng], 17, { animate: true })
 
-    // Calculate distance to end and off-route
+    // Calcola la distanza alla fine del percorso
     if (endPoint) {
       const distToEnd = calculateDistance(lat, lng, endPoint.lat, endPoint.lon)
       setDistanceToEnd(distToEnd)
       if (distToEnd < 0.05) handleArrival()
     }
-
+    
     const nearestPoint = findNearestPointOnRoute({ lat, lng })
     if (nearestPoint && nearestPoint.distance > 0.05) setIsOffRoute(true)
     else setIsOffRoute(false)
 
     updateCurrentStep({ lat, lng })
 
-    // Cleanup function to remove marker if needed
+    // Pulizia del marcatore alla rimozione del componente
   }, [map, routeLayer, endPoint, currentPosition, heading])
-
+ // Pulizia del marcatore alla rimozione del componente
   useEffect(() => {
     return () => {
       if (userMarkerRef.current && map) {
@@ -122,17 +123,17 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
       
     }
   }
-
+  // Gestisce l'arrivo a destinazione
   const handleArrival = () => {
     toast.success('🎉 Sei arrivato a destinazione!')
     onStop()
   }
-
+  // Gestisce lo stop della navigazione
   const handleStop = () => {
     onStop()
   }
 
-  // Show a loading state until we have a position
+  // Render del componente
   if (!currentPosition) {
     return (
       <div className="bg-white rounded-lg shadow-md p-4 w-full max-w-xl">
@@ -141,8 +142,8 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
     )
   }
 
-  const currentStep = instructions[currentStepIndex]
-  const nextStep = instructions[currentStepIndex + 1]
+  const currentStep = instructions[currentStepIndex] // Step corrente
+  const nextStep = instructions[currentStepIndex + 1] // Prossimo step
 
   return (
     <div className="navigation-container">
@@ -244,7 +245,7 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
 }
 
 function GPSStatusBadge({ currentPosition }) {
-  // use context to read error/isNavigating
+  // Gestisce lo stato del GPS
   try {
     const { isNavigating, error } = useNavigation()
     let text = 'GPS: in attesa'

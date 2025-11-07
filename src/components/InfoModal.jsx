@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
-import { FaHiking, FaTimes, FaMapMarkedAlt, FaRoute, FaBookmark, FaLocationArrow } from 'react-icons/fa'
-import PrivacyPolicy from './PrivacyPolicy'
+import React, { useState } from 'react' // importo React e l'hook useState
+import { FaHiking, FaTimes, FaMapMarkedAlt, FaRoute, FaBookmark, FaLocationArrow } from 'react-icons/fa'  // importo le icone necessarie
+import PrivacyPolicy from './PrivacyPolicy' // importo il componente PrivacyPolicy
 
+// Componente InfoModal per mostrare le informazioni sull'app
 const InfoModal = ({ onClose }) => {
   const [showPrivacy, setShowPrivacy] = useState(false)
   return (

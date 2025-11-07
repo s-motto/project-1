@@ -1,10 +1,8 @@
-/**
- * Logger utility that only logs in development mode
- * Prevents console statements from appearing in production builds
- */
+// Utility per il logging con diversi livelli di severità
 
-const isDevelopment = import.meta.env.DEV
+const isDevelopment = import.meta.env.DEV // Controllo se siamo in ambiente di sviluppo
 
+// Definizione dell'oggetto logger con vari metodi
 export const logger = {
   log: (...args) => {
     if (isDevelopment) {
@@ -16,8 +14,7 @@ export const logger = {
     if (isDevelopment) {
       console.error(...args)
     }
-    // In production, you could send errors to a logging service here
-    // e.g., Sentry, LogRocket, etc.
+    // In produzione potremmo inviare gli errori a un servizio di monitoraggio esterno
   },
   
   warn: (...args) => {

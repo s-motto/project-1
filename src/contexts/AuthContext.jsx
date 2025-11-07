@@ -3,8 +3,9 @@ import { account } from '../appwrite'
 import { ID } from 'appwrite'
 import logger from '../utils/logger'
 
-const AuthContext = createContext()
+const AuthContext = createContext() // Creo il contesto di autenticazione
 
+// Hook per l'autenticazione
 export const useAuth = () => {
   const context = useContext(AuthContext)
   if (!context) {
@@ -12,7 +13,7 @@ export const useAuth = () => {
   }
   return context
 }
-
+// Provider per il contesto di autenticazione
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -21,7 +22,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     checkUser()
   }, [])
-
+  // Funzione per controllare l'utente corrente
   const checkUser = async () => {
     try {
       const currentUser = await account.get()

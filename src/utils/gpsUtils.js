@@ -1,7 +1,4 @@
-/**
- * Utility functions per calcoli GPS
- * Centralizzo qui le funzioni per evitare duplicazioni di codice
- */
+// utilità per il calcolo di distanze, dislivelli, velocità e formattazioni legate al GPS
 
 /**
  *calcolo della distanza tra due coordinate GPS usando la formula di Haversine 
@@ -117,34 +114,34 @@ export function calculateSpeed(distanceKm, timeSeconds) {
   return parseFloat((distanceKm / timeHours).toFixed(1))
 }
 
-// ====== UNIT CONVERSION & FORMATTING ======
+//conversione e formattazione delle unità di misura
 export const KM_TO_MI = 0.621371
 export const M_TO_FT = 3.28084
 
-/** Convert km to display unit ("km" | "mi") and return number */
+// converto la distanza in base all'unità scelta ("km" | "mi") 
 export function convertDistance(distanceKm, unit) {
   return unit === 'mi' ? distanceKm * KM_TO_MI : distanceKm
 }
 
-/** Convert meters to display unit ("m" | "ft") and return number */
+//converto l'altitudine in base all'unità scelta ("m" | "ft")
 export function convertElevation(meters, unit) {
   return unit === 'ft' ? meters * M_TO_FT : meters
 }
 
-/** Format distance using given unit label ("km" | "mi") */
+//formatto la distanza usando l'unità data ("km" | "mi")
 export function formatDistance(distanceKm, unit) {
   const v = convertDistance(distanceKm, unit)
   const decimals = v < 10 ? 2 : 1
   return `${v.toFixed(decimals)} ${unit}`
 }
 
-/** Format elevation using given unit label ("m" | "ft") */
+//formatto l'altitudine usando l'unità data ("m" | "ft")
 export function formatElevation(meters, unit) {
   const v = convertElevation(meters, unit)
   return `${Math.round(v)} ${unit}`
 }
 
-/** Format speed based on distance unit: km/h or mph */
+//formatto la velocità in base all'unità di distanza data ("km" | "mi")
 export function formatSpeedKmh(kmh, distanceUnit) {
   if (distanceUnit === 'mi') {
     const mph = kmh * KM_TO_MI
@@ -153,7 +150,7 @@ export function formatSpeedKmh(kmh, distanceUnit) {
   return `${kmh.toFixed(1)} km/h`
 }
 
-// Duration formatting
+// formatto la durata in secondi in base allo stile scelto ('hms' | 'short')
 export function formatDurationSeconds(seconds, style = 'hms') {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
@@ -172,7 +169,7 @@ export function formatDurationMinutes(minutes, style = 'hms') {
   return formatDurationSeconds(totalSeconds, style)
 }
 
-// Timestamp formatting (times-of-day)
+// formatto una data ISO in stringa leggibile
 export function formatTimestamp(isoString, timeFormat = '24h') {
   if (!isoString) return ''
   const d = new Date(isoString)
@@ -184,7 +181,7 @@ export function formatTimestamp(isoString, timeFormat = '24h') {
   }
 }
 
-// Filename-safe timestamp: 2025-11-05_23-17 or 2025-11-05_11-17PM
+// formatto una data ISO in stringa per nomi di file
 export function formatTimestampForFilename(isoString, timeFormat = '24h') {
   if (!isoString) isoString = new Date().toISOString()
   const d = new Date(isoString)

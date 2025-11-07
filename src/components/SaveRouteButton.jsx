@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import routesService from '../services/routesService'
 import { useToast } from '../contexts/ToastContext'
 
+// Componente SaveRouteButton per salvare un percorso
 const SaveRouteButton = ({ routeData, onSaved }) => {
   const { user } = useAuth()
   const [saving, setSaving] = useState(false)
@@ -11,7 +12,7 @@ const SaveRouteButton = ({ routeData, onSaved }) => {
   const [showNameInput, setShowNameInput] = useState(false)
   const [routeName, setRouteName] = useState('')
   const { toast } = useToast()
-
+  // Funzione per gestire il salvataggio del percorso
   const handleSave = async () => {
     if (!user) {
       toast.info('Devi essere loggato per salvare un percorso')

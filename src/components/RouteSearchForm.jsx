@@ -1,20 +1,19 @@
-import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
+import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react' // importo React e gli hook necessari
+import NavigationMode from './NavigationMode' // importo il componente NavigationMode
+import SaveRouteButton from './SaveRouteButton' // importo il componente SaveRouteButton
+import ActiveTracking from './ActiveTracking' // importo il componente ActiveTracking
+import { FaMapMarkerAlt, FaFlag, FaWalking, FaClock, FaRoute, FaLocationArrow, FaSpinner, FaPlay } from 'react-icons/fa'  // importo le icone necessarie
+import L from 'leaflet' // importo Leaflet per la gestione della mappa
+import 'leaflet/dist/leaflet.css' // importo stili di Leaflet
+import MapPointSelector from './MapPointSelector' // importo il componente MapPointSelector
+import useNavigation from '../contexts/NavigationContext' // importo il contesto di navigazione
+import { useToast } from '../contexts/ToastContext' // importo il contesto delle notifiche
+import { useAuth } from '../contexts/AuthContext' // importo il contesto di autenticazione
+import { calculateDistance, formatDistance, formatElevation, KM_TO_MI, M_TO_FT, formatDurationSeconds } from '../utils/gpsUtils'  // importo le funzioni di utilità GPS
+import { useSettings } from '../contexts/SettingsContext' // importo il contesto delle impostazioni
 
-import NavigationMode from './NavigationMode'
-import SaveRouteButton from './SaveRouteButton'
-import ActiveTracking from './ActiveTracking'
-import { FaMapMarkerAlt, FaFlag, FaWalking, FaClock, FaRoute, FaLocationArrow, FaSpinner, FaPlay } from 'react-icons/fa'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
-import MapPointSelector from './MapPointSelector'
-import useNavigation from '../contexts/NavigationContext'
-import { useToast } from '../contexts/ToastContext'
-import { useAuth } from '../contexts/AuthContext'
-import { calculateDistance, formatDistance, formatElevation, KM_TO_MI, M_TO_FT, formatDurationSeconds } from '../utils/gpsUtils'
-import { useSettings } from '../contexts/SettingsContext'
-
-import logger from '../utils/logger'
-
+import logger from '../utils/logger'  // importo il logger
+// Componente RouteSearchForm per la ricerca e visualizzazione dei percorsi
 const RouteSearchForm = forwardRef(({preloadedRoute, preloadedHike}, ref) => {
   const { settings } = useSettings()
 
@@ -45,8 +44,8 @@ const RouteSearchForm = forwardRef(({preloadedRoute, preloadedHike}, ref) => {
   const endMarkerRef = useRef(null) //marcatore arrivo
   const updateMarkersListenerRef = useRef(null) // riferimento al listener
   
-  // Navigation state and actions come dal NavigationContext
-  const { isNavigating, currentPosition, heading, startNavigation, stopNavigation } = useNavigation()
+  
+  const { isNavigating, currentPosition, heading, startNavigation, stopNavigation } = useNavigation() //stato di navigazione
   const [fullRouteData, setFullRouteData] = useState(null) // salva tutti i dati del percorso
   const [isPreloaded, setIsPreloaded] = useState(false) //indica se il percorso è pre-caricato
   const [routeSaved, setRouteSaved] = useState(false) //indica se l'utente ha già salvato il percorso
@@ -99,14 +98,14 @@ useEffect(() => {
     if (tempMarkerRef.current) {
       tempMarkerRef.current.remove()
     }
-    
+    // Creo marcatore temporaneo
     const tempMarkerDiv = document.createElement('div')
     tempMarkerDiv.className = 'temp-map-marker fade-in-marker'
     tempMarkerDiv.style.position = 'absolute'
     tempMarkerDiv.style.zIndex = '1000'
     tempMarkerDiv.style.pointerEvents = 'none'
     tempMarkerDiv.innerHTML = ' '
-    
+    // Posiziono il marcatore
     const pixel = map.latLngToContainerPoint([lat, lng])
     tempMarkerDiv.style.left = `${pixel.x}px`
     tempMarkerDiv.style.top = `${pixel.y}px`
@@ -115,7 +114,7 @@ useEffect(() => {
     document.getElementById('map').appendChild(tempMarkerDiv)
     tempMarkerRef.current = tempMarkerDiv
     
-    // Update marker position on map move
+    // Aggiorna posizione marcatore con movimenti mappa
     const updateTempMarker = () => {
       if (tempMarkerRef.current) {
         const newPixel = map.latLngToContainerPoint([lat, lng])
@@ -222,6 +221,7 @@ useEffect(() => {
           <path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/>
         </svg>
       `
+      // Posiziono il marcatore di partenza
       const startPointPixel = map.latLngToContainerPoint([route.startPoint.lat, route.startPoint.lon])
       startMarkerDiv.style.position = 'absolute'
       startMarkerDiv.style.left = `${startPointPixel.x}px`
@@ -240,6 +240,7 @@ useEffect(() => {
           <path d="M32 0C49.7 0 64 14.3 64 32V48l69-17.2c38.1-9.5 78.3-5.1 113.5 12.5c46.3 23.2 100.8 23.2 147.1 0l9.6-4.8C423.8 28.1 448 43.1 448 66.1V345.8c0 13.3-8.3 25.3-20.8 30l-34.7 13c-46.2 17.3-97.6 14.6-141.7-7.4c-37.9-19-81.3-23.7-122.5-13.4L64 384v96c0 17.7-14.3 32-32 32s-32-14.3-32-32V400 334 64 32C0 14.3 14.3 0 32 0zM64 187.1l64-13.9v65.5L64 252.6V187.1zm0 96.8l64-13.9v65.5L64 349.4V283.9zM320 128c-13.3 0-24 10.7-24 24s10.7 24 24 24h32c13.3 0 24-10.7 24-24s-10.7-24-24-24H320z"/>
         </svg>
       `
+      // Posiziono il marcatore di arrivo
       const endPointPixel = map.latLngToContainerPoint([route.endPoint.lat, route.endPoint.lon])
       endMarkerDiv.style.position = 'absolute'
       endMarkerDiv.style.left = `${endPointPixel.x}px`
@@ -349,6 +350,7 @@ const loadHikingRoute = (hike) => {
         <path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/>
       </svg>
     `
+    // Posiziono il marcatore di partenza
     const startPointPixel = map.latLngToContainerPoint([startCoord[1], startCoord[0]])
     startMarkerDiv.style.position = 'absolute'
     startMarkerDiv.style.left = `${startPointPixel.x}px`
@@ -368,6 +370,7 @@ const loadHikingRoute = (hike) => {
         <path d="M32 0C49.7 0 64 14.3 64 32V48l69-17.2c38.1-9.5 78.3-5.1 113.5 12.5c46.3 23.2 100.8 23.2 147.1 0l9.6-4.8C423.8 28.1 448 43.1 448 66.1V345.8c0 13.3-8.3 25.3-20.8 30l-34.7 13c-46.2 17.3-97.6 14.6-141.7-7.4c-37.9-19-81.3-23.7-122.5-13.4L64 384v96c0 17.7-14.3 32-32 32s-32-14.3-32-32V400 334 64 32C0 14.3 14.3 0 32 0zM64 187.1l64-13.9v65.5L64 252.6V187.1zm0 96.8l64-13.9v65.5L64 349.4V283.9zM320 128c-13.3 0-24 10.7-24 24s10.7 24 24 24h32c13.3 0 24-10.7 24-24s-10.7-24-24-24H320z"/>
       </svg>
     `
+    // Posiziono il marcatore di arrivo
     const endPointPixel = map.latLngToContainerPoint([endCoord[1], endCoord[0]])
     endMarkerDiv.style.position = 'absolute'
     endMarkerDiv.style.left = `${endPointPixel.x}px`
@@ -504,6 +507,7 @@ const getCurrentLocation = () => {
   )
 }
 
+// Funzione di geocoding per ottenere coordinate da testo
  const geocodeText = async (text) => {
   if (!text) return null
   try {
@@ -525,7 +529,7 @@ const getCurrentLocation = () => {
     return null
   }
 }
-
+// Funzione per ottenere suggerimenti di autocompletamento
 const fetchSuggestions = async (text) => {
   if (!text || text.length < 2) return []
   try {
@@ -675,7 +679,7 @@ const handleReset = () => {
         document.getElementById('map').appendChild(startMarkerDiv)
         startMarkerRef.current = startMarkerDiv
 
-        
+        // Creo il marcatore di arrivo
         const endMarkerDiv = document.createElement('div')
         endMarkerDiv.className = 'custom-html-marker end-marker'
         endMarkerDiv.innerHTML = `
@@ -683,7 +687,7 @@ const handleReset = () => {
             <path d="M32 0C49.7 0 64 14.3 64 32V48l69-17.2c38.1-9.5 78.3-5.1 113.5 12.5c46.3 23.2 100.8 23.2 147.1 0l9.6-4.8C423.8 28.1 448 43.1 448 66.1V345.8c0 13.3-8.3 25.3-20.8 30l-34.7 13c-46.2 17.3-97.6 14.6-141.7-7.4c-37.9-19-81.3-23.7-122.5-13.4L64 384v96c0 17.7-14.3 32-32 32s-32-14.3-32-32V400 334 64 32C0 14.3 14.3 0 32 0zM64 187.1l64-13.9v65.5L64 252.6V187.1zm0 96.8l64-13.9v65.5L64 349.4V283.9zM320 128c-13.3 0-24 10.7-24 24s10.7 24 24 24h32c13.3 0 24-10.7 24-24s-10.7-24-24-24H320z"/>
           </svg>
         `
-        
+        // Converto coordinate in pixel e posiziono il marcatore
         const endPointPixel = map.latLngToContainerPoint([ep.lat, ep.lon])
         endMarkerDiv.style.position = 'absolute'
         endMarkerDiv.style.left = `${endPointPixel.x}px`
@@ -695,7 +699,7 @@ const handleReset = () => {
         document.getElementById('map').appendChild(endMarkerDiv)
         endMarkerRef.current = endMarkerDiv
         
-        
+        // Funzione per aggiornare la posizione dei marker durante lo zoom/move
         const updateMarkerPositions = () => {
           if (startMarkerRef.current) {
             const newStartPoint = map.latLngToContainerPoint([sp.lat, sp.lon])
@@ -750,7 +754,7 @@ const handleReset = () => {
          instructions: Array.isArray(props.segments?.[0]?.steps) ? props.segments[0].steps : []
 
         })
-        // Newly calculated route is not saved yet
+        // Salvo il percorso come salvato
         setRouteSaved(false)
       } else { // Nessun percorso trovato
         setErrorMsg('Non è stato possibile calcolare un percorso.')
@@ -763,7 +767,7 @@ const handleReset = () => {
   }
 
 
-  // Handlers per ActiveTracking (FUORI da handleSubmit!)
+  // Handlers per Tracking
  const handleStartTracking = () => {
   // Controlla se l'utente è loggato
   if (!user) {
@@ -796,7 +800,7 @@ const handleSetAsStart = () => {
   setShowMapPointSelector(false)
   if (tempMarkerRef.current) tempMarkerRef.current.remove()
 }
-
+// Handler per impostare il punto selezionato come punto di arrivo
 const handleSetAsEnd = () => {
   if (selectedMapPoint) {
     setEndPoint({
@@ -810,7 +814,7 @@ const handleSetAsEnd = () => {
   setShowMapPointSelector(false)
   if (tempMarkerRef.current) tempMarkerRef.current.remove()
 }
-
+// Handler per invertire i punti di partenza e arrivo
 const handleSwapPoints = () => {
   if (startPoint && endPoint) {
     // Swap
@@ -827,7 +831,7 @@ const handleSwapPoints = () => {
   setShowMapPointSelector(false)
   if (tempMarkerRef.current) tempMarkerRef.current.remove()
 }
-
+// Handler per chiudere il selettore di punti sulla mappa senza fare modifiche
 const handleCloseSelector = () => {
   setShowMapPointSelector(false)
   if (tempMarkerRef.current) tempMarkerRef.current.remove()

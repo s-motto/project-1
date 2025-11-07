@@ -1,27 +1,27 @@
-import React, { useState, useEffect } from 'react'
-import { FaUser, FaLock, FaEnvelope, FaSpinner, FaHiking } from 'react-icons/fa'
-import { useAuth } from '../contexts/AuthContext'
-
+import React, { useState, useEffect } from 'react' // importo React e gli hook necessari
+import { FaUser, FaLock, FaEnvelope, FaSpinner, FaHiking } from 'react-icons/fa' // importo le icone necessarie
+import { useAuth } from '../contexts/AuthContext' // importo il contesto di autenticazione
+// Componente AuthPage per login e registrazione
 const AuthPage = ({ onClose }) => {
   const { login, register } = useAuth()
   const [isLogin, setIsLogin] = useState(true)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  
+  // Stato per i dati del form
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
     confirmPassword: ''
   })
-
+// Effetto per gestire la classe del body quando il modal è aperto
   useEffect(() => {
     document.body.classList.add('modal-open')
     return () => {
       document.body.classList.remove('modal-open')
     }
   }, [])
-
+// Gestore del cambiamento nei campi del form
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -29,13 +29,13 @@ const AuthPage = ({ onClose }) => {
     })
     setError('')
   }
-
+// Funzione di validazione del form
   const validateForm = () => {
     if (!formData.email || !formData.password) {
       setError('Email e password sono obbligatori')
       return false
     }
-
+// Validazioni aggiuntive per la registrazione
     if (!isLogin) {
       if (!formData.name) {
         setError('Il nome è obbligatorio')
@@ -53,14 +53,14 @@ const AuthPage = ({ onClose }) => {
 
     return true
   }
-
+// Gestore del submit del form
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!validateForm()) return
 
-    setLoading(true)
-    setError('')
-
+    setLoading(true) // Avvio caricamento
+    setError('')// Reset errore
+    // Chiamata alle funzioni di login o registrazione
     try {
       let result
       if (isLogin) {
@@ -80,7 +80,7 @@ const AuthPage = ({ onClose }) => {
 
     setLoading(false)
   }
-
+  // Funzione per il toggle tra login e registrazione
   const toggleMode = () => {
     setIsLogin(!isLogin)
     setError('')
@@ -91,7 +91,7 @@ const AuthPage = ({ onClose }) => {
       confirmPassword: ''
     })
   }
-
+  // Render del componente
   return (
     <div className="modal-overlay" style={{isolation: 'isolate'}}>
       <div className="modal-content max-w-md">

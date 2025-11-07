@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react'
-import { FaChartLine, FaRoute, FaClock, FaMountain, FaSpinner, FaTimes } from 'react-icons/fa'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
-import { useAuth } from '../contexts/AuthContext'
-import routesService from '../services/routesService'
-import statsService from '../services/statsService'
-import { useSettings } from '../contexts/SettingsContext'
-import { formatDistance, formatElevation, KM_TO_MI, formatDurationMinutes, formatTimestamp, formatTimestampForFilename } from '../utils/gpsUtils'
-import StatsCard from './StatsCard'
-import { generateGpxFromTrack } from '../utils/gpx'
-import { trackToPng } from '../utils/trackImage'
+import React, { useState, useEffect } from 'react' // importo React e gli hook necessari
+import { FaChartLine, FaRoute, FaClock, FaMountain, FaSpinner, FaTimes } from 'react-icons/fa'  // importo le icone necessarie
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts' // importo i componenti del grafico
+import { useAuth } from '../contexts/AuthContext' // importo il contesto di autenticazione
+import routesService from '../services/routesService' // importo il servizio per le rotte
+import statsService from '../services/statsService' // importo il servizio per le statistiche
+import { useSettings } from '../contexts/SettingsContext' // importo il contesto delle impostazioni
+import { formatDistance, formatElevation, KM_TO_MI, formatDurationMinutes, formatTimestamp, formatTimestampForFilename } from '../utils/gpsUtils' // importo le funzioni di utilità
+import StatsCard from './StatsCard' // importo il componente StatsCard
+import { generateGpxFromTrack } from '../utils/gpx' // importo la funzione per generare GPX
+import { trackToPng } from '../utils/trackImage'  // importo la funzione per generare immagini del percorso
 
 // Componente Dashboard per visualizzare le statistiche dell'utente
 const Dashboard = ({ onClose }) => {
@@ -17,10 +17,11 @@ const Dashboard = ({ onClose }) => {
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState(null)
   const [routes, setRoutes] = useState([])
-
+  // Gestisce l'esportazione del file GPX
   const handleExportGpx = (route) => {
     const name = route.name || 'Percorso'
-    let points = []
+    let points = [] 
+    // Determina le coordinate da usare
     if (Array.isArray(route.actualCoordinates) && route.actualCoordinates.length > 0) {
       points = route.actualCoordinates
     } else if (Array.isArray(route.coordinates)) {
@@ -31,23 +32,23 @@ const Dashboard = ({ onClose }) => {
         return { lat: c.lat, lng: c.lng }
       })
     }
-    const gpx = generateGpxFromTrack(name, points)
-    const blob = new Blob([gpx], { type: 'application/gpx+xml' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    const dateStr = formatTimestampForFilename(route.completedAt || new Date().toISOString(), settings?.timeFormat || '24h')
-    a.href = url
-    a.download = `${name.replace(/\s+/g, '_')}_${dateStr}.gpx`
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    URL.revokeObjectURL(url)
+    const gpx = generateGpxFromTrack(name, points)  // Genera il contenuto GPX
+    const blob = new Blob([gpx], { type: 'application/gpx+xml' })   // Crea il blob, ossia il file virtuale
+    const url = URL.createObjectURL(blob) // Crea l'URL per il download
+    const a = document.createElement('a') // Crea un elemento di ancoraggio
+    const dateStr = formatTimestampForFilename(route.completedAt || new Date().toISOString(), settings?.timeFormat || '24h')  // Formatta la data per il nome del file
+    a.href = url // Imposta l'URL come href
+    a.download = `${name.replace(/\s+/g, '_')}_${dateStr}.gpx`  // Imposta il nome del file
+    document.body.appendChild(a)  // Aggiunge l'elemento al DOM
+    a.click() // Simula il click per avviare il download
+    a.remove()  // Rimuove l'elemento
+    URL.revokeObjectURL(url)  // Revoca l'URL per liberare memoria
   }
-
+  // Gestisce l'esportazione dell'immagine del percorso
   const handleExportImage = async (route) => {
     const name = route.name || 'Percorso'
-    let points = []
-    if (Array.isArray(route.actualCoordinates) && route.actualCoordinates.length > 0) {
+    let points = []   
+    if (Array.isArray(route.actualCoordinates) && route.actualCoordinates.length > 0) { // Usa le coordinate effettive se disponibili
       points = route.actualCoordinates
     } else if (Array.isArray(route.coordinates)) {
       points = route.coordinates.map(c => {
@@ -57,7 +58,7 @@ const Dashboard = ({ onClose }) => {
         return { lat: c.lat, lng: c.lng }
       })
     }
-    const basemapKey = import.meta.env.VITE_MAPTILER_KEY
+    const basemapKey = import.meta.env.VITE_MAPTILER_KEY  
     const staticTileUrl = import.meta.env.VITE_STATIC_TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
     const tileAttribution = import.meta.env.VITE_TILE_ATTRIBUTION || '© OpenStreetMap contributors'
     // Let the exporter choose a reliable default style (streets-v2). Also pass OSM tile template fallback (no key required).
@@ -80,7 +81,7 @@ const Dashboard = ({ onClose }) => {
       document.body.classList.remove('modal-open')
     }
   }, [])
-
+  // Carica i dati quando l'utente cambia
   useEffect(() => {
     if (user) {
       loadData()
@@ -90,7 +91,7 @@ const Dashboard = ({ onClose }) => {
   // Carica i percorsi completati  e calcola le statistiche
   const loadData = async () => {
     setLoading(true)
-    //Usa getCompletedRoutes invece di getUserRoutes
+    //  Carica i percorsi completati
     const result = await routesService.getCompletedRoutes(user.$id)
     
     if (result.success) {

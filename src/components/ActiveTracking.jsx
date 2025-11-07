@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react'
-import { FaPlay, FaPause, FaStop, FaTimes, FaMapMarkerAlt, FaExclamationTriangle } from 'react-icons/fa'
-import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet'
-import useGeolocation from '../hooks/useGeolocation'
-import routesService from '../services/routesService'
-import { useAuth } from '../contexts/AuthContext'
+import React, { useState, useEffect, useRef, useMemo } from 'react' // importo react e hook necessari
+import { FaPlay, FaPause, FaStop, FaTimes, FaMapMarkerAlt, FaExclamationTriangle } from 'react-icons/fa' // importo icone da react-icons
+import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet' // importo componenti da react-leaflet
+import useGeolocation from '../hooks/useGeolocation' // importo hook personalizzato per geolocalizzazione
+import routesService from '../services/routesService' // importo servizio per gestione rotte
+import { useAuth } from '../contexts/AuthContext' // importo contesto di autenticazione
 import {
   calculateDistance,
   calculateTotalDistance,
@@ -15,18 +15,18 @@ import {
   formatElevation,
   formatSpeedKmh,
   formatDurationSeconds
-} from '../utils/gpsUtils'
-import 'leaflet/dist/leaflet.css'
-import { useToast } from '../contexts/ToastContext'
-import logger from '../utils/logger'
-import { useSettings } from '../contexts/SettingsContext'
+} from '../utils/gpsUtils' // importo funzioni di utilità per GPS
+import 'leaflet/dist/leaflet.css' // importo stili di Leaflet
+import { useToast } from '../contexts/ToastContext' // importo contesto per toast notifiche
+import logger from '../utils/logger' // importo logger per debug
+import { useSettings } from '../contexts/SettingsContext' // importo contesto per impostazioni utente
 
 // Componente per centrare la mappa sulla posizione corrente
 function MapCenterController({ position, shouldCenter, onMapReady }) {
   const map = useMap()
   const hasCenteredRef = useRef(false)
   const userHasInteractedRef = useRef(false)
-  
+  // Avviso mappa pronta
   useEffect(() => {
     if (onMapReady) {
       onMapReady(map)
@@ -46,7 +46,7 @@ function MapCenterController({ position, shouldCenter, onMapReady }) {
   }, [map, onMapReady])
   
   useEffect(() => {
-    // Only center once at the start, preserve user's zoom level
+    // Centra la mappa solo se richiesto e non è già stato fatto
     if (position && shouldCenter && map && !hasCenteredRef.current && !userHasInteractedRef.current) {
       const currentZoom = map.getZoom()
       map.setView([position.lat, position.lng], currentZoom || 16)
@@ -57,9 +57,7 @@ function MapCenterController({ position, shouldCenter, onMapReady }) {
   return null
 }
 
-/**
- * Componente per tracking GPS in tempo reale
- */
+// Componente principale ActiveTracking
 const ActiveTracking = ({ route, onClose, onComplete }) => {
   const { user } = useAuth()
   const geolocation = useGeolocation()
@@ -110,7 +108,7 @@ useEffect(() => {
       clearInterval(timerRef.current)
     }
   }
-  
+  // Cleanup all'unmount
   return () => {
     if (timerRef.current) {
       clearInterval(timerRef.current)
@@ -152,18 +150,18 @@ useEffect(() => {
       setTrackPoints(prev => {
         // Filtra spostamenti minimi per ridurre il rumore
         if (settings?.minPointDistanceMeters && prev.length > 0) {
-          const last = prev[prev.length - 1]
+          const last = prev[prev.length - 1] // Ultimo punto
           const R = 6371000 // raggio terrestre in metri
-          const dLat = (newPoint.lat - last.lat) * Math.PI / 180
-          const dLon = (newPoint.lng - last.lng) * Math.PI / 180
-          const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(last.lat * Math.PI/180) * Math.cos(newPoint.lat * Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2)
-          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-          const meters = R * c
-          if (meters < settings.minPointDistanceMeters) {
+          const dLat = (newPoint.lat - last.lat) * Math.PI / 180 // conversione in radianti
+          const dLon = (newPoint.lng - last.lng) * Math.PI / 180 // conversione in radianti
+          const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(last.lat * Math.PI/180) * Math.cos(newPoint.lat * Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2) // formula haversine
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)) // formula haversine
+          const meters = R * c // distanza in metri
+          if (meters < settings.minPointDistanceMeters) { // troppo vicino all'ultimo punto 
             return prev
           }
         }
-        const updated = [...prev, newPoint]
+        const updated = [...prev, newPoint] // Aggiungi nuovo punto
         
         // Calcola distanza
         if (updated.length > 1) {
@@ -186,7 +184,7 @@ useEffect(() => {
       })
     }
   }
-
+// Gestione errori GPS
   const handlePositionError = (error) => {
     logger.error('GPS Error:', error)
     let errorMsg = 'Errore GPS: '
@@ -223,11 +221,11 @@ useEffect(() => {
       },
       user.$id
     )
-    
+    // Se salvato
     if (result.success) {
       setSavedRouteId(result.data.$id)
       return result.data.$id
-    } else {
+    } else { // Errore
       throw new Error('Impossibile salvare il percorso')
     }
   }
@@ -246,14 +244,14 @@ useEffect(() => {
       }
       
       // Primo avvio
-      startTimeRef.current = Date.now()
-      pausedTimeRef.current = 0
-      setIsTracking(true)
-      setIsPaused(false)
-      isTrackingRef.current = true
-      isPausedRef.current = false
-      setShouldCenterMap(true)
-      setWaitingForGoodFix(true)
+      startTimeRef.current = Date.now() // Timestamp di inizio
+      pausedTimeRef.current = 0 // Reset tempo in pausa
+      setIsTracking(true) // Stato tracking
+      setIsPaused(false)  // Stato pausa
+      isTrackingRef.current = true  // Ref tracking
+      isPausedRef.current = false   // Ref pausa
+      setShouldCenterMap(true)  // Auto-center mappa
+      setWaitingForGoodFix(true)    // Aspetta fix GPS
       
       // Avvia GPS
       geolocation.start(
@@ -314,7 +312,7 @@ useEffect(() => {
       
       // Aggiorna il percorso
       const result = await routesService.updateRoute(routeId, completedData)
-      
+      // Notifica risultato
       if (result.success) {
         toast.success('Percorso completato e salvato!')
         if (onComplete) onComplete()
@@ -371,7 +369,7 @@ useEffect(() => {
       }
     }, 300)
   }
-
+ // Render del componente
   return (
     <div className="modal-overlay">
       <div className="modal-content w-full-max-4xl h-[95vh] flex flex-col">
@@ -447,31 +445,31 @@ useEffect(() => {
             {route.coordinates && route.coordinates.length > 1 && (
               <Polyline 
                 positions={route.coordinates.map(coord => {
-                  // Handle both [lon, lat] and {lat, lng} formats
+                  // Supporta sia oggetti che array
                   if (Array.isArray(coord)) {
-                    return [coord[1], coord[0]] // [lat, lng] from [lon, lat]
+                    return [coord[1], coord[0]] // [lat, lng]
                   }
                   return [coord.lat, coord.lng]
                 })}
-                color="#ef4444" // Red - planned route
+                color="#ef4444" 
                 weight={3}
                 opacity={0.5}
-                dashArray="10, 10" // Dashed line
+                dashArray="10, 10" 
               />
             )}
             
             {/* Traccia GPS - il percorso effettivamente tracciato */}
             {useMemo(() => {
               if (trackPoints.length < 2) return null
-              
+              // Ritorna il Polyline della traccia
               return (
                 <Polyline 
-                  key={`track-${trackPoints.length}`} // Force re-render when points change
+                  key={`track-${trackPoints.length}`} // Forza rerender su aggiornamento
                   positions={trackPoints.map(p => [p.lat, p.lng])}
-                  color="#10b981" // Green - more visible for hiking
-                  weight={5} // Thicker line
+                  color="#10b981" 
+                  weight={5} 
                   opacity={0.9}
-                  smoothFactor={1} // Less smoothing for more accurate trail
+                  smoothFactor={1} 
                 />
               )
             }, [trackPoints])}
@@ -482,7 +480,7 @@ useEffect(() => {
               </Marker>
             )}
 
-            {/* Auto-centra sulla posizione solo all'inizio + Fix mappa */}
+            {/* Auto-centra sulla posizione solo all'inizio */}
             {currentPosition && (
               <MapCenterController 
                 position={currentPosition} 

@@ -2,19 +2,20 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 
 const DEFAULTS = {
   distanceUnit: 'km', // 'km' | 'mi'
-  elevationUnit: 'm', // derived from distanceUnit but persisted for flexibility
+  elevationUnit: 'm', // 'm' | 'ft'
   timeFormat: '24h', // '24h' | '12h'
   durationFormat: 'hms', // 'hms' | 'short'
   theme: 'system', // 'system' | 'light' | 'dark'
-  language: 'auto', // 'auto' for now
-  gpsAccuracyMax: 50, // meters; ignore points worse than this
-  minPointDistanceMeters: 5 // ignore GPS jitter below this distance
+  language: 'auto', // 'auto' | 'en' | 'it' | ...
+  gpsAccuracyMax: 50, // ignora posizioni con accuratezza superiore a questo valore (in metri)
+  minPointDistanceMeters: 5 // distanza minima tra due punti di traccia (in metri)
 }
 
-const STORAGE_KEY = 'app_settings_v1'
+const STORAGE_KEY = 'app_settings_v1' //chiave di storage localStorage per le impostazioni 
 
+// Contesto per le impostazioni dell'app
 const SettingsContext = createContext({ settings: DEFAULTS, setSettings: () => {} })
-
+// Provider per avvolgere l'app e fornire le impostazioni
 export const SettingsProvider = ({ children }) => {
   const [settings, setSettings] = useState(DEFAULTS)
 
@@ -29,13 +30,13 @@ export const SettingsProvider = ({ children }) => {
     } catch {}
   }, [])
 
-  // persist
+  // salvo le impostazioni su localStorage quando cambiano
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
     } catch {}
   }, [settings])
-
+// memoizzo il valore del contesto per evitare render inutili
   const value = useMemo(() => ({ settings, setSettings }), [settings])
   return (
     <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>

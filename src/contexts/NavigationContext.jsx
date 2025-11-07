@@ -14,13 +14,13 @@ const initialState = {
 function reducer(state, action) {
   switch (action.type) {
     case 'START':
-      return { ...state, isNavigating: true, error: null }
+      return { ...state, isNavigating: true, error: null } // reset error on start
     case 'STOP':
-      return { ...initialState }
+      return { ...initialState } // reset state on stop
     case 'POSITION':
-      return { ...state, currentPosition: action.payload.position, heading: action.payload.heading || 0 }
+      return { ...state, currentPosition: action.payload.position, heading: action.payload.heading || 0 } // update position and heading
     case 'ERROR':
-      return { ...state, error: action.payload }
+      return { ...state, error: action.payload } // set error
     default:
       return state
   }
@@ -30,27 +30,27 @@ export function NavigationProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState)
   const geo = useGeolocation()
 
-  // startNavigation starts the watch and flips state
+  // Funzione per avviare la navigazione
   const startNavigation = useCallback(() => {
     if (state.isNavigating) return
     dispatch({ type: 'START' })
     const id = geo.start(
       (pos) => {
         const position = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy, timestamp: pos.timestamp }
-        dispatch({ type: 'POSITION', payload: { position, heading: pos.coords.heading || 0 } })
+        dispatch({ type: 'POSITION', payload: { position, heading: pos.coords.heading || 0 } }) // posizione e orientamento
       },
       (err) => {
-        dispatch({ type: 'ERROR', payload: err })
+        dispatch({ type: 'ERROR', payload: err }) // errore di geolocalizzazione
       }
     )
   }, [geo, state.isNavigating])
-
+  // Funzione per fermare la navigazione
   const stopNavigation = useCallback(() => {
     try { geo.stop() } catch (e) { /* ignore */ }
     dispatch({ type: 'STOP' })
   }, [geo])
 
-  // Cleanup on unmount to ensure watch is cleared
+  // Pulizia alla rimozione del componente
   useEffect(() => {
     return () => {
       try { geo.stop() } catch (e) { /* ignore */ }

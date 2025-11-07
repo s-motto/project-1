@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react'
-import { FaRoute, FaTrash, FaMapMarkedAlt, FaSpinner, FaCheckCircle, FaPlay, FaEdit, FaCheck, FaTimes } from 'react-icons/fa'
+import React, { useState, useEffect } from 'react' // importo React e gli hook necessari
+import { FaRoute, FaTrash, FaMapMarkedAlt, FaSpinner, FaCheckCircle, FaPlay, FaEdit, FaCheck, FaTimes } from 'react-icons/fa' // importo le icone necessarie
 
-import { useAuth } from '../contexts/AuthContext'
-import routesService from '../services/routesService'
-import ActiveTracking from './ActiveTracking'
-import { useToast } from '../contexts/ToastContext'
-import { useSettings } from '../contexts/SettingsContext'
-import { formatDistance, formatElevation, formatDurationMinutes, formatTimestamp } from '../utils/gpsUtils'
+import { useAuth } from '../contexts/AuthContext' // importo il contesto di autenticazione
+import routesService from '../services/routesService' // importo il servizio per i percorsi
+import ActiveTracking from './ActiveTracking' // importo il componente ActiveTracking
+import { useToast } from '../contexts/ToastContext' // importo il contesto delle notifiche toast
+import { useSettings } from '../contexts/SettingsContext' // importo il contesto delle impostazioni
+import { formatDistance, formatElevation, formatDurationMinutes, formatTimestamp } from '../utils/gpsUtils' // importo le funzioni di formattazione
 
+// Componente SavedRoutes per mostrare e gestire i percorsi salvati
 const SavedRoutes = ({ onLoadRoute }) => {
   const { user } = useAuth()
   const [routes, setRoutes] = useState([])
@@ -27,7 +28,7 @@ const SavedRoutes = ({ onLoadRoute }) => {
       loadRoutes()
     }
   }, [user])
-
+  // Carica i percorsi salvati dall'utente
   const loadRoutes = async () => {
     setLoading(true)
     const result = await routesService.getSavedRoutes(user.$id)
@@ -36,7 +37,7 @@ const SavedRoutes = ({ onLoadRoute }) => {
     }
     setLoading(false)
   }
-
+  // Elimina un percorso salvato
   const handleDelete = async (routeId) => {
     if (!confirm('Sei sicuro di voler eliminare questo percorso?')) return
     

@@ -1,21 +1,22 @@
 
-import React from 'react'
-import { FaHome, FaRoute, FaBookmark, FaInfoCircle } from 'react-icons/fa'
-import InfoModal from './InfoModal'
-import { useState } from 'react'
-import NearbyHikes from './NearbyHikes'
+import React from 'react' // importo React
+import { FaHome, FaRoute, FaBookmark, FaInfoCircle } from 'react-icons/fa'  // importo le icone necessarie
+import InfoModal from './InfoModal' // importo il componente InfoModal
+import { useState } from 'react'  // importo l'hook useState
+import NearbyHikes from './NearbyHikes' // importo il componente NearbyHikes
 
+// Componente BottomNav per la navigazione inferiore
 const BottomNav = ({ onHomeClick, onSavedClick, onRouteSelected }) => { 
   const [showInfo, setShowInfo] = useState(false)
   const [showNearbyHikes, setShowNearbyHikes] = useState(false)
-
+  // Gestore della selezione di un percorso di hiking
   const handleSelectHike = (hike) => {
     setShowNearbyHikes(false)
     if (onRouteSelected) {
       onRouteSelected(hike)
     }
   }
-
+ // Render del componente
   return (
     <>
       <nav className="bottom-nav">
@@ -55,12 +56,12 @@ const BottomNav = ({ onHomeClick, onSavedClick, onRouteSelected }) => {
           <span className="nav-item-label">Info</span>
         </button>
       </nav>
-
+      
       {showInfo && <InfoModal onClose={() => setShowInfo(false)} />}
       {showNearbyHikes && (
         <NearbyHikes 
-          onClose={() => setShowNearbyHikes(false)} 
-          onSelectHike={handleSelectHike} 
+          onClose={() => setShowNearbyHikes(false)} // Chiusura del modal
+          onSelectHike={handleSelectHike} // Selezione di un percorso di hiking
         />
       )}
     </>

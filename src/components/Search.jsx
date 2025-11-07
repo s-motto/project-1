@@ -1,6 +1,7 @@
 import React from 'react'
 import { FaSearch } from 'react-icons/fa'
 
+// Componente Search per la barra di ricerca
 const Search = ({searchTerm,setSearchTerm}) => {
   return (
     <div className="rounded-md bg-amber-100 text-black box-border p-1 mx-2 flex items-center h-8">

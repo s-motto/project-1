@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react'
-import { FaHiking, FaTimes, FaSpinner, FaMapMarkerAlt, FaRulerCombined, FaChevronRight, FaMountain } from 'react-icons/fa'
-import logger from '../utils/logger'
-import { useSettings } from '../contexts/SettingsContext'
-import { formatDistance } from '../utils/gpsUtils'
+import React, { useState, useEffect } from 'react' // importo React e gli hook necessari
+import { FaHiking, FaTimes, FaSpinner, FaMapMarkerAlt, FaRulerCombined, FaChevronRight, FaMountain } from 'react-icons/fa' // importo le icone necessarie
+import logger from '../utils/logger'  // importo il logger
+import { useSettings } from '../contexts/SettingsContext' // importo il contesto delle impostazioni
+import { formatDistance } from '../utils/gpsUtils'  // importo la funzione per formattare la distanza
 
 // Componente per mostrare i percorsi di hiking nelle vicinanze
 const NearbyHikes = ({ onClose, onSelectHike }) => {
@@ -123,7 +123,7 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
         });
       }
 
-      coordinates = removeDuplicatePoints(coordinates);
+      coordinates = removeDuplicatePoints(coordinates); // Rimuovi punti duplicati
       if (coordinates.length < 2) return;
 
       // Calcola posizione media e distanza dall'utente
@@ -214,7 +214,7 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
           sampledCoords.push(coordinates[coordinates.length - 1])
         }
       }
-
+      // Effettua la richiesta all'API di elevazione
       const response = await fetch(
         'https://api.openrouteservice.org/elevation/line',
         {

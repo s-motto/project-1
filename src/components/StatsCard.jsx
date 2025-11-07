@@ -8,6 +8,7 @@ import React from 'react'
  * @param {string} props.value - Valore della statistica
  * @param {string} props.color - Colore dell'icona 
  */
+// Componente StatsCard per visualizzare una statistica
 const StatsCard = ({ icon, label, value, color = 'text-blue-600' }) => {
   return (
     <div className="stats-card">
