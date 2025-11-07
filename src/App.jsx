@@ -64,7 +64,7 @@ function App() {
         {/* Header */}
         <header className="app-header">
           <div className="header-container">
-            <div className="logo-container">
+            <div className="logo-container cursor-pointer" onClick={handleHomeClick}>
               <div className="logo-icon">
                 🚶
               </div>
