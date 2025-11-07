@@ -392,4 +392,40 @@
   .gradient-success {
     background: linear-gradient(135deg, #A9CBB7 0%, #98baa7 100%);
   }
+
+
+  /* ===== TOAST UTILITIES ===== */
+  .toast-base {
+    @apply border-l-4 rounded-lg shadow-lg p-4 mb-3 
+           flex items-center justify-between space-x-3
+           animate-slide-in-right min-w-[320px] max-w-md;
+  }
+
+  .toast-success {
+    @apply bg-green-50 border-green-400 text-green-800;
+  }
+
+  .toast-error {
+    @apply bg-red-50 border-red-400 text-red-800;
+  }
+
+  .toast-warning {
+    @apply bg-yellow-50 border-yellow-400 text-yellow-800;
+  }
+
+  .toast-info {
+    @apply bg-blue-50 border-blue-400 text-blue-800;
+  }
+
+  .toast-close-btn {
+    @apply text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0;
+  }
+
+  .toast-container {
+    @apply fixed top-4 right-4 z-[10001] pointer-events-none;
+  }
+
+  .toast-list {
+    @apply flex flex-col items-end space-y-2 pointer-events-auto;
+  }
 }

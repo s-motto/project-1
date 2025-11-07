@@ -51,7 +51,7 @@ const SaveRouteButton = ({ routeData, onSaved }) => {
     return (
       <button
         onClick={() => toast.info('Effettua il login per salvare i percorsi')}
-        className="w-full bg-gray-400 text-white py-3 px-4 rounded-md font-medium flex items-center justify-center space-x-2"
+        className="btn-secondary w-full"
       >
         <FaBookmark />
         <span>Login per salvare</span>
@@ -63,7 +63,7 @@ const SaveRouteButton = ({ routeData, onSaved }) => {
     return (
       <button
         disabled
-        className="w-full bg-green-600 text-white py-3 px-4 rounded-md font-medium flex items-center justify-center space-x-2"
+        className="btn-green w-full"
       >
         <FaCheck />
         <span>Percorso salvato!</span>
@@ -79,18 +79,18 @@ const SaveRouteButton = ({ routeData, onSaved }) => {
           placeholder="Nome del percorso..."
           value={routeName}
           onChange={(e) => setRouteName(e.target.value)}
-          className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="input"
           autoFocus
         />
       )}
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white py-3 px-4 rounded-md font-medium flex items-center justify-center space-x-2"
+        className="btn-blue w-full"
       >
         {saving ? (
           <>
-            <FaSpinner className="animate-spin" />
+            <FaSpinner className="spinner-sm" />
             <span>Salvataggio...</span>
           </>
         ) : (
