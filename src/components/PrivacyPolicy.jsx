@@ -14,7 +14,7 @@ const PrivacyPolicy = ({ onClose }) => {
           </div>
         </div>
 
-        <div className="modal-body space-y-6 text-gray-700 text-sm">
+        <div className="modal-body space-y-6 text-sm" style={{ color: 'var(--text-secondary)' }}>
           <section>
             <h3 className="info-section-title">Dati che raccogliamo</h3>
             <ul className="list-disc list-inside space-y-1">
@@ -67,18 +67,16 @@ const PrivacyPolicy = ({ onClose }) => {
           </section>
 
           <section>
-            <h3 className="info-section-title">Sicurezza</h3>
+            <h3 className="info-section-title">Modifiche alla policy</h3>
             <p>
-              Adottiamo misure ragionevoli per proteggere i dati (autenticazione, controllo accessi). Tuttavia nessun
-              sistema è completamente sicuro: usa l'app con buon senso e non condividere dati sensibili.
+              Ci riserviamo il diritto di modificare questa policy. Le modifiche saranno comunicate attraverso l'app.
             </p>
           </section>
 
           <section>
             <h3 className="info-section-title">Contatti</h3>
             <p>
-              Per richieste sulla privacy o per esercitare i tuoi diritti, contattaci all'indirizzo indicato nella
-              documentazione del progetto.
+              Per domande o richieste relative alla privacy, contattaci attraverso le informazioni fornite nell'app.
             </p>
           </section>
         </div>

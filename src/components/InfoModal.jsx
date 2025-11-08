@@ -1,10 +1,11 @@
-import React, { useState } from 'react' // importo React e l'hook useState
-import { FaHiking, FaTimes, FaMapMarkedAlt, FaRoute, FaBookmark, FaLocationArrow } from 'react-icons/fa'  // importo le icone necessarie
-import PrivacyPolicy from './PrivacyPolicy' // importo il componente PrivacyPolicy
+import React, { useState } from 'react'
+import { FaHiking, FaTimes, FaMapMarkedAlt, FaRoute, FaBookmark, FaLocationArrow } from 'react-icons/fa'
+import PrivacyPolicy from './PrivacyPolicy'
 
 // Componente InfoModal per mostrare le informazioni sull'app
 const InfoModal = ({ onClose }) => {
   const [showPrivacy, setShowPrivacy] = useState(false)
+  
   return (
     <div className="modal-overlay">
       <div className="modal-content">
@@ -33,7 +34,7 @@ const InfoModal = ({ onClose }) => {
           {/* Cos'è */}
           <section className="info-section">
             <h3 className="info-section-title">👋 Benvenuto!</h3>
-            <p className="text-gray-600 leading-relaxed">
+            <p className="leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
               Let's Walk è un'app che ti aiuta a pianificare percorsi a piedi personalizzati. 
               Calcola distanze, tempi, dislivelli e ti guida passo-passo verso la tua destinazione.
             </p>
@@ -96,7 +97,7 @@ const InfoModal = ({ onClose }) => {
           {/* Tracking GPS */}
           <section className="info-section">
             <h3 className="info-section-title">📍 Tracking GPS in tempo reale</h3>
-            <div className="space-y-2 text-gray-600">
+            <div className="space-y-2" style={{ color: 'var(--text-secondary)' }}>
               <p>
                 Avvia il tracking per registrare il percorso effettivo. Puoi mettere in pausa e riprendere in qualsiasi momento.
               </p>
@@ -109,7 +110,7 @@ const InfoModal = ({ onClose }) => {
           {/* Esporta */}
           <section className="info-section">
             <h3 className="info-section-title">📤 Esporta</h3>
-            <div className="space-y-2 text-gray-600">
+            <div className="space-y-2" style={{ color: 'var(--text-secondary)' }}>
               <p>
                 Puoi esportare i percorsi completati in formato <strong>GPX</strong> oppure come <strong>immagine</strong> con la mappa di sfondo.
               </p>
@@ -119,7 +120,7 @@ const InfoModal = ({ onClose }) => {
           {/* Privacy */}
           <section className="info-section">
             <h3 className="info-section-title">🔐 Privacy</h3>
-            <div className="space-y-2 text-gray-600">
+            <div className="space-y-2" style={{ color: 'var(--text-secondary)' }}>
               <p>
                 I dati di posizione sono utilizzati solo per registrare i tuoi percorsi. Puoi interrompere il tracking in qualsiasi momento.
               </p>
@@ -135,7 +136,10 @@ const InfoModal = ({ onClose }) => {
           {/* Suggerimenti GPS/Batteria */}
           <section className="info-section">
             <h3 className="info-section-title">⚡ Suggerimenti GPS e batteria</h3>
-            <ul className="list-disc list-inside space-y-1 text-gray-600">
+            <ul 
+              className="list-disc list-inside space-y-1" 
+              style={{ color: 'var(--text-secondary)' }}
+            >
               <li>Consenti l'accesso alla posizione e attendi una buona precisione (idealmente &lt; 50 m).</li>
               <li>All'aperto il segnale è più stabile.</li>
               <li>Le modalità risparmio energetico possono rallentare gli aggiornamenti GPS.</li>
@@ -145,7 +149,7 @@ const InfoModal = ({ onClose }) => {
           {/* Credits */}
           <section className="info-section border-t pt-6">
             <h3 className="info-section-title">🙏 Credits</h3>
-            <div className="space-y-2 text-sm text-gray-600">
+            <div className="space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
               <p>Questa app è stata realizzata utilizzando:</p>
               <ul className="list-disc list-inside space-y-1 ml-2">
                 <li>
@@ -198,12 +202,13 @@ const InfoModal = ({ onClose }) => {
 
           {/* Footer */}
           <div className="text-center pt-4 border-t">
-            <p className="text-sm text-gray-500">
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
               Realizzato con ❤️ per gli amanti delle passeggiate
             </p>
           </div>
         </div>
       </div>
+      
       {showPrivacy && <PrivacyPolicy onClose={() => setShowPrivacy(false)} />}
     </div>
   )

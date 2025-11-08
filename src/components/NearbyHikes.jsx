@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react' // importo React e gli hook necessari
-import { FaHiking, FaTimes, FaSpinner, FaMapMarkerAlt, FaRulerCombined, FaChevronRight, FaMountain } from 'react-icons/fa' // importo le icone necessarie
+import { FaHiking, FaTimes, FaSpinner, FaMapMarkerAlt, FaRulerCombined, FaChevronRight } from 'react-icons/fa' // importo le icone necessarie
 import logger from '../utils/logger'  // importo il logger
 import { useSettings } from '../contexts/SettingsContext' // importo il contesto delle impostazioni
 import { formatDistance } from '../utils/gpsUtils'  // importo la funzione per formattare la distanza
@@ -140,6 +140,7 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
         const memberDiff = element.members.find(m => m.tags && m.tags.sac_scale);
         if (memberDiff) difficulty = memberDiff.tags.sac_scale;
       }
+      
       if (length > 1 && length < 80) {
         hikes.push({
           id: element.id,
@@ -152,7 +153,6 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
           operator: element.tags.operator || '',
           coordinates,
           center: { lat: avgLat, lon: avgLon }
-
         });
       }
     });
@@ -164,12 +164,12 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
   // Rimuovi punti duplicati consecutivi
   const removeDuplicatePoints = (coordinates) => {
     if (coordinates.length <= 1) return coordinates
-
+    
     const filtered = [coordinates[0]]
     for (let i = 1; i < coordinates.length; i++) {
       const prev = coordinates[i - 1]
       const curr = coordinates[i]
-
+      
       // Aggiungi solo se il punto è diverso dal precedente
       if (prev[0] !== curr[0] || prev[1] !== curr[1]) {
         filtered.push(curr)
@@ -183,7 +183,7 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
     let length = 0
     for (let i = 1; i < coordinates.length; i++) {
       length += calculateDistance(
-        coordinates[i - 1][1], coordinates[i - 1][0],
+        coordinates[i-1][1], coordinates[i-1][0],
         coordinates[i][1], coordinates[i][0]
       )
     }
@@ -194,7 +194,7 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
   const calculateElevation = async (coordinates) => {
     try {
       const ORS_KEY = import.meta.env.VITE_OPENROUTE_API_KEY
-
+      
       if (!ORS_KEY) {
         logger.error('OpenRouteService API key non trovata')
         return { ascent: 0, descent: 0 }
@@ -214,6 +214,7 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
           sampledCoords.push(coordinates[coordinates.length - 1])
         }
       }
+      
       // Effettua la richiesta all'API di elevazione
       const response = await fetch(
         'https://api.openrouteservice.org/elevation/line',
@@ -239,13 +240,13 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
       }
 
       const data = await response.json()
-
+      
       // Calcola salita e discesa dalle elevazioni
       let ascent = 0
       let descent = 0
-
+      
       const elevations = data.geometry.coordinates.map(coord => coord[2])
-
+      
       for (let i = 1; i < elevations.length; i++) {
         const diff = elevations[i] - elevations[i - 1]
         if (diff > 0) {
@@ -255,8 +256,8 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
         }
       }
 
-      return {
-        ascent: Math.round(ascent),
+      return { 
+        ascent: Math.round(ascent), 
         descent: Math.round(descent),
         elevations: elevations
       }
@@ -269,11 +270,11 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
   // Gestisci selezione percorso con calcolo elevazione
   const handleSelectHike = async (hike) => {
     setLoadingElevation(`${hike.type}-${hike.id}`)
-
+    
     try {
       // Calcola elevazione prima di passare al componente padre
       const elevation = await calculateElevation(hike.coordinates)
-
+      
       // Aggiungi i dati di elevazione al percorso
       const hikeWithElevation = {
         ...hike,
@@ -281,7 +282,7 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
         descent: elevation.descent,
         elevations: elevation.elevations
       }
-
+      
       onSelectHike(hikeWithElevation)
     } catch (error) {
       logger.error('Errore durante la selezione:', error)
@@ -367,14 +368,15 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
           {/* Radius selector */}
           {userLocation && (
             <div className="mt-4">
-              <label className="text-sm text-green-100 block mb-2">Raggio di ricerca:</label>
+              <label className="text-sm block mb-2" style={{ color: 'var(--text-on-gradient)' }}>
+                Raggio di ricerca:
+              </label>
               <div className="flex space-x-2">
                 {[5, 10, 20, 50].map(km => (
                   <button
                     key={km}
                     onClick={() => setRadiusKm(km)}
                     className={radiusKm === km ? 'hikes-radius-btn-active' : 'hikes-radius-btn-inactive'}
-
                   >
                     {settings?.distanceUnit === 'mi' ? `${Math.round(km * 0.621371)} mi` : `${km} km`}
                   </button>
@@ -389,7 +391,9 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
           {loading && (
             <div className="hikes-loading-container">
               <FaSpinner className="hikes-loading-icon" />
-              <p className="text-gray-600">Ricerca percorsi in corso...</p>
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                Ricerca percorsi in corso...
+              </p>
               <p className="hikes-loading-text">Può richiedere alcuni secondi</p>
             </div>
           )}
@@ -415,7 +419,10 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
                       <div className="hike-card-main">
                         <h3 className="hike-title">{hike.name}</h3>
 
-                        <div className="flex items-center flex-wrap gap-3 text-sm text-gray-600 mb-2">
+                        <div 
+                          className="flex items-center flex-wrap gap-3 text-sm mb-2" 
+                          style={{ color: 'var(--text-secondary)' }}
+                        >
                           <span className="hike-detail-item">
                             <FaMapMarkerAlt className="hike-detail-icon-location" />
                             <span>{formatDistance(hike.distance, settings?.distanceUnit || 'km')} da te</span>
@@ -429,27 +436,31 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
                           )}
 
                           <DifficultyBadge difficulty={hike.difficulty} />
-
-
                         </div>
 
                         {hike.description && (
-                          <p className="text-sm text-gray-600 mb-2">{hike.description}</p>
+                          <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>
+                            {hike.description}
+                          </p>
                         )}
 
                         {hike.operator && (
-                          <p className="text-xs text-gray-500">📋 {hike.operator}</p>
+                          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                            📋 {hike.operator}
+                          </p>
                         )}
 
                         {isLoadingThis && (
-                          <div className="mt-2 flex items-center space-x-2 text-sm text-green-600">
+                          <div className="mt-2 flex items-center space-x-2 text-sm" style={{ color: 'var(--color-green)' }}>
                             <FaSpinner className="animate-spin" />
                             <span>Calcolo elevazione...</span>
                           </div>
                         )}
                       </div>
 
-                      {!isLoadingThis && <FaChevronRight className="text-gray-400 ml-4" />}
+                      {!isLoadingThis && (
+                        <FaChevronRight className="ml-4" style={{ color: 'var(--text-muted)' }} />
+                      )}
                     </div>
                   </div>
                 )
