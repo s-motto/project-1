@@ -2,18 +2,19 @@
 
 @layer components {
 
-
-    /* Forza z-index alto per la modale dashboard */
+  /* Forza z-index alto per la modale dashboard */
   .modal-overlay {
     z-index: 10000 !important;
     position: fixed !important;
   }
+
   /* ===== STATS CARD ===== */
   
   .stats-card {
-    @apply bg-white rounded-lg p-4 flex items-start space-x-3
+    @apply rounded-lg p-4 flex items-start space-x-3
            transition-all hover:shadow-md;
-    border: 2px solid #EFECCA;
+    background-color: var(--bg-card);
+    border: 2px solid var(--border-color);
   }
 
   .stats-card-icon-container {
@@ -26,19 +27,23 @@
     background-color: rgba(169, 203, 183, 0.1);
   }
 
+  .theme-dark .stats-card-icon {
+    background-color: rgba(90, 131, 112, 0.2);
+  }
+
   .stats-card-content {
     @apply flex-1;
   }
 
   .stats-card-label {
     @apply text-xs uppercase tracking-wide mb-1;
-    color: #5E565A;
+    color: var(--text-secondary);
     opacity: 0.7;
   }
 
   .stats-card-value {
     @apply text-2xl font-bold;
-    color: #5E565A;
+    color: var(--text-primary);
   }
 
   /* ===== DASHBOARD SECTIONS ===== */
@@ -49,7 +54,7 @@
 
   .dashboard-section-title {
     @apply text-lg font-bold mb-3;
-    color: #5E565A;
+    color: var(--text-primary);
   }
 
   .dashboard-stats-grid {
@@ -61,31 +66,33 @@
   }
 
   .dashboard-chart-container {
-    @apply bg-white rounded-lg p-4;
-    border: 2px solid #EFECCA;
+    @apply rounded-lg p-4;
+    background-color: var(--bg-card);
+    border: 2px solid var(--border-color);
   }
 
   .dashboard-footer {
     @apply mt-6 pt-4 border-t;
-    border-color: #EFECCA;
+    border-color: var(--border-color);
   }
 
   /* ===== CHART TOOLTIP ===== */
   
   .dashboard-tooltip {
-    @apply bg-white px-3 py-2 rounded-lg shadow-lg;
-    border: 2px solid #A9CBB7;
+    @apply px-3 py-2 rounded-lg shadow-lg;
+    background-color: var(--bg-card);
+    border: 2px solid var(--color-green);
   }
 
   .dashboard-tooltip-label {
     @apply text-xs font-medium mb-1;
-    color: #5E565A;
+    color: var(--text-secondary);
     opacity: 0.7;
   }
 
   .dashboard-tooltip-value {
     @apply text-lg font-bold;
-    color: #A9CBB7;
+    color: var(--color-green);
   }
 
   /* ===== RESPONSIVE ===== */
@@ -104,17 +111,17 @@
 
   .dashboard-empty-icon {
     @apply text-6xl mx-auto mb-4;
-    color: #EFECCA;
+    color: var(--border-color);
   }
 
   .dashboard-empty-title {
     @apply text-lg font-bold mb-2;
-    color: #5E565A;
+    color: var(--text-primary);
   }
 
   .dashboard-empty-description {
     @apply text-sm;
-    color: #5E565A;
+    color: var(--text-secondary);
     opacity: 0.7;
   }
 }

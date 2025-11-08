@@ -8,28 +8,44 @@ import routesService from '../services/routesService'
 const CustomSelect = ({ value, options, onChange, label }) => {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
+  
   useEffect(() => {
     const onDoc = (e) => {
-      if (!ref.current || ref.current.contains(e.target)) return // ignoro eventi fuori dal componente
+      if (!ref.current || ref.current.contains(e.target)) return
       setOpen(false)
     }
     document.addEventListener('mousedown', onDoc)
     return () => document.removeEventListener('mousedown', onDoc)
   }, [])
-  // Trovo l'opzione selezionata
+  
   const selected = options.find(o => o.value === value)
+  
   return (
     <div className="custom-select" ref={ref}>
-      <button type="button" className="input w-full custom-select-button" onClick={() => setOpen(o => !o)} aria-haspopup="listbox" aria-expanded={open}>
+      <button 
+        type="button" 
+        className="input w-full custom-select-button" 
+        onClick={() => setOpen(o => !o)} 
+        aria-haspopup="listbox" 
+        aria-expanded={open}
+      >
         <span>{selected ? selected.label : ''}</span>
         <span className="chevron">▾</span>
       </button>
       {open && (
         <ul className="select-dropdown" role="listbox">
           {options.map(opt => (
-            <li key={opt.value} role="option" aria-selected={opt.value === value}
-                className={`select-option ${opt.disabled ? 'select-option-disabled' : ''}`}
-                onClick={() => { if (opt.disabled) return; onChange(opt.value); setOpen(false) }}>
+            <li 
+              key={opt.value} 
+              role="option" 
+              aria-selected={opt.value === value}
+              className={`select-option ${opt.disabled ? 'select-option-disabled' : ''}`}
+              onClick={() => { 
+                if (opt.disabled) return
+                onChange(opt.value)
+                setOpen(false) 
+              }}
+            >
               {opt.label}
             </li>
           ))}
@@ -52,8 +68,10 @@ const SettingsModal = ({ onClose }) => {
       document.body.classList.remove('modal-open')
     }
   }, [])
+  
   // Funzione per gestire i cambiamenti nelle impostazioni
   const handleChange = (patch) => setSettings({ ...settings, ...patch })
+  
   // Funzione per esportare i dati dell'utente
   const exportData = async () => {
     if (!user) return
@@ -79,6 +97,7 @@ const SettingsModal = ({ onClose }) => {
       setBusy(false)
     }
   }
+  
   // Funzione per eliminare tutti i percorsi dell'utente
   const deleteAllRoutes = async () => {
     if (!user) return
@@ -88,7 +107,6 @@ const SettingsModal = ({ onClose }) => {
       const res = await routesService.getUserRoutes(user.$id)
       if (res.success) {
         for (const r of res.data) {
-          // Elimino tutti i percorsi
           await routesService.deleteRoute(r.$id)
         }
       }
@@ -124,7 +142,12 @@ const SettingsModal = ({ onClose }) => {
                 />
                 <span className="leading-tight">
                   <span className="block font-medium whitespace-nowrap">Metriche</span>
-                  <span className="block text-xs text-gray-500 whitespace-nowrap">km, m</span>
+                  <span 
+                    className="block text-xs whitespace-nowrap" 
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    km, m
+                  </span>
                 </span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
@@ -137,7 +160,12 @@ const SettingsModal = ({ onClose }) => {
                 />
                 <span className="leading-tight">
                   <span className="block font-medium whitespace-nowrap">Imperiali</span>
-                  <span className="block text-xs text-gray-500 whitespace-nowrap">mi, ft</span>
+                  <span 
+                    className="block text-xs whitespace-nowrap" 
+                    style={{ color: 'var(--text-secondary)' }}
+                  >
+                    mi, ft
+                  </span>
                 </span>
               </label>
             </div>
@@ -148,7 +176,12 @@ const SettingsModal = ({ onClose }) => {
             <h3 className="info-section-title">🖌️ Aspetto</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Formato orario</label>
+                <label 
+                  className="block text-sm mb-1" 
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  Formato orario
+                </label>
                 <CustomSelect
                   value={settings.timeFormat}
                   onChange={(v) => handleChange({ timeFormat: v })}
@@ -159,19 +192,29 @@ const SettingsModal = ({ onClose }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Tema</label>
+                <label 
+                  className="block text-sm mb-1" 
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  Tema
+                </label>
                 <CustomSelect
-                    value={settings.theme}
-                    onChange={(v) => handleChange({ theme: v })}
-                    options={[
-                      { value: 'light', label: '☀️ Light Mode' },
-                      { value: 'dark', label: '🌙 Dark Mode' },
-                      { value: 'system', label: '💻 Sistema' },
-                    ]}
-                  />
+                  value={settings.theme}
+                  onChange={(v) => handleChange({ theme: v })}
+                  options={[
+                    { value: 'light', label: '☀️ Light Mode' },
+                    { value: 'dark', label: '🌙 Dark Mode' },
+                    { value: 'system', label: '💻 Sistema' },
+                  ]}
+                />
               </div>
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Formato durata</label>
+                <label 
+                  className="block text-sm mb-1" 
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  Formato durata
+                </label>
                 <CustomSelect
                   value={settings.durationFormat}
                   onChange={(v) => handleChange({ durationFormat: v })}
@@ -189,7 +232,12 @@ const SettingsModal = ({ onClose }) => {
             <h3 className="info-section-title">📍 GPS</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Accuratezza massima (m)</label>
+                <label 
+                  className="block text-sm mb-1" 
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  Accuratezza massima (m)
+                </label>
                 <input
                   type="number"
                   min={5}
@@ -200,7 +248,12 @@ const SettingsModal = ({ onClose }) => {
                 />
               </div>
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Distanza minima tra punti (m)</label>
+                <label 
+                  className="block text-sm mb-1" 
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  Distanza minima tra punti (m)
+                </label>
                 <input
                   type="number"
                   min={0}
@@ -211,7 +264,11 @@ const SettingsModal = ({ onClose }) => {
                 />
               </div>
             </div>
-            <p className="text-xs text-gray-500 mt-2 flex items-start gap-1"><FaInfoCircle className="mt-0.5" />
+            <p 
+              className="text-xs mt-2 flex items-start gap-1" 
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              <FaInfoCircle className="mt-0.5" />
               Punti con accuratezza peggiore del limite o troppo vicini saranno ignorati per ridurre il rumore.
             </p>
           </section>
@@ -220,10 +277,18 @@ const SettingsModal = ({ onClose }) => {
           <section>
             <h3 className="info-section-title">🔐 Dati</h3>
             <div className="flex flex-wrap items-center gap-3">
-              <button onClick={exportData} disabled={busy || !user} className="btn-secondary flex items-center gap-2">
+              <button 
+                onClick={exportData} 
+                disabled={busy || !user} 
+                className="btn-secondary flex items-center gap-2"
+              >
                 <FaDownload /> Esporta i miei dati
               </button>
-              <button onClick={deleteAllRoutes} disabled={busy || !user} className="btn-danger flex items-center gap-2">
+              <button 
+                onClick={deleteAllRoutes} 
+                disabled={busy || !user} 
+                className="btn-danger flex items-center gap-2"
+              >
                 <FaTrash /> Elimina tutti i percorsi
               </button>
             </div>
@@ -232,7 +297,12 @@ const SettingsModal = ({ onClose }) => {
           {/* Link legali */}
           <section>
             <h3 className="info-section-title">📄 Documenti</h3>
-            <p className="text-sm text-gray-600">Consulta la Privacy Policy nella sezione Informazioni.</p>
+            <p 
+              className="text-sm" 
+              style={{ color: 'var(--text-secondary)' }}
+            >
+              Consulta la Privacy Policy nella sezione Informazioni.
+            </p>
           </section>
         </div>
       </div>

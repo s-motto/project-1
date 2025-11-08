@@ -12,7 +12,7 @@ import { ToastProvider } from './contexts/ToastContext'
 import { SettingsProvider } from './contexts/SettingsContext'
 import logger from './utils/logger'
 
-// Ensure dark mode is disabled if previously set
+// Resetto il tema di default
 if (typeof document !== 'undefined') {
   document.documentElement.classList.remove('theme-dark')
   document.body.classList.remove('modal-open')
