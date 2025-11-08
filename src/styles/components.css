@@ -155,7 +155,7 @@
   }
 
   .card-beige {
-    background-color: var(--color-beige);
+    background-color: var(--bg-card) !important;
   }
 
   

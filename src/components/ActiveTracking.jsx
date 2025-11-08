@@ -400,25 +400,25 @@ useEffect(() => {
             {/* Tempo */}
             <div>
               <p className="text-xs text-muted">Tempo</p>
-              <p className="text-2xl font-bold text-gray-800-custom">{formatTime(elapsedTime)}</p>
+              <p className="text-2xl font-bold "style={{ color: 'var(--text-primary)' }}>{formatTime(elapsedTime)}</p>
             </div>
             
             {/* Distanza */}
             <div>
               <p className="text-xs text-muted">Distanza</p>
-              <p className="text-2xl font-bold text-gray-800-custom">{distanceLabel}</p>
+              <p className="text-2xl font-bold"style={{ color: 'var(--text-primary)' }}>{distanceLabel}</p>
             </div>
             
             {/* Velocità media */}
             <div>
               <p className="text-xs text-muted">Velocità Media</p>
-              <p className="text-2xl font-bold text-gray-800-custom">{speedLabel}</p>
+              <p className="text-2xl font-bold "style={{ color: 'var(--text-primary)' }}>{speedLabel}</p>
             </div>
             
             {/* Dislivello */}
             <div>
               <p className="text-xs text-muted">Dislivello (+/-)</p>
-              <p className="text-2xl font-bold text-gray-800-custom">
+              <p className="text-2xl font-bold "style={{ color: 'var(--text-primary)' }}>
                 {gainLabel}
               </p>
               <p className={`text-xs font-bold ${gpsAccuracy && gpsAccuracy < 20 ? 

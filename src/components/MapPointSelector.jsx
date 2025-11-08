@@ -35,9 +35,9 @@ const MapPointSelector = ({ location, onSetStart, onSetEnd, onSwap, onClose }) =
         <div className="modal-body">
           {/* Location Info */}
           <div className="card-beige">
-            <p className="text-sm font-medium text-gray-700 mb-2">📍 Posizione:</p>
-            <p className="text-xs text-gray-600 break-words">{location.name}</p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>📍 Posizione:</p>
+            <p className="text-xs break-words" style={{ color: 'var(--text-primary)' }}>{location.name}</p>
+            <p className="text-xsmt-1" style={{ color: 'var(--text-primary)' }}>
               {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
             </p>
           </div>

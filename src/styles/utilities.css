@@ -331,8 +331,9 @@
   }
 
   .modal-container {
-    @apply relative bg-white rounded-2xl shadow-2xl;
-  }
+  @apply relative rounded-2xl shadow-2xl;
+  background-color: var(--bg-card);
+}
 
   .modal-header-gradient {
     @apply p-6 text-white rounded-t-2xl;

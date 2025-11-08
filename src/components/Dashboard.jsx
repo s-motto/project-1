@@ -17,6 +17,7 @@ const Dashboard = ({ onClose }) => {
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState(null)
   const [routes, setRoutes] = useState([])
+
   // Gestisce l'esportazione del file GPX
   const handleExportGpx = (route) => {
     const name = route.name || 'Percorso'
@@ -44,6 +45,7 @@ const Dashboard = ({ onClose }) => {
     a.remove()  // Rimuove l'elemento
     URL.revokeObjectURL(url)  // Revoca l'URL per liberare memoria
   }
+
   // Gestisce l'esportazione dell'immagine del percorso
   const handleExportImage = async (route) => {
     const name = route.name || 'Percorso'
@@ -81,6 +83,7 @@ const Dashboard = ({ onClose }) => {
       document.body.classList.remove('modal-open')
     }
   }, [])
+
   // Carica i dati quando l'utente cambia
   useEffect(() => {
     if (user) {
@@ -88,7 +91,7 @@ const Dashboard = ({ onClose }) => {
     }
   }, [user])
 
-  // Carica i percorsi completati  e calcola le statistiche
+  // Carica i percorsi completati e calcola le statistiche
   const loadData = async () => {
     setLoading(true)
     //  Carica i percorsi completati
@@ -137,7 +140,7 @@ const Dashboard = ({ onClose }) => {
             </div>
           </div>
           <div className="modal-body text-center">
-            <p className="text-gray-600">Effettua il login per vedere le tue statistiche</p>
+            <p style={{ color: 'var(--text-secondary)' }}>Effettua il login per vedere le tue statistiche</p>
           </div>
         </div>
       </div>
@@ -169,13 +172,13 @@ const Dashboard = ({ onClose }) => {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-12">
               <FaSpinner className="animate-spin text-4xl text-blue-600 mb-4" />
-              <p className="text-gray-600">Caricamento statistiche...</p>
+              <p style={{ color: 'var(--text-secondary)' }}>Caricamento statistiche...</p>
             </div>
           ) : !stats || stats.totalRoutes === 0 ? (
             <div className="text-center py-12">
               <FaRoute className="text-6xl text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600 text-lg mb-2">Nessuna statistica disponibile</p>
-              <p className="text-gray-500 text-sm">
+              <p style={{ color: 'var(--text-primary)' }} className="text-lg mb-2">Nessuna statistica disponibile</p>
+              <p style={{ color: 'var(--text-secondary)' }} className="text-sm">
                 Completa i tuoi percorsi per vedere i progressi!
               </p>
             </div>
@@ -251,7 +254,7 @@ const Dashboard = ({ onClose }) => {
                 
                 {/* Messaggio se non ci sono dati nel grafico */}
                 {stats.monthlyKm.every(m => m.km === 0) && (
-                  <p className="text-center text-sm text-gray-500 mt-4">
+                  <p className="text-center text-sm mt-4" style={{ color: 'var(--text-secondary)' }}>
                     Nessun dato disponibile per gli ultimi 6 mesi
                   </p>
                 )}
@@ -262,10 +265,10 @@ const Dashboard = ({ onClose }) => {
                 <h3 className="dashboard-section-title">📤 Esporta GPX dei percorsi completati</h3>
                 <div className="space-y-2 max-h-64 overflow-y-auto">
                   {routes.map(r => (
-                    <div key={r.$id} className="flex items-center justify-between border rounded px-3 py-2">
+                    <div key={r.$id} className="flex items-center justify-between border rounded px-3 py-2" style={{ borderColor: 'var(--border-color)' }}>
                       <div className="text-sm">
-                        <div className="font-semibold text-gray-800">{r.name}</div>
-                        <div className="text-gray-500">
+                        <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>{r.name}</div>
+                        <div style={{ color: 'var(--text-secondary)' }}>
                           {formatTimestamp(r.completedAt || r.createdAt, settings?.timeFormat || '24h')} • {formatDistance(r.actualDistance ?? r.distance, settings?.distanceUnit || 'km')}
                         </div>
                       </div>
@@ -280,21 +283,21 @@ const Dashboard = ({ onClose }) => {
                         </button>
                         <button
                           onClick={() => handleExportImage(r)}
-                          className="bg-gray-800 hover:bg-gray-900 text-white rounded-md px-2.5 py-1 text-sm"
+                          className="btn-primary px-2.5 py-1 text-sm rounded-md"
                           disabled={!(Array.isArray(r.actualCoordinates) && r.actualCoordinates.length > 1) && !(Array.isArray(r.coordinates) && r.coordinates.length > 1)}
                           title="Esporta immagine del percorso"
                         >
                           Immagine
                         </button>
                       </div>
-                    </div>)
-                  )}
+                    </div>
+                  ))}
                 </div>
               </div>
 
               {/* Footer con info */}
               <div className="dashboard-footer">
-                <p className="text-xs text-gray-500 text-center">
+                <p className="text-xs text-center" style={{ color: 'var(--text-secondary)' }}>
                   💡 Le statistiche sono calcolate dai percorsi che hai completato
                 </p>
               </div>

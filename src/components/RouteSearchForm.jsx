@@ -843,7 +843,7 @@ const handleCloseSelector = () => {
     <div className="flex flex-col space-y-4">
   {!isNavigating ? (
         <>
-          <form onSubmit={handleSubmit} className="flex flex-col space-y-4 p-4 bg-white rounded-lg shadow-md w-full max-w-xl">
+          <form onSubmit={handleSubmit} className="route-search-form">
             {/* Input punto di partenza con bottone GPS */}
 <div className="flex items-center space-x-2 relative">
   <div className="flex-1">
