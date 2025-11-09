@@ -21,7 +21,7 @@ const Dashboard = ({ onClose }) => {
   // Gestisce l'esportazione del file GPX
   const handleExportGpx = (route) => {
     const name = route.name || 'Percorso'
-    let points = [] 
+    let points = []
     // Determina le coordinate da usare
     if (Array.isArray(route.actualCoordinates) && route.actualCoordinates.length > 0) {
       points = route.actualCoordinates
@@ -49,7 +49,7 @@ const Dashboard = ({ onClose }) => {
   // Gestisce l'esportazione dell'immagine del percorso
   const handleExportImage = async (route) => {
     const name = route.name || 'Percorso'
-    let points = []   
+    let points = []
     if (Array.isArray(route.actualCoordinates) && route.actualCoordinates.length > 0) { // Usa le coordinate effettive se disponibili
       points = route.actualCoordinates
     } else if (Array.isArray(route.coordinates)) {
@@ -60,7 +60,7 @@ const Dashboard = ({ onClose }) => {
         return { lat: c.lat, lng: c.lng }
       })
     }
-    const basemapKey = import.meta.env.VITE_MAPTILER_KEY  
+    const basemapKey = import.meta.env.VITE_MAPTILER_KEY
     const staticTileUrl = import.meta.env.VITE_STATIC_TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
     const tileAttribution = import.meta.env.VITE_TILE_ATTRIBUTION || '© OpenStreetMap contributors'
     // Let the exporter choose a reliable default style (streets-v2). Also pass OSM tile template fallback (no key required).
@@ -96,16 +96,16 @@ const Dashboard = ({ onClose }) => {
     setLoading(true)
     //  Carica i percorsi completati
     const result = await routesService.getCompletedRoutes(user.$id)
-    
+
     if (result.success) {
       const completedRoutes = result.data
       setRoutes(completedRoutes)
-      
+
       // Calcola statistiche dai percorsi completati
       const calculatedStats = statsService.calculateStats(completedRoutes)
       setStats(calculatedStats)
     }
-    
+
     setLoading(false)
   }
 
@@ -197,8 +197,8 @@ const Dashboard = ({ onClose }) => {
                   <StatsCard
                     icon={<FaChartLine />}
                     label={settings?.distanceUnit === 'mi' ? 'Miglia totali' : 'Chilometri totali'}
-                    value={settings?.distanceUnit === 'mi' 
-                      ? (() => { const mi = stats.totalKm * KM_TO_MI; return mi >= 1000 ? `${(mi/1000).toFixed(1)}k mi` : `${mi.toFixed(1)} mi` })()
+                    value={settings?.distanceUnit === 'mi'
+                      ? (() => { const mi = stats.totalKm * KM_TO_MI; return mi >= 1000 ? `${(mi / 1000).toFixed(1)}k mi` : `${mi.toFixed(1)} mi` })()
                       : statsService.formatKm(stats.totalKm)}
                     color="text-blue-600"
                   />
@@ -211,7 +211,7 @@ const Dashboard = ({ onClose }) => {
                   <StatsCard
                     icon={<FaMountain />}
                     label="Dislivello totale"
-                    value={settings?.elevationUnit === 'ft' 
+                    value={settings?.elevationUnit === 'ft'
                       ? `${Math.round(stats.totalAscent * 3.28084).toLocaleString('it-IT')} ft`
                       : statsService.formatMeters(stats.totalAscent)}
                     color="text-orange-600"
@@ -229,12 +229,12 @@ const Dashboard = ({ onClose }) => {
                       margin={{ top: 10, right: 10, left: 0, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" stroke="#EFECCA" />
-                      <XAxis 
-                        dataKey="month" 
+                      <XAxis
+                        dataKey="month"
                         stroke="#5E565A"
                         style={{ fontSize: '12px' }}
                       />
-                      <YAxis 
+                      <YAxis
                         stroke="#5E565A"
                         style={{ fontSize: '12px' }}
                         label={{ value: settings?.distanceUnit === 'mi' ? 'mi' : 'km', angle: -90, position: 'insideLeft' }}
@@ -251,7 +251,7 @@ const Dashboard = ({ onClose }) => {
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
-                
+
                 {/* Messaggio se non ci sono dati nel grafico */}
                 {stats.monthlyKm.every(m => m.km === 0) && (
                   <p className="text-center text-sm mt-4" style={{ color: 'var(--text-secondary)' }}>

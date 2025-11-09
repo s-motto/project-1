@@ -110,19 +110,19 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     try {
       const ORS_KEY = import.meta.env.VITE_OPENROUTE_API_KEY
       const url = `https://api.openrouteservice.org/geocode/reverse?api_key=${ORS_KEY}&point.lon=${lng}&point.lat=${lat}&size=1`
-      
+
       const response = await fetch(url)
       if (!response.ok) {
         return `${lat.toFixed(4)}, ${lng.toFixed(4)}`
       }
-      
+
       const data = await response.json()
-      
+
       if (data.features && data.features.length > 0) {
         const props = data.features[0].properties
         return props.name || props.label || `${lat.toFixed(4)}, ${lng.toFixed(4)}`
       }
-      
+
       return `${lat.toFixed(4)}, ${lng.toFixed(4)}`
     } catch (error) {
       logger.error('Reverse geocoding error:', error)
@@ -145,31 +145,31 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
    */
   const calculateWaypointPreview = async (newWaypoint) => {
     setLoadingPreview(true)
-    
+
     try {
       const ORS_KEY = import.meta.env.VITE_OPENROUTE_API_KEY
-      
+
       // Costruisci array coordinate
       const coordinates = []
-      
+
       // 1. Punto di partenza: posizione corrente o start originale
       if (currentPosition) {
         coordinates.push([currentPosition.lng, currentPosition.lat])
       } else {
         coordinates.push([route.startPoint.lon, route.startPoint.lat])
       }
-      
+
       // 2. Tutti i waypoints esistenti
       waypoints.forEach(wp => {
         coordinates.push([wp.lng, wp.lat])
       })
-      
+
       // 3. Nuovo waypoint
       coordinates.push([newWaypoint.lng, newWaypoint.lat])
-      
+
       // 4. Destinazione finale
       coordinates.push([route.endPoint.lon, route.endPoint.lat])
-      
+
       // Chiamata API OpenRouteService
       const response = await fetch(
         'https://api.openrouteservice.org/v2/directions/foot-hiking/geojson',
@@ -188,20 +188,20 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
           })
         }
       )
-      
+
       if (!response.ok) {
         throw new Error('Errore nel calcolo del percorso')
       }
-      
+
       const data = await response.json()
-      
+
       if (data.features && data.features.length > 0) {
         const feature = data.features[0]
         const props = feature.properties
-        
+
         // Ottieni nome del waypoint
         const name = await reverseGeocode(newWaypoint.lat, newWaypoint.lng)
-        
+
         return {
           distance: props.summary.distance, // km
           duration: props.summary.duration, // secondi
@@ -211,9 +211,9 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
           descent: props.descent || 0
         }
       }
-      
+
       throw new Error('Nessun percorso trovato')
-      
+
     } catch (error) {
       logger.error('Error calculating waypoint preview:', error)
       toast.error('Errore nel calcolo del percorso con waypoint')
@@ -231,28 +231,28 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
    */
   const recalculateRouteWithWaypoints = async () => {
     setRecalculatingRoute(true)
-    
+
     try {
       const ORS_KEY = import.meta.env.VITE_OPENROUTE_API_KEY
-      
+
       // Costruisci coordinate
       const coordinates = []
-      
+
       // Posizione corrente o start originale
       if (currentPosition) {
         coordinates.push([currentPosition.lng, currentPosition.lat])
       } else {
         coordinates.push([route.startPoint.lon, route.startPoint.lat])
       }
-      
+
       // Tutti i waypoints
       waypoints.forEach(wp => {
         coordinates.push([wp.lng, wp.lat])
       })
-      
+
       // Destinazione
       coordinates.push([route.endPoint.lon, route.endPoint.lat])
-      
+
       // Chiamata API
       const response = await fetch(
         'https://api.openrouteservice.org/v2/directions/foot-hiking/geojson',
@@ -271,17 +271,17 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
           })
         }
       )
-      
+
       if (!response.ok) {
         throw new Error('Errore nel ricalcolo del percorso')
       }
-      
+
       const data = await response.json()
-      
+
       if (data.features && data.features.length > 0) {
         const feature = data.features[0]
         const props = feature.properties
-        
+
         // Aggiorna route data
         const updatedRoute = {
           ...route,
@@ -290,7 +290,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
           duration: Math.round(props.summary.duration / 60), // minuti
           ascent: props.ascent || 0,
           descent: props.descent || 0,
-          instructions: props.segments.flatMap(seg => 
+          instructions: props.segments.flatMap(seg =>
             seg.steps.map(step => ({
               instruction: step.instruction,
               distance: step.distance,
@@ -298,14 +298,14 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
             }))
           )
         }
-        
+
         setCurrentRouteData(updatedRoute)
         toast.success('Percorso aggiornato con successo!')
-        
+
       } else {
         throw new Error('Nessun percorso trovato')
       }
-      
+
     } catch (error) {
       logger.error('Error recalculating route:', error)
       toast.error('Errore nel ricalcolo del percorso')
@@ -336,26 +336,26 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       toast.info('Avvia il tracking per aggiungere waypoints')
       return
     }
-    
+
     if (waypoints.length >= 5) {
       toast.warning('Massimo 5 waypoints raggiunto')
       return
     }
-    
+
     // Salva waypoint temporaneo
     const tempWp = {
       lat: latlng.lat,
       lng: latlng.lng
     }
     setTempWaypoint(tempWp)
-    
+
     // Mostra dialog con loading
     setShowWaypointDialog(true)
     setWaypointPreview(null)
-    
+
     // Calcola preview
     const preview = await calculateWaypointPreview(tempWp)
-    
+
     if (preview) {
       setWaypointPreview(preview)
     } else {
@@ -371,7 +371,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
    */
   const handleConfirmWaypoint = async () => {
     if (!tempWaypoint || !waypointPreview) return
-    
+
     // Aggiungi waypoint
     const newWaypoint = {
       lat: tempWaypoint.lat,
@@ -379,19 +379,19 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       name: waypointPreview.name,
       addedAt: new Date().toISOString()
     }
-    
+
     setWaypoints(prev => [...prev, newWaypoint])
-    
+
     // Chiudi dialog
     setShowWaypointDialog(false)
     setTempWaypoint(null)
     setWaypointPreview(null)
-    
+
     // Ricalcola percorso
     setTimeout(() => {
       recalculateRouteWithWaypoints()
     }, 100)
-    
+
     toast.success(`Waypoint "${newWaypoint.name}" aggiunto!`)
   }
 
@@ -413,13 +413,13 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     if (!confirm(`Rimuovere il waypoint "${waypoints[index].name}"?`)) {
       return
     }
-    
+
     // Rimuovi waypoint
     const newWaypoints = waypoints.filter((_, i) => i !== index)
     setWaypoints(newWaypoints)
-    
+
     toast.info('Waypoint rimosso')
-    
+
     // Se non ci sono più waypoints, torna al percorso originale
     if (newWaypoints.length === 0) {
       setCurrentRouteData(originalRouteRef.current)
@@ -437,14 +437,14 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
    */
   const formatPreviewDistance = (km) => {
     if (!km) return '---'
-    
+
     const unit = settings?.distanceUnit || 'km'
-    
+
     if (unit === 'mi') {
       const miles = km * 0.621371
       return `${miles.toFixed(2)} mi`
     }
-    
+
     return `${km.toFixed(2)} km`
   }
 
@@ -453,15 +453,15 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
    */
   const formatPreviewDuration = (seconds) => {
     if (!seconds) return '---'
-    
+
     const minutes = Math.round(seconds / 60)
-    
+
     if (minutes >= 60) {
       const hours = Math.floor(minutes / 60)
       const mins = minutes % 60
       return `${hours}h ${mins}min`
     }
-    
+
     return `${minutes}min`
   }
 
@@ -481,39 +481,39 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       timestamp: position.timestamp,
       accuracy: position.coords.accuracy
     }
-    
+
     setCurrentPosition(newPoint)
-    
+
     // Calcola direzione dal movimento
     if (trackPoints.length > 0 && !isPausedRef.current && isTrackingRef.current) {
       const lastPoint = trackPoints[trackPoints.length - 1]
       const lat1 = lastPoint.lat * Math.PI / 180
       const lat2 = newPoint.lat * Math.PI / 180
       const dLon = (newPoint.lng - lastPoint.lng) * Math.PI / 180
-      
+
       const y = Math.sin(dLon) * Math.cos(lat2)
       const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon)
       const bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360
-      
+
       setHeading(bearing)
     }
-    
+
     setGpsAccuracy(position.coords.accuracy)
-    
+
     // Se accuracy è buona, considera GPS "fixed"
     if (position.coords.accuracy < (settings?.gpsAccuracyMax || 50)) {
       setWaitingForGoodFix(false)
     }
-    
+
     // Se in pausa o non tracking, non registrare punti
     if (!isTrackingRef.current || isPausedRef.current) return
-    
+
     // Ignora punti con accuratezza troppo bassa
     if (position.coords.accuracy > (settings?.gpsAccuracyMax || 50)) {
       logger.warn('GPS accuracy too low:', position.coords.accuracy)
       return
     }
-    
+
     // Aggiungi punto alla traccia
     if (trackPoints.length === 0) {
       // Primo punto
@@ -523,30 +523,30 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       }
     } else {
       const lastPoint = trackPoints[trackPoints.length - 1]
-      
+
       // Calcola distanza dal punto precedente
       const dist = calculateDistance(
         lastPoint.lat, lastPoint.lng,
         newPoint.lat, newPoint.lng
       )
-      
+
       // Aggiungi solo se supera la distanza minima (default 5m)
       const minDistance = (settings?.minPointDistanceMeters || 5) / 1000 // converti in km
-      
+
       if (dist >= minDistance) {
         setTrackPoints(prev => [...prev, newPoint])
         setDistance(prev => prev + dist)
-        
+
         // Calcola dislivello
         if (newPoint.altitude !== null && lastElevation.current !== null) {
           const elevDiff = newPoint.altitude - lastElevation.current
-          
+
           if (elevDiff > 0) {
             setElevationGain(prev => prev + elevDiff)
           } else if (elevDiff < 0) {
             setElevationLoss(prev => prev + Math.abs(elevDiff))
           }
-          
+
           lastElevation.current = newPoint.altitude
         }
       }
@@ -558,7 +558,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
    */
   const handlePositionError = (error) => {
     let errorMsg = 'Errore GPS: '
-    
+
     if (error.code === 1) {
       errorMsg += 'Abilita il GPS nelle impostazioni del browser.'
     } else if (error.code === 2) {
@@ -568,7 +568,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     } else {
       errorMsg += error.message
     }
-    
+
     toast.error(errorMsg)
   }
 
@@ -579,7 +579,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     if (savedRouteId) {
       return savedRouteId
     }
-    
+
     const result = await routesService.saveRoute(
       {
         name: route.name || 'Percorso tracciato',
@@ -594,7 +594,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       },
       user.$id
     )
-    
+
     if (result.success) {
       setSavedRouteId(result.data.$id)
       return result.data.$id
@@ -617,7 +617,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
           toast.error('Errore nel salvare il percorso: ' + error.message)
         }
       }
-      
+
       // Avvia tracking
       startTimeRef.current = Date.now()
       pausedTimeRef.current = 0
@@ -627,7 +627,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       isPausedRef.current = false
       setShouldCenterMap(true)
       setWaitingForGoodFix(true)
-      
+
       // Avvia GPS
       geolocation.start(
         handlePositionUpdate,
@@ -668,18 +668,18 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
    */
   const handleStop = async () => {
     if (!confirm('Vuoi terminare il percorso e salvare i dati?')) return
-    
+
     setIsSaving(true)
-    
+
     try {
       // Ferma GPS
       geolocation.stop()
       setIsTracking(false)
       isTrackingRef.current = false
-      
+
       // Assicura che il percorso sia salvato
       const routeId = await ensureRouteSaved()
-      
+
       // Prepara dati da salvare
       const completedData = {
         status: 'completed',
@@ -690,10 +690,10 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
         actualDescent: elevationLoss,
         actualCoordinates: JSON.stringify(trackPoints)
       }
-      
+
       // Aggiorna il percorso
       const result = await routesService.updateRoute(routeId, completedData)
-      
+
       if (result.success) {
         toast.success('Percorso completato e salvato!')
         if (onComplete) onComplete()
@@ -714,7 +714,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
    */
   const handleCancel = () => {
     if (!confirm('Vuoi annullare il tracking? I dati non verranno salvati.')) return
-    
+
     geolocation.stop()
     setIsTracking(false)
     isTrackingRef.current = false
@@ -746,7 +746,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
         clearInterval(timerRef.current)
       }
     }
-    
+
     return () => {
       if (timerRef.current) {
         clearInterval(timerRef.current)
@@ -777,13 +777,32 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
 
   /**
    * Componente per auto-centrare la mappa sulla posizione corrente
+   * Si disabilita automaticamente quando l'utente muove la mappa
    */
-  const MapCenterController = ({ position, shouldCenter, onMapReady }) => {
+  const MapCenterController = ({ position, shouldCenter, onMapReady, onDisableCenter }) => {
     const map = useMap()
 
     useEffect(() => {
       if (onMapReady) onMapReady(map)
     }, [map, onMapReady])
+
+    // Rileva quando l'utente muove la mappa manualmente
+    useEffect(() => {
+      if (!map || !onDisableCenter) return
+
+      const handleUserInteraction = () => {
+        onDisableCenter()
+      }
+
+      // Ascolta tutti gli eventi di interazione utente
+      map.on('dragstart', handleUserInteraction)
+      map.on('zoomstart', handleUserInteraction)
+
+      return () => {
+        map.off('dragstart', handleUserInteraction)
+        map.off('zoomstart', handleUserInteraction)
+      }
+    }, [map, onDisableCenter])
 
     useEffect(() => {
       if (shouldCenter && position) {
@@ -800,12 +819,12 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
    */
   const WaypointDialog = () => {
     if (!showWaypointDialog) return null
-    
+
     return (
       <div className="modal-overlay" style={{ zIndex: 2000 }}>
-        <div 
+        <div
           className="card mx-4"
-          style={{ 
+          style={{
             maxWidth: '320px',
             padding: '1rem',
             margin: '0 auto',
@@ -820,7 +839,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
               Aggiungi Waypoint?
             </h3>
           </div>
-          
+
           {/* Contenuto */}
           {loadingPreview ? (
             // Loading
@@ -837,9 +856,9 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
               <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
                 {waypointPreview.name}
               </div>
-              
+
               {/* Statistiche preview */}
-              <div 
+              <div
                 className="flex items-center justify-around py-2 rounded-lg"
                 style={{ backgroundColor: 'var(--bg-secondary)' }}
               >
@@ -860,7 +879,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
                   </div>
                 </div>
               </div>
-              
+
               {/* Info */}
               <p className="text-xs text-center" style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
                 Il percorso verrà ricalcolato con questo waypoint
@@ -874,7 +893,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
               </p>
             </div>
           )}
-          
+
           {/* Bottoni */}
           <div className="flex space-x-2 mt-3">
             <button
@@ -905,11 +924,11 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
    */
   const WaypointsList = () => {
     if (waypoints.length === 0) return null
-    
+
     return (
-      <div 
+      <div
         className="card absolute top-16 right-2 z-[1000]"
-        style={{ 
+        style={{
           maxWidth: '160px',
           fontSize: '0.65rem',
           padding: '0.4rem',
@@ -923,14 +942,14 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
             🎯 Waypoints ({waypoints.length}/5)
           </span>
         </div>
-        
+
         {/* Lista */}
         <div className="space-y-1">
           {waypoints.map((wp, index) => (
-            <div 
+            <div
               key={index}
               className="flex items-center justify-between p-1 rounded transition-colors"
-              style={{ 
+              style={{
                 ':hover': { backgroundColor: 'var(--bg-secondary)' }
               }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
@@ -945,7 +964,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
                   {wp.name}
                 </span>
               </div>
-              
+
               {/* Bottone rimuovi */}
               <button
                 onClick={() => handleRemoveWaypoint(index)}
@@ -960,10 +979,10 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
             </div>
           ))}
         </div>
-        
+
         {/* Hint */}
         {waypoints.length < 5 && (
-          <div className="mt-1 pt-1 border-t" style={{ 
+          <div className="mt-1 pt-1 border-t" style={{
             borderColor: 'var(--border-color)',
             color: 'var(--text-secondary)',
             fontSize: '0.6rem'
@@ -988,11 +1007,11 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     if (currentPosition) {
       return [currentPosition.lat, currentPosition.lng]
     }
-    
+
     if (route.startPoint) {
       return [route.startPoint.lat, route.startPoint.lon]
     }
-    
+
     return [44.102, 9.824] // La Spezia default
   }
 
@@ -1014,50 +1033,50 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   return (
     <div className="modal-overlay">
       <div className="modal-content w-full-max-4xl h-[100vh] flex flex-col">
-        
+
         {/* ========== HEADER ========== */}
         <div className="modal-header-primary">
           <div className="flex-between">
             <div className="space-x-3-items">
               <FaMapMarkerAlt className="text-2xl" />
               <div>
-  <h2 className="text-xl font-bold">
-    {currentRouteData.name || 'Tracking GPS'}
-  </h2>
-  <p className="text-xs text-white/90">
-    {isTracking ? (isPaused ? 'In pausa' : 'In corso') : 'Pronto'}
-  </p>
-  {/* Waypoints collassabili nell'header */}
-  {waypoints.length > 0 && (
-    <div className="mt-2">
-      <button
-        onClick={() => setShowWaypointsList(!showWaypointsList)}
-        className="flex items-center space-x-2 text-xs text-white/90 hover:text-white"
-      >
-        <span>🎯 Waypoints ({waypoints.length}/5)</span>
-        <span style={{ transform: showWaypointsList ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
-      </button>
-      {showWaypointsList && (
-        <div className="mt-2 space-y-1 text-xs text-white/90">
-          {waypoints.map((wp, idx) => (
-            <div key={idx} className="flex items-center justify-between bg-white/10 rounded px-2 py-1">
-              <span className="truncate">{idx + 1}. {wp.name}</span>
-              <button
-                onClick={() => handleRemoveWaypoint(idx)}
-                className="ml-2 text-white/70 hover:text-white"
-              >
-                <FaTimes className="text-xs" />
-              </button>
+                <h2 className="text-xl font-bold">
+                  {currentRouteData.name || 'Tracking GPS'}
+                </h2>
+                <p className="text-xs text-white/90">
+                  {isTracking ? (isPaused ? 'In pausa' : 'In corso') : 'Pronto'}
+                </p>
+                {/* Waypoints collassabili nell'header */}
+                {waypoints.length > 0 && (
+                  <div className="mt-2">
+                    <button
+                      onClick={() => setShowWaypointsList(!showWaypointsList)}
+                      className="flex items-center space-x-2 text-xs text-white/90 hover:text-white"
+                    >
+                      <span>🎯 Waypoints ({waypoints.length}/5)</span>
+                      <span style={{ transform: showWaypointsList ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
+                    </button>
+                    {showWaypointsList && (
+                      <div className="mt-2 space-y-1 text-xs text-white/90">
+                        {waypoints.map((wp, idx) => (
+                          <div key={idx} className="flex items-center justify-between bg-white/10 rounded px-2 py-1">
+                            <span className="truncate">{idx + 1}. {wp.name}</span>
+                            <button
+                              onClick={() => handleRemoveWaypoint(idx)}
+                              className="ml-2 text-white/70 hover:text-white"
+                            >
+                              <FaTimes className="text-xs" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )}
-</div>
-            </div>
-            <button 
-              onClick={handleCancel} 
+            <button
+              onClick={handleCancel}
               className="icon-btn-white"
               aria-label="Chiudi"
             >
@@ -1080,7 +1099,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
             />
 
             {/* Long Press Handler - Abilita waypoints */}
-            <MapLongPressHandler 
+            <MapLongPressHandler
               onLongPress={handleMapLongPress}
               disabled={!isTracking || isSaving}
             />
@@ -1090,7 +1109,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
               if (!currentRouteData.coordinates || currentRouteData.coordinates.length === 0) {
                 return null
               }
-              
+
               return (
                 <Polyline
                   key={`route-${waypoints.length}`}
@@ -1174,20 +1193,20 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
             {useMemo(() => {
               if (trackPoints.length < 2) return null
               return (
-                <Polyline 
+                <Polyline
                   key={`track-${trackPoints.length}`}
                   positions={trackPoints.map(p => [p.lat, p.lng])}
-                  color="#10b981" 
-                  weight={5} 
+                  color="#10b981"
+                  weight={5}
                   opacity={0.9}
-                  smoothFactor={1} 
+                  smoothFactor={1}
                 />
               )
             }, [trackPoints])}
 
             {/* Posizione corrente */}
             {currentPosition && (
-              <Marker 
+              <Marker
                 position={[currentPosition.lat, currentPosition.lng]}
                 icon={L.divIcon({
                   html: `
@@ -1208,16 +1227,36 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
 
             {/* Auto-center */}
             {currentPosition && (
-              <MapCenterController 
-                position={currentPosition} 
+              <MapCenterController
+                position={currentPosition}
                 shouldCenter={shouldCenterMap}
                 onMapReady={handleMapReady}
+                onDisableCenter={() => setShouldCenterMap(false)}
               />
             )}
           </MapContainer>
 
-          
-          
+
+
+
+          {/* ========== BOTTONE RICENTRA ========== */}
+          {isTracking && !shouldCenterMap && (
+            <button
+              onClick={() => setShouldCenterMap(true)}
+              className="card absolute bottom-4 right-4 z-[1000] p-2 flex items-center space-x-2 hover:scale-105 transition-transform"
+              style={{
+                backgroundColor: 'var(--bg-card)',
+                boxShadow: 'var(--shadow-xl)',
+                cursor: 'pointer'
+              }}
+              title="Ricentra sulla posizione"
+            >
+              <span className="text-2xl">🎯</span>
+              <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
+                Centra
+              </span>
+            </button>
+          )}
 
           {/* ========== LOADING RICALCOLO ========== */}
           {recalculatingRoute && (
@@ -1231,9 +1270,9 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
         </div>
 
         {/* ========== STATISTICHE ========== */}
-        <div 
+        <div
           className="card border-t"
-          style={{ 
+          style={{
             borderColor: 'var(--border-color)',
             padding: '0.75rem'
           }}
@@ -1312,17 +1351,17 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
         </div>
 
         {/* ========== CONTROLLI ========== */}
-        <div 
+        <div
           className="card border-t flex-center space-x-2"
-          style={{ 
+          style={{
             borderColor: 'var(--border-color)',
             padding: '0.75rem',
             flexShrink: 0
           }}
         >
           {!isTracking ? (
-            <button 
-              onClick={handleStart} 
+            <button
+              onClick={handleStart}
               className="btn-primary"
               style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
             >
@@ -1331,24 +1370,24 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
           ) : (
             <>
               {!isPaused ? (
-                <button 
-                  onClick={handlePause} 
+                <button
+                  onClick={handlePause}
                   className="btn-secondary"
                   style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
                 >
                   <FaPause className="mr-1" /> Pausa
                 </button>
               ) : (
-                <button 
-                  onClick={handleResume} 
+                <button
+                  onClick={handleResume}
                   className="btn-primary"
                   style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
                 >
                   <FaPlay className="mr-1" /> Riprendi
                 </button>
               )}
-              <button 
-                onClick={handleStop} 
+              <button
+                onClick={handleStop}
                 className="btn-danger"
                 disabled={isSaving}
                 style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
@@ -1365,8 +1404,8 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
                   </>
                 )}
               </button>
-              <button 
-                onClick={handleCancel} 
+              <button
+                onClick={handleCancel}
                 className="btn-secondary"
                 style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
               >
