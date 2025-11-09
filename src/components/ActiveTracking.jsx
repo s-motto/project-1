@@ -710,41 +710,72 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     setIsSaving(true)
 
     try {
-      // Ferma GPS
-      geolocation.stop()
-      setIsTracking(false)
-      isTrackingRef.current = false
+  // Ferma GPS
+  geolocation.stop()
+  setIsTracking(false)
+  isTrackingRef.current = false
 
-      // Assicura che il percorso sia salvato
-      const routeId = await ensureRouteSaved()
+  // Assicura che il percorso sia salvato
+  const routeId = await ensureRouteSaved()
 
-      // Prepara dati da salvare
-      const completedData = {
-        status: 'completed',
-        completedAt: new Date().toISOString(),
-        actualDistance: parseFloat(distance.toFixed(2)),
-        actualDuration: Math.floor(elapsedTime / 60),
-        actualAscent: elevationGain,
-        actualDescent: elevationLoss,
-        actualCoordinates: JSON.stringify(trackPoints)
-      }
+  // Prepara dati da salvare
+  const completedData = {
+    status: 'completed',
+    completedAt: new Date().toISOString(),
+    actualDistance: parseFloat(distance.toFixed(2)),
+    actualDuration: Math.floor(elapsedTime / 60),
+    actualAscent: elevationGain,
+    actualDescent: elevationLoss,
+    actualCoordinates: JSON.stringify(trackPoints)
+  }
 
-      // Aggiorna il percorso
-      const result = await routesService.updateRoute(routeId, completedData)
+  // Aggiorna il percorso
+  const result = await routesService.updateRoute(routeId, completedData)
 
-      if (result.success) {
-        toast.success('Percorso completato e salvato!')
-        if (onComplete) onComplete()
-        onClose()
-      } else {
-        throw new Error(result.error)
+  if (result.success) {
+    toast.success('Percorso completato e salvato!')
+    
+    // 🎮 AGGIORNA ACHIEVEMENTS
+    try {
+      // Carica percorsi completati aggiornati
+      const completedRoutes = await routesService.getCompletedRoutes(user.$id)
+      if (completedRoutes.success) {
+        // Calcola nuove statistiche
+        const statsService = await import('../services/statsService').then(m => m.default)
+        const stats = statsService.calculateStats(completedRoutes.data)
+        
+        // Aggiorna achievements
+        const achievementsService = await import('../services/achievementsService').then(m => m.default)
+        const achievementResult = await achievementsService.updateAchievements(user.$id, stats, completedRoutes.data)
+        
+        if (achievementResult.success && achievementResult.data.newBadges.length > 0) {
+          // Mostra toast per ogni badge sbloccato
+          achievementResult.data.newBadges.forEach(badgeId => {
+            const badge = achievementsService.getBadgeInfo(badgeId)
+            toast.success(`🏆 Badge sbloccato: ${badge.name}!`)
+          })
+        }
+        
+        if (achievementResult.success && achievementResult.data.leveledUp) {
+          const levelInfo = achievementsService.getLevelInfo(achievementResult.data.currentLevel)
+          toast.success(`🎉 Livello ${levelInfo.level}: ${levelInfo.name}!`)
+        }
       }
     } catch (error) {
-      logger.error('Error saving track:', error)
-      toast.error('Errore nel salvare il percorso: ' + error.message)
-    } finally {
-      setIsSaving(false)
+      logger.error('Error updating achievements:', error)
     }
+    
+    if (onComplete) onComplete()
+    onClose()
+  } else {
+    throw new Error(result.error)
+  }
+} catch (error) {
+  logger.error('Error saving track:', error)
+  toast.error('Errore nel salvare il percorso: ' + error.message)
+} finally {
+  setIsSaving(false)
+}
   }
 
   /**

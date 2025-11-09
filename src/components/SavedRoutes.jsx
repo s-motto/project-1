@@ -53,19 +53,50 @@ const SavedRoutes = ({ onLoadRoute }) => {
   }
 
   // Segna come completato (senza tracking GPS)
-  const handleComplete = async (routeId) => {
-    if (!confirm('Vuoi segnare questo percorso come completato? I dati pianificati verranno copiati nelle statistiche.')) return
+const handleComplete = async (routeId) => {
+  if (!confirm('Vuoi segnare questo percorso come completato? I dati pianificati verranno copiati nelle statistiche.')) return
+  
+  setCompleting(routeId)
+  const result = await routesService.completeRoute(routeId)
+  
+  if (result.success) {
+    setRoutes(routes.filter(r => r.$id !== routeId))
+    toast.success('✅ Percorso segnato come completato! Controlla la Dashboard per le statistiche.')
     
-    setCompleting(routeId)
-    const result = await routesService.completeRoute(routeId)
-    if (result.success) {
-      setRoutes(routes.filter(r => r.$id !== routeId))
-      toast.success('✅ Percorso segnato come completato! Controlla la Dashboard per le statistiche.')
-    } else {
-      toast.error('Errore durante il completamento: ' + result.error)
+    // 🎮 AGGIORNA ACHIEVEMENTS
+    try {
+      // Carica percorsi completati aggiornati
+      const completedRoutes = await routesService.getCompletedRoutes(user.$id)
+      if (completedRoutes.success) {
+        // Calcola nuove statistiche
+        const stats = await import('../services/statsService').then(m => m.default.calculateStats(completedRoutes.data))
+        
+        // Aggiorna achievements
+        const achievementsService = await import('../services/achievementsService').then(m => m.default)
+        const achievementResult = await achievementsService.updateAchievements(user.$id, stats, completedRoutes.data)
+        
+        if (achievementResult.success && achievementResult.data.newBadges.length > 0) {
+          // Mostra toast per ogni badge sbloccato
+          achievementResult.data.newBadges.forEach(badgeId => {
+            const badge = achievementsService.getBadgeInfo(badgeId)
+            toast.success(`🏆 Badge sbloccato: ${badge.name}!`)
+          })
+        }
+        
+        if (achievementResult.success && achievementResult.data.leveledUp) {
+          const levelInfo = achievementsService.getLevelInfo(achievementResult.data.currentLevel)
+          toast.success(`🎉 Sei salito al livello ${levelInfo.level}: ${levelInfo.name}!`)
+        }
+      }
+    } catch (error) {
+      console.error('Error updating achievements:', error)
     }
-    setCompleting(null)
+  } else {
+    toast.error('Errore durante il completamento: ' + result.error)
   }
+  
+  setCompleting(null)
+}
 
   // Avvia tracking GPS
   const handleStartTracking = (route) => {
