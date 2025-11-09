@@ -81,8 +81,36 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   const [recalculatingRoute, setRecalculatingRoute] = useState(false) // Loading durante ricalcolo percorso
 
   // ========== ROUTE STATE ==========
-  const originalRouteRef = useRef(route) // Salva percorso originale per reset
-  const [currentRouteData, setCurrentRouteData] = useState(route) // Percorso visualizzato (può cambiare con waypoints)
+  // Converti coordinate da GeoJSON [lon, lat] a Leaflet [lat, lon]
+  // Le coordinate dall'API OpenRouteService sono SEMPRE in formato GeoJSON [lon, lat]
+  const normalizeRoute = (routeData) => {
+    if (!routeData.coordinates || routeData.coordinates.length === 0) {
+      return routeData
+    }
+
+    // Controlla se le coordinate sono già in formato corretto Leaflet [lat, lon]
+    // GeoJSON: [lon, lat] dove lon è tipicamente minore (9-18 per l'Italia)
+    // Leaflet: [lat, lon] dove lat è tipicamente maggiore (44-47 per l'Italia)
+    const firstCoord = routeData.coordinates[0]
+
+    // Se il primo valore è minore del secondo, sono probabilmente [lon, lat] e vanno invertite
+    const needsConversion = Array.isArray(firstCoord) && firstCoord[0] < firstCoord[1]
+
+    if (needsConversion) {
+      console.log('[ActiveTracking] Converting coordinates from GeoJSON [lon,lat] to Leaflet [lat,lon]')
+      return {
+        ...routeData,
+        coordinates: routeData.coordinates.map(coord => [coord[1], coord[0]])
+      }
+    }
+
+    console.log('[ActiveTracking] Coordinates already in Leaflet format [lat,lon]')
+    return routeData
+  }
+
+  const normalizedRoute = useMemo(() => normalizeRoute(route), [route])
+  const originalRouteRef = useRef(normalizedRoute) // Salva percorso originale per reset
+  const [currentRouteData, setCurrentRouteData] = useState(normalizedRoute) // Percorso visualizzato (può cambiare con waypoints)
   const [showWaypointsList, setShowWaypointsList] = useState(false) // Mostra/nascondi lista waypoints
 
   // ========== REFS ==========
@@ -227,13 +255,17 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
    * Ricalcola il percorso completo con tutti i waypoints
    * Aggiorna currentRouteData con il nuovo percorso
    * 
+   * @param {Array} waypointsToUse - Optional array of waypoints to use (defaults to current state)
    * Viene chiamato dopo la conferma del waypoint
    */
-  const recalculateRouteWithWaypoints = async () => {
+  const recalculateRouteWithWaypoints = async (waypointsToUse = null) => {
     setRecalculatingRoute(true)
 
     try {
       const ORS_KEY = import.meta.env.VITE_OPENROUTE_API_KEY
+
+      // Usa i waypoints passati o quelli nello state
+      const wps = waypointsToUse || waypoints
 
       // Costruisci coordinate
       const coordinates = []
@@ -246,7 +278,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       }
 
       // Tutti i waypoints
-      waypoints.forEach(wp => {
+      wps.forEach(wp => {
         coordinates.push([wp.lng, wp.lat])
       })
 
@@ -367,7 +399,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
 
   /**
    * Conferma l'aggiunta del waypoint
-   * Aggiunge il waypoint all'array e ricalcola il percorso
+   * Aggiunge il waypoint all'array e usa i dati del preview già calcolati
    */
   const handleConfirmWaypoint = async () => {
     if (!tempWaypoint || !waypointPreview) return
@@ -380,17 +412,25 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       addedAt: new Date().toISOString()
     }
 
-    setWaypoints(prev => [...prev, newWaypoint])
+    const updatedWaypoints = [...waypoints, newWaypoint]
+    setWaypoints(updatedWaypoints)
+
+    // Usa i dati del preview già calcolati per aggiornare il percorso
+    const updatedRoute = {
+      ...route,
+      coordinates: waypointPreview.coordinates.map(coord => [coord[1], coord[0]]), // [lat, lon]
+      distance: waypointPreview.distance,
+      duration: Math.round(waypointPreview.duration / 60), // minuti
+      ascent: waypointPreview.ascent || 0,
+      descent: waypointPreview.descent || 0
+    }
+
+    setCurrentRouteData(updatedRoute)
 
     // Chiudi dialog
     setShowWaypointDialog(false)
     setTempWaypoint(null)
     setWaypointPreview(null)
-
-    // Ricalcola percorso
-    setTimeout(() => {
-      recalculateRouteWithWaypoints()
-    }, 100)
 
     toast.success(`Waypoint "${newWaypoint.name}" aggiunto!`)
   }
@@ -425,10 +465,8 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       setCurrentRouteData(originalRouteRef.current)
       toast.info('Percorso ripristinato')
     } else {
-      // Ricalcola con i waypoints rimanenti
-      setTimeout(() => {
-        recalculateRouteWithWaypoints()
-      }, 100)
+      // Ricalcola con i waypoints rimanenti, passando l'array aggiornato
+      recalculateRouteWithWaypoints(newWaypoints)
     }
   }
 
