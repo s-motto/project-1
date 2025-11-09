@@ -11,6 +11,7 @@ import StatsCard from './StatsCard'
 import { generateGpxFromTrack } from '../utils/gpx'
 import { trackToPng } from '../utils/trackImage'
 import Achievements from './Achievements'
+import StreakWidget from './StreakWidget' // 🔥 NUOVO IMPORT
 
 const Dashboard = ({ onClose }) => {
   const { user } = useAuth()
@@ -19,6 +20,7 @@ const Dashboard = ({ onClose }) => {
   const [stats, setStats] = useState(null)
   const [routes, setRoutes] = useState([])
   const [showAchievements, setShowAchievements] = useState(false)
+  const [achievements, setAchievements] = useState(null) // 🔥 NUOVO STATE
 
   const handleExportGpx = (route) => {
     const name = route.name || 'Percorso'
@@ -103,7 +105,20 @@ const Dashboard = ({ onClose }) => {
       setStats(calculatedStats)
     }
 
+    // 🔥 CARICA ACHIEVEMENTS
+    await loadAchievements()
+
     setLoading(false)
+  }
+
+  // 🔥 NUOVA FUNZIONE: Carica achievements
+  const loadAchievements = async () => {
+    if (!user) return
+
+    const result = await achievementsService.getAchievements(user.$id)
+    if (result.success) {
+      setAchievements(result.data)
+    }
   }
 
   const CustomTooltip = ({ active, payload }) => {
@@ -146,32 +161,31 @@ const Dashboard = ({ onClose }) => {
     <div className="modal-overlay">
       <div className="modal-content max-w-3xl">
         {/* Header */}
- {/* Header */}
-<div className="modal-header-primary">
-  <div className="flex items-center justify-between gap-3">
-    <div className="flex items-center gap-2 min-w-0">
-      <FaChartLine className="text-2xl flex-shrink-0" />
-      <div className="min-w-0">
-        <h2 className="text-xl font-bold truncate">Dashboard</h2>
-      </div>
-    </div>
-    
-    <div className="flex items-center gap-2 flex-shrink-0">
-      <button 
-        onClick={() => setShowAchievements(true)}
-        className="bg-white/20 hover:bg-white/30 text-white text-sm px-2 py-1 rounded-lg transition-colors"
-      >
-        🏆
-      </button>
-      <button 
-        onClick={onClose} 
-        className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
-      >
-        <FaTimes className="text-xl" />
-      </button>
-    </div>
-  </div>
-</div>
+        <div className="modal-header-primary">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <FaChartLine className="text-2xl flex-shrink-0" />
+              <div className="min-w-0">
+                <h2 className="text-xl font-bold truncate">Dashboard</h2>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <button 
+                onClick={() => setShowAchievements(true)}
+                className="bg-white/20 hover:bg-white/30 text-white text-sm px-2 py-1 rounded-lg transition-colors"
+              >
+                🏆
+              </button>
+              <button 
+                onClick={onClose} 
+                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+              >
+                <FaTimes className="text-xl" />
+              </button>
+            </div>
+          </div>
+        </div>
 
         {/* Body */}
         <div className="modal-body">
@@ -190,6 +204,16 @@ const Dashboard = ({ onClose }) => {
             </div>
           ) : (
             <>
+              {/* 🔥 STREAK WIDGET */}
+              {achievements && (
+                <div className="mb-4">
+                  <StreakWidget
+                    achievements={achievements}
+                    onClick={() => setShowAchievements(true)}
+                  />
+                </div>
+              )}
+
               {/* Cards Statistiche */}
               <div className="dashboard-stats-section">
                 <h3 className="dashboard-section-title">📊 Riepilogo generale</h3>
