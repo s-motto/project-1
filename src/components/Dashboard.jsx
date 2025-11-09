@@ -11,7 +11,8 @@ import StatsCard from './StatsCard'
 import { generateGpxFromTrack } from '../utils/gpx'
 import { trackToPng } from '../utils/trackImage'
 import Achievements from './Achievements'
-import StreakWidget from './StreakWidget' // 🔥 NUOVO IMPORT
+import StreakWidget from './StreakWidget'
+import DailyChallengesWidget from './DailyChallengesWidget' // 🎯 NUOVO IMPORT
 
 const Dashboard = ({ onClose }) => {
   const { user } = useAuth()
@@ -20,7 +21,7 @@ const Dashboard = ({ onClose }) => {
   const [stats, setStats] = useState(null)
   const [routes, setRoutes] = useState([])
   const [showAchievements, setShowAchievements] = useState(false)
-  const [achievements, setAchievements] = useState(null) // 🔥 NUOVO STATE
+  const [achievements, setAchievements] = useState(null)
 
   const handleExportGpx = (route) => {
     const name = route.name || 'Percorso'
@@ -105,13 +106,12 @@ const Dashboard = ({ onClose }) => {
       setStats(calculatedStats)
     }
 
-    // 🔥 CARICA ACHIEVEMENTS
+    // Carica achievements
     await loadAchievements()
 
     setLoading(false)
   }
 
-  // 🔥 NUOVA FUNZIONE: Carica achievements
   const loadAchievements = async () => {
     if (!user) return
 
@@ -204,13 +204,25 @@ const Dashboard = ({ onClose }) => {
             </div>
           ) : (
             <>
-              {/* 🔥 STREAK WIDGET */}
+              {/* 🔥 SEZIONE GAMIFICATION - WIDGETS */}
               {achievements && (
-                <div className="mb-4">
-                  <StreakWidget
-                    achievements={achievements}
-                    onClick={() => setShowAchievements(true)}
-                  />
+                <div className="space-y-4 mb-6">
+                  {/* Grid 2 colonne su desktop, 1 su mobile */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Streak Widget */}
+                    <StreakWidget
+                      achievements={achievements}
+                      onClick={() => setShowAchievements(true)}
+                    />
+
+                    {/* Daily Challenges Widget - Solo se ci sono stats */}
+                    {stats && (
+                      <DailyChallengesWidget
+                        stats={stats}
+                        achievements={achievements}
+                      />
+                    )}
+                  </div>
                 </div>
               )}
 

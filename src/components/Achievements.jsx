@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { FaTimes, FaTrophy, FaStar, FaLock, FaSpinner } from 'react-icons/fa'
+import { FaTimes, FaTrophy, FaStar, FaLock, FaSpinner, FaFire } from 'react-icons/fa'
 import { useAuth } from '../contexts/AuthContext'
 import achievementsService from '../services/achievementsService'
 import logger from '../utils/logger'
@@ -78,6 +78,11 @@ const Achievements = ({ onClose, stats }) => {
   const unlockedCount = badgesWithStatus.filter(b => b.isUnlocked).length
   const totalBadges = badgesWithStatus.length
 
+  // 🔥 Dati Streak
+  const currentStreak = achievements?.currentStreak || 0
+  const longestStreak = achievements?.longestStreak || 0
+  const isStreakActive = currentStreak > 0
+
   return (
     <div className="modal-overlay">
       <div className="modal-content max-w-xl">
@@ -135,12 +140,16 @@ const Achievements = ({ onClose, stats }) => {
                 {/* Progress Bar */}
                 {!progress.isMaxLevel ? (
                   <>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
+                    <div 
+                      className="w-full rounded-full h-2 mb-2 overflow-hidden"
+                      style={{ backgroundColor: 'var(--bg-secondary)' }}
+                    >
                       <div 
-                        className="h-2 rounded-full transition-all duration-500"
+                        className="h-full rounded-full transition-all duration-500"
                         style={{ 
                           width: `${progress.percentage}%`,
-                          background: 'linear-gradient(90deg, var(--gradient-start), var(--gradient-end))'
+                          background: 'linear-gradient(90deg, var(--gradient-start), var(--gradient-end))',
+                          minWidth: progress.percentage > 0 ? '2%' : '0%'
                         }}
                       />
                     </div>
@@ -155,6 +164,92 @@ const Achievements = ({ onClose, stats }) => {
                     <span className="text-yellow-500 font-bold text-sm">
                       🎉 Hai raggiunto il livello massimo!
                     </span>
+                  </div>
+                )}
+              </div>
+
+              {/* 🔥 SEZIONE STREAK - NUOVA */}
+              <div
+                className="card p-4"
+                style={{
+                  background: isStreakActive
+                    ? 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)'
+                    : 'var(--bg-card)',
+                  border: isStreakActive ? 'none' : '2px solid var(--border-color)'
+                }}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <h3
+                    className="text-base font-bold"
+                    style={{
+                      color: isStreakActive ? '#fff' : 'var(--text-primary)'
+                    }}
+                  >
+                    🔥 Il Tuo Streak
+                  </h3>
+                  <FaFire
+                    className="text-2xl"
+                    style={{
+                      color: isStreakActive ? '#FFE66D' : '#ccc'
+                    }}
+                  />
+                </div>
+
+                {/* Streak Corrente */}
+                <div className="text-center mb-3">
+                  <div
+                    className="text-4xl font-bold"
+                    style={{
+                      color: isStreakActive ? '#fff' : 'var(--text-primary)'
+                    }}
+                  >
+                    {currentStreak}
+                  </div>
+                  <div
+                    className="text-sm"
+                    style={{
+                      color: isStreakActive ? '#fff' : 'var(--text-secondary)',
+                      opacity: isStreakActive ? 0.9 : 0.7
+                    }}
+                  >
+                    {currentStreak === 1 ? 'giorno consecutivo' : 'giorni consecutivi'}
+                  </div>
+                </div>
+
+                {/* Record Personale */}
+                <div
+                  className="flex items-center justify-center gap-2 pt-3 border-t"
+                  style={{
+                    borderColor: isStreakActive ? 'rgba(255, 255, 255, 0.2)' : 'var(--border-color)'
+                  }}
+                >
+                  <FaTrophy
+                    className="text-sm"
+                    style={{
+                      color: isStreakActive ? '#FFE66D' : 'var(--text-secondary)'
+                    }}
+                  />
+                  <span
+                    className="text-xs font-medium"
+                    style={{
+                      color: isStreakActive ? '#fff' : 'var(--text-secondary)',
+                      opacity: isStreakActive ? 0.9 : 0.7
+                    }}
+                  >
+                    Record: {longestStreak} {longestStreak === 1 ? 'giorno' : 'giorni'}
+                  </span>
+                </div>
+
+                {/* Messaggio motivazionale se streak = 0 */}
+                {!isStreakActive && currentStreak === 0 && (
+                  <div
+                    className="text-xs mt-3 text-center"
+                    style={{
+                      color: 'var(--text-secondary)',
+                      opacity: 0.7
+                    }}
+                  >
+                    💡 Completa un percorso oggi per iniziare lo streak!
                   </div>
                 )}
               </div>
