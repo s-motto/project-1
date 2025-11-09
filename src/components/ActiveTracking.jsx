@@ -69,6 +69,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   const [isPaused, setIsPaused] = useState(false)
   const [trackPoints, setTrackPoints] = useState([])
   const [currentPosition, setCurrentPosition] = useState(null)
+  const [heading, setHeading] = useState(0)
   const [gpsAccuracy, setGpsAccuracy] = useState(null)
   const [elapsedTime, setElapsedTime] = useState(0)
   const [distance, setDistance] = useState(0)
@@ -134,6 +135,19 @@ useEffect(() => {
     }
     
     setCurrentPosition(newPoint)
+    // Calcola direzione dal movimento
+if (trackPoints.length > 0 && !isPausedRef.current && isTrackingRef.current) {
+  const lastPoint = trackPoints[trackPoints.length - 1]
+  const lat1 = lastPoint.lat * Math.PI / 180
+  const lat2 = newPoint.lat * Math.PI / 180
+  const dLon = (newPoint.lng - lastPoint.lng) * Math.PI / 180
+  
+  const y = Math.sin(dLon) * Math.cos(lat2)
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon)
+  const bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360
+  
+  setHeading(bearing)
+}
     setGpsAccuracy(position.coords.accuracy)
     
     // Se accuracy è buona (< soglia impostazioni), considera il GPS "fixed"
@@ -476,9 +490,26 @@ useEffect(() => {
             
             {/* Posizione corrente */}
             {currentPosition && (
-              <Marker position={[currentPosition.lat, currentPosition.lng]}>
-              </Marker>
-            )}
+  <Marker 
+    position={[currentPosition.lat, currentPosition.lng]}
+    icon={L.divIcon({
+      html: `
+        <div style="transform: rotate(${heading || 0}deg); width: 40px; height: 40px;">
+          <svg viewBox="0 0 24 24" width="40" height="40">
+            <path fill="#2563eb" stroke="#fff" stroke-width="2" 
+                  d="M12 2 L4 22 L12 18 L20 22 Z"/>
+            <circle cx="12" cy="12" r="3" fill="#fff"/>
+          </svg>
+        </div>
+      `,
+      className: 'custom-gps-marker',
+      iconSize: [40, 40],
+      iconAnchor: [20, 20]
+    })}
+  />
+)}
+             
+            
 
             {/* Auto-centra sulla posizione solo all'inizio */}
             {currentPosition && (
