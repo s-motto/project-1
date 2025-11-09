@@ -270,6 +270,46 @@ class AchievementsService {
   getAllLevels() {
     return LEVELS
   }
+
+  /**
+ * Resetta completamente gli achievements di un utente
+ * Riporta tutto ai valori iniziali
+ */
+async resetAchievements(userId) {
+  try {
+    // Trova il documento achievements dell'utente
+    const response = await databases.listDocuments(
+      DATABASE_ID,
+      ACHIEVEMENTS_COLLECTION_ID,
+      [Query.equal('userId', userId)]
+    )
+
+    if (response.documents.length === 0) {
+      return { success: true } // Niente da resettare
+    }
+
+    const achievementDoc = response.documents[0]
+
+    // Resetta ai valori iniziali
+    await databases.updateDocument(
+      DATABASE_ID,
+      ACHIEVEMENTS_COLLECTION_ID,
+      achievementDoc.$id,
+      {
+        totalPoints: 0,
+        currentLevel: 1,
+        badgesEarned: [],
+        badgeUnlockedAt: JSON.stringify({}),
+        lastUpdated: new Date().toISOString()
+      }
+    )
+
+    return { success: true }
+  } catch (error) {
+    logger.error('Error resetting achievements:', error)
+    return { success: false, error: error.message }
+  }
+}
 }
 
 export default new AchievementsService()

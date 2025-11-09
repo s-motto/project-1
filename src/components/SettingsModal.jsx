@@ -1,8 +1,9 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react'
-import { FaTimes, FaTrash, FaDownload, FaInfoCircle } from 'react-icons/fa'
+import { FaTimes, FaTrash, FaDownload, FaInfoCircle, FaSpinner } from 'react-icons/fa'
 import { useSettings } from '../contexts/SettingsContext'
 import { useAuth } from '../contexts/AuthContext'
 import routesService from '../services/routesService'
+import achievementsService from '../services/achievementsService'
 
 // Componente CustomSelect per selezioni personalizzate
 const CustomSelect = ({ value, options, onChange, label }) => {
@@ -60,6 +61,8 @@ const SettingsModal = ({ onClose }) => {
   const { settings, setSettings } = useSettings()
   const { user } = useAuth()
   const [busy, setBusy] = useState(false)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false) 
+const [resetAchievementsToo, setResetAchievementsToo] = useState(false) 
 
   // Effetto per bloccare lo scroll del body quando il modal è aperto
   useEffect(() => {
@@ -99,21 +102,32 @@ const SettingsModal = ({ onClose }) => {
   }
   
   // Funzione per eliminare tutti i percorsi dell'utente
-  const deleteAllRoutes = async () => {
-    if (!user) return
-    if (!confirm('Eliminare tutti i percorsi? Questa azione non è reversibile.')) return
-    setBusy(true)
-    try {
-      const res = await routesService.getUserRoutes(user.$id)
-      if (res.success) {
-        for (const r of res.data) {
-          await routesService.deleteRoute(r.$id)
-        }
+const deleteAllRoutes = async () => {
+  if (!user) return
+  setBusy(true)
+  try {
+    // Elimina tutti i percorsi
+    const res = await routesService.getUserRoutes(user.$id)
+    if (res.success) {
+      for (const r of res.data) {
+        await routesService.deleteRoute(r.$id)
       }
-    } finally {
-      setBusy(false)
     }
+
+    // Se richiesto, azzera anche gli achievements
+    if (resetAchievementsToo) {
+      const achievementResult = await achievementsService.resetAchievements(user.$id)
+      if (achievementResult.success) {
+        console.log('Achievements resettati con successo')
+      }
+    }
+
+    setShowDeleteDialog(false)
+    setResetAchievementsToo(false)
+  } finally {
+    setBusy(false)
   }
+}
 
   return (
     <div className="modal-overlay">
@@ -285,12 +299,12 @@ const SettingsModal = ({ onClose }) => {
                 <FaDownload /> Esporta i miei dati
               </button>
               <button 
-                onClick={deleteAllRoutes} 
-                disabled={busy || !user} 
-                className="btn-danger flex items-center gap-2"
-              >
-                <FaTrash /> Elimina tutti i percorsi
-              </button>
+  onClick={() => setShowDeleteDialog(true)} 
+  disabled={busy || !user} 
+  className="btn-danger flex items-center gap-2"
+>
+  <FaTrash /> Elimina tutti i percorsi
+</button>
             </div>
           </section>
 
@@ -306,6 +320,86 @@ const SettingsModal = ({ onClose }) => {
           </section>
         </div>
       </div>
+
+      {/* Dialog Conferma Eliminazione */}
+      {showDeleteDialog && (
+        <div className="modal-overlay" style={{ zIndex: 3000 }}>
+          <div className="modal-content max-w-md">
+            <div className="modal-header-primary">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold">⚠️ Elimina Tutti i Percorsi</h3>
+                <button 
+                  onClick={() => {
+                    setShowDeleteDialog(false)
+                    setResetAchievementsToo(false)
+                  }} 
+                  className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+                >
+                  <FaTimes />
+                </button>
+              </div>
+            </div>
+
+            <div className="modal-body space-y-4">
+              <p style={{ color: 'var(--text-primary)' }}>
+                Questa operazione eliminerà <strong>tutti i tuoi percorsi completati</strong> e le statistiche associate.
+              </p>
+
+              <p style={{ color: 'var(--text-secondary)' }} className="text-sm">
+                ⚠️ <strong>Attenzione:</strong> Questa azione non è reversibile!
+              </p>
+
+              {/* Checkbox per achievements */}
+              <label className="flex items-start gap-3 p-3 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={resetAchievementsToo}
+                  onChange={(e) => setResetAchievementsToo(e.target.checked)}
+                  className="mt-1 w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <div className="flex-1">
+                  <div className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                    🏆 Azzera anche traguardi e livelli
+                  </div>
+                  <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    Ricomincerai da zero (livello 1, nessun badge)
+                  </div>
+                </div>
+              </label>
+
+              <div className="flex gap-3 mt-6">
+                <button 
+                  onClick={() => {
+                    setShowDeleteDialog(false)
+                    setResetAchievementsToo(false)
+                  }}
+                  className="button-secondary flex-1"
+                  disabled={busy}
+                >
+                  Annulla
+                </button>
+                <button 
+                  onClick={deleteAllRoutes}
+                  className="btn-danger flex-1 flex items-center justify-center gap-2"
+                  disabled={busy}
+                >
+                  {busy ? (
+                    <>
+                      <FaSpinner className="spinner" />
+                      Eliminazione...
+                    </>
+                  ) : (
+                    <>
+                      <FaTrash />
+                      Elimina Tutto
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
