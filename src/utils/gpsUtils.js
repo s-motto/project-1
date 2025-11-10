@@ -135,6 +135,22 @@ export function formatDistance(distanceKm, unit) {
   return `${v.toFixed(decimals)} ${unit}`
 }
 
+// formatto la distanza per gli step di navigazione (mostra m/ft per distanze brevi)
+export function formatStepDistance(distanceKm, unit) {
+  if (unit === 'mi') {
+    const miles = distanceKm * KM_TO_MI
+    if (miles >= 0.1) return `${miles.toFixed(2)} mi`
+    // Per distanze brevi, mostra in piedi
+    const feet = Math.round(distanceKm * 1000 * M_TO_FT)
+    return `${feet} ft`
+  }
+  // Unità metrica
+  if (distanceKm >= 1) return `${distanceKm.toFixed(2)} km`
+  // Per distanze brevi, mostra in metri
+  const meters = Math.round(distanceKm * 1000)
+  return `${meters} m`
+}
+
 //formatto l'altitudine usando l'unità data ("m" | "ft")
 export function formatElevation(meters, unit) {
   const v = convertElevation(meters, unit)

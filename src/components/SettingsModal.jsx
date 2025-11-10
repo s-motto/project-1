@@ -9,7 +9,7 @@ import achievementsService from '../services/achievementsService'
 const CustomSelect = ({ value, options, onChange, label }) => {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
-  
+
   useEffect(() => {
     const onDoc = (e) => {
       if (!ref.current || ref.current.contains(e.target)) return
@@ -18,16 +18,16 @@ const CustomSelect = ({ value, options, onChange, label }) => {
     document.addEventListener('mousedown', onDoc)
     return () => document.removeEventListener('mousedown', onDoc)
   }, [])
-  
+
   const selected = options.find(o => o.value === value)
-  
+
   return (
     <div className="custom-select" ref={ref}>
-      <button 
-        type="button" 
-        className="input w-full custom-select-button" 
-        onClick={() => setOpen(o => !o)} 
-        aria-haspopup="listbox" 
+      <button
+        type="button"
+        className="input w-full custom-select-button"
+        onClick={() => setOpen(o => !o)}
+        aria-haspopup="listbox"
         aria-expanded={open}
       >
         <span>{selected ? selected.label : ''}</span>
@@ -36,15 +36,15 @@ const CustomSelect = ({ value, options, onChange, label }) => {
       {open && (
         <ul className="select-dropdown" role="listbox">
           {options.map(opt => (
-            <li 
-              key={opt.value} 
-              role="option" 
+            <li
+              key={opt.value}
+              role="option"
               aria-selected={opt.value === value}
               className={`select-option ${opt.disabled ? 'select-option-disabled' : ''}`}
-              onClick={() => { 
+              onClick={() => {
                 if (opt.disabled) return
                 onChange(opt.value)
-                setOpen(false) 
+                setOpen(false)
               }}
             >
               {opt.label}
@@ -61,8 +61,8 @@ const SettingsModal = ({ onClose }) => {
   const { settings, setSettings } = useSettings()
   const { user } = useAuth()
   const [busy, setBusy] = useState(false)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false) 
-const [resetAchievementsToo, setResetAchievementsToo] = useState(false) 
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [resetAchievementsToo, setResetAchievementsToo] = useState(false)
 
   // Effetto per bloccare lo scroll del body quando il modal è aperto
   useEffect(() => {
@@ -71,10 +71,10 @@ const [resetAchievementsToo, setResetAchievementsToo] = useState(false)
       document.body.classList.remove('modal-open')
     }
   }, [])
-  
+
   // Funzione per gestire i cambiamenti nelle impostazioni
   const handleChange = (patch) => setSettings({ ...settings, ...patch })
-  
+
   // Funzione per esportare i dati dell'utente
   const exportData = async () => {
     if (!user) return
@@ -100,34 +100,31 @@ const [resetAchievementsToo, setResetAchievementsToo] = useState(false)
       setBusy(false)
     }
   }
-  
+
   // Funzione per eliminare tutti i percorsi dell'utente
-const deleteAllRoutes = async () => {
-  if (!user) return
-  setBusy(true)
-  try {
-    // Elimina tutti i percorsi
-    const res = await routesService.getUserRoutes(user.$id)
-    if (res.success) {
-      for (const r of res.data) {
-        await routesService.deleteRoute(r.$id)
+  const deleteAllRoutes = async () => {
+    if (!user) return
+    setBusy(true)
+    try {
+      // Elimina tutti i percorsi
+      const res = await routesService.getUserRoutes(user.$id)
+      if (res.success) {
+        for (const r of res.data) {
+          await routesService.deleteRoute(r.$id)
+        }
       }
-    }
 
-    // Se richiesto, azzera anche gli achievements
-    if (resetAchievementsToo) {
-      const achievementResult = await achievementsService.resetAchievements(user.$id)
-      if (achievementResult.success) {
-        console.log('Achievements resettati con successo')
+      // Se richiesto, azzera anche gli achievements
+      if (resetAchievementsToo) {
+        await achievementsService.resetAchievements(user.$id)
       }
-    }
 
-    setShowDeleteDialog(false)
-    setResetAchievementsToo(false)
-  } finally {
-    setBusy(false)
+      setShowDeleteDialog(false)
+      setResetAchievementsToo(false)
+    } finally {
+      setBusy(false)
+    }
   }
-}
 
   return (
     <div className="modal-overlay">
@@ -156,8 +153,8 @@ const deleteAllRoutes = async () => {
                 />
                 <span className="leading-tight">
                   <span className="block font-medium whitespace-nowrap">Metriche</span>
-                  <span 
-                    className="block text-xs whitespace-nowrap" 
+                  <span
+                    className="block text-xs whitespace-nowrap"
                     style={{ color: 'var(--text-secondary)' }}
                   >
                     km, m
@@ -174,8 +171,8 @@ const deleteAllRoutes = async () => {
                 />
                 <span className="leading-tight">
                   <span className="block font-medium whitespace-nowrap">Imperiali</span>
-                  <span 
-                    className="block text-xs whitespace-nowrap" 
+                  <span
+                    className="block text-xs whitespace-nowrap"
                     style={{ color: 'var(--text-secondary)' }}
                   >
                     mi, ft
@@ -190,8 +187,8 @@ const deleteAllRoutes = async () => {
             <h3 className="info-section-title">🖌️ Aspetto</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label 
-                  className="block text-sm mb-1" 
+                <label
+                  className="block text-sm mb-1"
                   style={{ color: 'var(--text-secondary)' }}
                 >
                   Formato orario
@@ -206,8 +203,8 @@ const deleteAllRoutes = async () => {
                 />
               </div>
               <div>
-                <label 
-                  className="block text-sm mb-1" 
+                <label
+                  className="block text-sm mb-1"
                   style={{ color: 'var(--text-secondary)' }}
                 >
                   Tema
@@ -223,8 +220,8 @@ const deleteAllRoutes = async () => {
                 />
               </div>
               <div>
-                <label 
-                  className="block text-sm mb-1" 
+                <label
+                  className="block text-sm mb-1"
                   style={{ color: 'var(--text-secondary)' }}
                 >
                   Formato durata
@@ -246,8 +243,8 @@ const deleteAllRoutes = async () => {
             <h3 className="info-section-title">📍 GPS</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label 
-                  className="block text-sm mb-1" 
+                <label
+                  className="block text-sm mb-1"
                   style={{ color: 'var(--text-secondary)' }}
                 >
                   Accuratezza massima (m)
@@ -262,8 +259,8 @@ const deleteAllRoutes = async () => {
                 />
               </div>
               <div>
-                <label 
-                  className="block text-sm mb-1" 
+                <label
+                  className="block text-sm mb-1"
                   style={{ color: 'var(--text-secondary)' }}
                 >
                   Distanza minima tra punti (m)
@@ -278,8 +275,8 @@ const deleteAllRoutes = async () => {
                 />
               </div>
             </div>
-            <p 
-              className="text-xs mt-2 flex items-start gap-1" 
+            <p
+              className="text-xs mt-2 flex items-start gap-1"
               style={{ color: 'var(--text-secondary)' }}
             >
               <FaInfoCircle className="mt-0.5" />
@@ -291,28 +288,28 @@ const deleteAllRoutes = async () => {
           <section>
             <h3 className="info-section-title">🔐 Dati</h3>
             <div className="flex flex-wrap items-center gap-3">
-              <button 
-                onClick={exportData} 
-                disabled={busy || !user} 
+              <button
+                onClick={exportData}
+                disabled={busy || !user}
                 className="btn-secondary flex items-center gap-2"
               >
                 <FaDownload /> Esporta i miei dati
               </button>
-              <button 
-  onClick={() => setShowDeleteDialog(true)} 
-  disabled={busy || !user} 
-  className="btn-danger flex items-center gap-2"
->
-  <FaTrash /> Elimina tutti i percorsi
-</button>
+              <button
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={busy || !user}
+                className="btn-danger flex items-center gap-2"
+              >
+                <FaTrash /> Elimina tutti i percorsi
+              </button>
             </div>
           </section>
 
           {/* Link legali */}
           <section>
             <h3 className="info-section-title">📄 Documenti</h3>
-            <p 
-              className="text-sm" 
+            <p
+              className="text-sm"
               style={{ color: 'var(--text-secondary)' }}
             >
               Consulta la Privacy Policy nella sezione Informazioni.
@@ -328,11 +325,11 @@ const deleteAllRoutes = async () => {
             <div className="modal-header-primary">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-bold">⚠️ Elimina Tutti i Percorsi</h3>
-                <button 
+                <button
                   onClick={() => {
                     setShowDeleteDialog(false)
                     setResetAchievementsToo(false)
-                  }} 
+                  }}
                   className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
                 >
                   <FaTimes />
@@ -368,7 +365,7 @@ const deleteAllRoutes = async () => {
               </label>
 
               <div className="flex gap-3 mt-6">
-                <button 
+                <button
                   onClick={() => {
                     setShowDeleteDialog(false)
                     setResetAchievementsToo(false)
@@ -378,7 +375,7 @@ const deleteAllRoutes = async () => {
                 >
                   Annulla
                 </button>
-                <button 
+                <button
                   onClick={deleteAllRoutes}
                   className="btn-danger flex-1 flex items-center justify-center gap-2"
                   disabled={busy}

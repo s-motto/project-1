@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { FaChartLine, FaRoute, FaClock, FaMountain, FaSpinner, FaTimes } from 'react-icons/fa'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { useAuth } from '../contexts/AuthContext'
@@ -88,13 +88,16 @@ const Dashboard = ({ onClose }) => {
     }
   }, [showAchievements])
 
-  useEffect(() => {
-    if (user) {
-      loadData()
+  const loadAchievements = useCallback(async () => {
+    if (!user) return
+
+    const result = await achievementsService.getAchievements(user.$id)
+    if (result.success) {
+      setAchievements(result.data)
     }
   }, [user])
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true)
     const result = await routesService.getCompletedRoutes(user.$id)
 
@@ -110,16 +113,13 @@ const Dashboard = ({ onClose }) => {
     await loadAchievements()
 
     setLoading(false)
-  }
+  }, [user, loadAchievements])
 
-  const loadAchievements = async () => {
-    if (!user) return
-
-    const result = await achievementsService.getAchievements(user.$id)
-    if (result.success) {
-      setAchievements(result.data)
+  useEffect(() => {
+    if (user) {
+      loadData()
     }
-  }
+  }, [user, loadData])
 
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
@@ -169,16 +169,16 @@ const Dashboard = ({ onClose }) => {
                 <h2 className="text-xl font-bold truncate">Dashboard</h2>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-2 flex-shrink-0">
-              <button 
+              <button
                 onClick={() => setShowAchievements(true)}
                 className="bg-white/20 hover:bg-white/30 text-white text-sm px-2 py-1 rounded-lg transition-colors"
               >
                 🏆
               </button>
-              <button 
-                onClick={onClose} 
+              <button
+                onClick={onClose}
                 className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
               >
                 <FaTimes className="text-xl" />
@@ -346,7 +346,7 @@ const Dashboard = ({ onClose }) => {
 
       {/* Modale Achievements */}
       {showAchievements && (
-        <Achievements 
+        <Achievements
           onClose={() => setShowAchievements(false)}
           stats={stats}
         />

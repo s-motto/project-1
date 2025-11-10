@@ -7,6 +7,18 @@ const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID || 'hiking_db'
 const ROUTES_COLLECTION_ID = import.meta.env.VITE_APPWRITE_ROUTES_COLLECTION_ID || 'routes'
 
 class RoutesService {
+  // Helper per parsare i documenti dei percorsi
+  parseRouteDocument(doc) {
+    return {
+      ...doc,
+      startPoint: JSON.parse(doc.startPoint),
+      endPoint: JSON.parse(doc.endPoint),
+      coordinates: JSON.parse(doc.coordinates),
+      instructions: JSON.parse(doc.instructions),
+      actualCoordinates: doc.actualCoordinates ? JSON.parse(doc.actualCoordinates) : undefined
+    }
+  }
+
   // Salva un nuovo percorso
   async saveRoute(routeData, userId) {
     try {
@@ -48,15 +60,9 @@ class RoutesService {
           Query.limit(100)
         ]
       )
-      return { 
-        success: true, 
-        data: response.documents.map(doc => ({
-          ...doc,
-          startPoint: JSON.parse(doc.startPoint),
-          endPoint: JSON.parse(doc.endPoint),
-          coordinates: JSON.parse(doc.coordinates),
-          instructions: JSON.parse(doc.instructions)
-        }))
+      return {
+        success: true,
+        data: response.documents.map(doc => this.parseRouteDocument(doc))
       }
     } catch (error) {
       logger.error('Error fetching routes:', error)
@@ -77,15 +83,9 @@ class RoutesService {
           Query.limit(100)
         ]
       )
-      return { 
-        success: true, 
-        data: response.documents.map(doc => ({
-          ...doc,
-          startPoint: JSON.parse(doc.startPoint),
-          endPoint: JSON.parse(doc.endPoint),
-          coordinates: JSON.parse(doc.coordinates),
-          instructions: JSON.parse(doc.instructions)
-        }))
+      return {
+        success: true,
+        data: response.documents.map(doc => this.parseRouteDocument(doc))
       }
     } catch (error) {
       logger.error('Error fetching saved routes:', error)
@@ -106,16 +106,9 @@ class RoutesService {
           Query.limit(100)
         ]
       )
-      return { 
-        success: true, 
-        data: response.documents.map(doc => ({
-          ...doc,
-          startPoint: JSON.parse(doc.startPoint),
-          endPoint: JSON.parse(doc.endPoint),
-          coordinates: JSON.parse(doc.coordinates),
-          instructions: JSON.parse(doc.instructions),
-          actualCoordinates: doc.actualCoordinates ? JSON.parse(doc.actualCoordinates) : undefined
-        }))
+      return {
+        success: true,
+        data: response.documents.map(doc => this.parseRouteDocument(doc))
       }
     } catch (error) {
       logger.error('Error fetching completed routes:', error)
@@ -146,15 +139,9 @@ class RoutesService {
         ROUTES_COLLECTION_ID,
         routeId
       )
-      return { 
-        success: true, 
-        data: {
-          ...document,
-          startPoint: JSON.parse(document.startPoint),
-          endPoint: JSON.parse(document.endPoint),
-          coordinates: JSON.parse(document.coordinates),
-          instructions: JSON.parse(document.instructions)
-        }
+      return {
+        success: true,
+        data: this.parseRouteDocument(document)
       }
     } catch (error) {
       logger.error('Error fetching route:', error)
@@ -179,21 +166,21 @@ class RoutesService {
   }
 
   async updateRoute(routeId, data) {
-  try {
-    const document = await databases.updateDocument(
-      DATABASE_ID,
-      ROUTES_COLLECTION_ID,
-      routeId,
-      data
-    )
-    return { success: true, data: document }
-  } catch (error) {
-    console.error('Error updating route:', error)
-    return { success: false, error: error.message }
+    try {
+      const document = await databases.updateDocument(
+        DATABASE_ID,
+        ROUTES_COLLECTION_ID,
+        routeId,
+        data
+      )
+      return { success: true, data: document }
+    } catch (error) {
+      console.error('Error updating route:', error)
+      return { success: false, error: error.message }
+    }
   }
-}
 
-    // Segna un percorso come completato
+  // Segna un percorso come completato
   async completeRoute(routeId) {
     try {
       // Recupera il percorso
@@ -201,29 +188,29 @@ class RoutesService {
       if (!routeResult.success) {
         return routeResult
       }
-    
-    const route = routeResult.data
-    
-    // Aggiorna con dati reali
-    const document = await databases.updateDocument(
-      DATABASE_ID,
-      ROUTES_COLLECTION_ID,
-      routeId,
-      {
-        status: 'completed',
-        completedAt: new Date().toISOString(),
-        actualDistance: route.distance,
-        actualDuration: route.duration,
-        actualAscent: route.ascent || 0,
-        actualDescent: route.descent || 0
-      }
-    )
-    return { success: true, data: document }
-  } catch (error) {
-    logger.error('Error completing route:', error)
-    return { success: false, error: error.message }
+
+      const route = routeResult.data
+
+      // Aggiorna con dati reali
+      const document = await databases.updateDocument(
+        DATABASE_ID,
+        ROUTES_COLLECTION_ID,
+        routeId,
+        {
+          status: 'completed',
+          completedAt: new Date().toISOString(),
+          actualDistance: route.distance,
+          actualDuration: route.duration,
+          actualAscent: route.ascent || 0,
+          actualDescent: route.descent || 0
+        }
+      )
+      return { success: true, data: document }
+    } catch (error) {
+      logger.error('Error completing route:', error)
+      return { success: false, error: error.message }
+    }
   }
- }
 }
 
 export default new RoutesService()

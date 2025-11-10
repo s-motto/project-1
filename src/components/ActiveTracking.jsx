@@ -97,14 +97,12 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     const needsConversion = Array.isArray(firstCoord) && firstCoord[0] < firstCoord[1]
 
     if (needsConversion) {
-      console.log('[ActiveTracking] Converting coordinates from GeoJSON [lon,lat] to Leaflet [lat,lon]')
       return {
         ...routeData,
         coordinates: routeData.coordinates.map(coord => [coord[1], coord[0]])
       }
     }
 
-    console.log('[ActiveTracking] Coordinates already in Leaflet format [lat,lon]')
     return routeData
   }
 
@@ -529,7 +527,6 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
 
     // Se in pausa o non tracking, non registrare punti
     if (!isTrackingRef.current || isPausedRef.current) {
-      console.log('📍 Posizione aggiornata ma tracking in pausa o non attivo')
       return
     }
 
@@ -644,13 +641,10 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
    * Avvia tracking
    */
   const handleStart = async () => {
-    console.log('🚀 handleStart chiamato - isTracking:', isTracking)
-
     if (!isTracking) {
       // Se il percorso non è salvato, salvalo
       if (!savedRouteId) {
         try {
-          console.log('💾 Salvataggio percorso...')
           await ensureRouteSaved()
           toast.info('Percorso salvato automaticamente per il tracking')
         } catch (error) {
@@ -659,7 +653,6 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       }
 
       // Avvia tracking
-      console.log('⏱️ Inizializzazione tracking...')
       startTimeRef.current = Date.now()
       pausedTimeRef.current = 0
       setIsTracking(true)
@@ -669,38 +662,22 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       setShouldCenterMap(true)
       setWaitingForGoodFix(true)
 
-      // Test permessi GPS
-      console.log('🔍 Verifica permessi GPS...')
+      // Verifica permessi GPS
       if (!navigator.geolocation) {
-        console.error('❌ Geolocation non supportato!')
+        logger.error('Geolocation non supportato')
         toast.error('GPS non disponibile su questo dispositivo')
         return
       }
 
       // Avvia GPS
-      console.log('📡 Avvio GPS con geolocation.start()...')
-      const watchId = geolocation.start(
-        handlePositionUpdate,  // ← Passa direttamente la funzione!
+      geolocation.start(
+        handlePositionUpdate,
         handlePositionError,
         {
           enableHighAccuracy: true,
           timeout: 30000,
           maximumAge: 0
         }
-      )
-
-      console.log('📡 GPS watchId:', watchId)
-
-      // Test immediato posizione
-      console.log('🧪 Test getCurrentPosition immediato...')
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          console.log('✅ getCurrentPosition OK:', pos.coords.latitude, pos.coords.longitude)
-        },
-        (err) => {
-          console.error('❌ getCurrentPosition FAIL:', err.code, err.message)
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
       )
     }
   }

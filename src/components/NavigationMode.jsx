@@ -2,17 +2,18 @@ import React, { useState, useEffect, useRef } from 'react' // importo React e gl
 import useNavigation from '../contexts/NavigationContext' // importo il contesto di navigazione
 import { FaLocationArrow, FaRoute, FaFlag, FaExclamationTriangle, FaStop, FaCompass } from 'react-icons/fa' // importo le icone necessarie
 import L from 'leaflet' // importo Leaflet per la gestione della mappa
-import { calculateDistance, formatDistance, KM_TO_MI, M_TO_FT, formatDurationSeconds } from '../utils/gpsUtils' // importo le funzioni di utilità GPS
+import { calculateDistance, formatDistance, formatStepDistance, formatDurationSeconds } from '../utils/gpsUtils' // importo le funzioni di utilità GPS
 import { useSettings } from '../contexts/SettingsContext' // importo il contesto delle impostazioni
 import { useToast } from '../contexts/ToastContext' // importo il contesto delle notifiche toast
 
 // Componente NavigationMode per la modalità di navigazione GPS
 const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, currentPosition, heading }) => {
-  const [currentStepIndex, setCurrentStepIndex] = useState(0) 
-  const [distanceToEnd, setDistanceToEnd] = useState(null)  
+  const [currentStepIndex, setCurrentStepIndex] = useState(0)
+  const [distanceToEnd, setDistanceToEnd] = useState(null)
 
   const [isOffRoute, setIsOffRoute] = useState(false)
   const userMarkerRef = useRef(null)
+  const accuracyCircleRef = useRef(null)
   const { toast } = useToast()
   const { settings } = useSettings()
 
@@ -28,9 +29,9 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
         const coords = layer.feature.geometry.coordinates
         coords.forEach(coord => {
           const dist = calculateDistance(
-            position.lat, 
-            position.lng, 
-            coord[1], 
+            position.lat,
+            position.lng,
+            coord[1],
             coord[0]
           )
           if (dist < minDistance) {
@@ -40,7 +41,7 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
         })
       }
     })
-    
+
     return nearestPoint
   }
 
@@ -83,8 +84,21 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
         `,
         iconSize: [20, 20]
       })
-      userMarkerRef.current = L.marker([lat, lng], { icon: userIcon }).addTo(map) // Aggiungo il marcatore alla mappa
-      L.circle([lat, lng], { radius: accuracy, color: '#3b82f6', fillColor: '#3b82f6', fillOpacity: 0.1, weight: 1 }).addTo(map) // Aggiungo il cerchio di accuratezza
+      userMarkerRef.current = L.marker([lat, lng], { icon: userIcon }).addTo(map)
+    }
+
+    // Aggiorna o crea il cerchio di accuratezza
+    if (accuracyCircleRef.current) {
+      accuracyCircleRef.current.setLatLng([lat, lng])
+      accuracyCircleRef.current.setRadius(accuracy)
+    } else {
+      accuracyCircleRef.current = L.circle([lat, lng], {
+        radius: accuracy,
+        color: '#3b82f6',
+        fillColor: '#3b82f6',
+        fillOpacity: 0.1,
+        weight: 1
+      }).addTo(map)
     }
 
     map.setView([lat, lng], 17, { animate: true })
@@ -95,7 +109,7 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
       setDistanceToEnd(distToEnd)
       if (distToEnd < 0.05) handleArrival()
     }
-    
+
     const nearestPoint = findNearestPointOnRoute({ lat, lng })
     if (nearestPoint && nearestPoint.distance > 0.05) setIsOffRoute(true)
     else setIsOffRoute(false)
@@ -104,12 +118,16 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
 
     // Pulizia del marcatore alla rimozione del componente
   }, [map, routeLayer, endPoint, currentPosition, heading])
- // Pulizia del marcatore alla rimozione del componente
+  // Pulizia del marcatore alla rimozione del componente
   useEffect(() => {
     return () => {
       if (userMarkerRef.current && map) {
         map.removeLayer(userMarkerRef.current)
         userMarkerRef.current = null
+      }
+      if (accuracyCircleRef.current && map) {
+        map.removeLayer(accuracyCircleRef.current)
+        accuracyCircleRef.current = null
       }
     }
   }, [map])
@@ -117,10 +135,10 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
   // Aggiorna lo step corrente basato sulla posizione
   const updateCurrentStep = (position) => {
     // Logica semplificata: avanza allo step successivo quando sei vicino
-    
+
     if (currentStepIndex < instructions.length - 1) {
       // Placeholder: avanza dopo tot metri
-      
+
     }
   }
   // Gestisce l'arrivo a destinazione
@@ -166,7 +184,7 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
             <span>Stop</span>
           </button>
         </div>
-        
+
         {distanceToEnd !== null && (
           <div className="flex items-center space-x-2 text-sm">
             <FaFlag />
@@ -203,15 +221,7 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
               <div className="nav-instruction-meta">
                 <span>
                   <FaRoute className="mr-1" />
-                  {(() => {
-                    const dKm = currentStep.distance || 0
-                    if ((settings?.distanceUnit || 'km') === 'mi') {
-                      if (dKm >= 0.1) return `${(dKm * KM_TO_MI).toFixed(2)} mi`
-                      return `${Math.round(dKm * 1000 * M_TO_FT)} ft`
-                    }
-                    if (dKm >= 1) return `${dKm.toFixed(2)} km`
-                    return `${Math.round(dKm * 1000)} m`
-                  })()}
+                  {formatStepDistance(currentStep.distance || 0, settings?.distanceUnit || 'km')}
                 </span>
                 <span>
                   <FaCompass className="mr-1" />
@@ -233,13 +243,13 @@ const NavigationMode = ({ map, routeLayer, instructions, endPoint, onStop, curre
 
       {/* Remaining Steps Counter */}
       <div className="nav-remaining-card">
-  <div className="nav-remaining-content">
-    <span>Indicazioni rimanenti</span>
-    <span className="nav-remaining-count">
-      {instructions.length - currentStepIndex - 1}
-    </span>
-  </div>
-</div>
+        <div className="nav-remaining-content">
+          <span>Indicazioni rimanenti</span>
+          <span className="nav-remaining-count">
+            {instructions.length - currentStepIndex - 1}
+          </span>
+        </div>
+      </div>
     </div>
   )
 }
@@ -260,7 +270,7 @@ function GPSStatusBadge({ currentPosition }) {
       text = 'GPS: in attesa'
       cls = 'gps-badge waiting'
     }
-// Render badge
+    // Render badge
     return (
       <div className={cls} style={{ padding: '6px 10px', borderRadius: 16, background: '#ffffff', boxShadow: '0 1px 3px rgba(0,0,0,0.08)', display: 'inline-block', fontSize: 14 }}>
         {text}

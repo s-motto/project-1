@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useCallback, useEffect } from 'react'
+import React, { createContext, useContext, useReducer, useCallback, useEffect, useRef } from 'react'
 import useGeolocation from '../hooks/useGeolocation'
 // Contesto per gestire lo stato di navigazione globale
 const NavigationStateContext = createContext(null)
@@ -29,10 +29,12 @@ function reducer(state, action) {
 export function NavigationProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState)
   const geo = useGeolocation()
+  const isNavigatingRef = useRef(false)
 
   // Funzione per avviare la navigazione
   const startNavigation = useCallback(() => {
-    if (state.isNavigating) return
+    if (isNavigatingRef.current) return // Usa ref invece di state per evitare stale closure
+    isNavigatingRef.current = true
     dispatch({ type: 'START' })
     const id = geo.start(
       (pos) => {
@@ -43,9 +45,10 @@ export function NavigationProvider({ children }) {
         dispatch({ type: 'ERROR', payload: err }) // errore di geolocalizzazione
       }
     )
-  }, [geo, state.isNavigating])
+  }, [geo])
   // Funzione per fermare la navigazione
   const stopNavigation = useCallback(() => {
+    isNavigatingRef.current = false
     try { geo.stop() } catch (e) { /* ignore */ }
     dispatch({ type: 'STOP' })
   }, [geo])
