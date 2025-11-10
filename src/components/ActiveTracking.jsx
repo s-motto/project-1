@@ -512,45 +512,41 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
    * Calcola distanza, elevazione, direzione
    */
   const handlePositionUpdate = (position) => {
-    const newPoint = {
-      lat: position.coords.latitude,
-      lng: position.coords.longitude,
-      altitude: position.coords.altitude,
-      timestamp: position.timestamp,
-      accuracy: position.coords.accuracy
-    }
+  const newPoint = {
+    lat: position.coords.latitude,
+    lng: position.coords.longitude,
+    altitude: position.coords.altitude,
+    timestamp: position.timestamp,
+    accuracy: position.coords.accuracy
+  }
 
-    setCurrentPosition(newPoint)
+  setCurrentPosition(newPoint)
 
-    // Calcola direzione dal movimento
-    if (trackPoints.length > 0 && !isPausedRef.current && isTrackingRef.current) {
-      const lastPoint = trackPoints[trackPoints.length - 1]
-      const lat1 = lastPoint.lat * Math.PI / 180
-      const lat2 = newPoint.lat * Math.PI / 180
-      const dLon = (newPoint.lng - lastPoint.lng) * Math.PI / 180
+  // Calcola direzione dal movimento
+  if (trackPoints.length > 0 && !isPausedRef.current && isTrackingRef.current) {
+    const lastPoint = trackPoints[trackPoints.length - 1]
+    const lat1 = lastPoint.lat * Math.PI / 180
+    const lat2 = newPoint.lat * Math.PI / 180
+    const dLon = (newPoint.lng - lastPoint.lng) * Math.PI / 180
 
-      const y = Math.sin(dLon) * Math.cos(lat2)
-      const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon)
-      const bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360
+    const y = Math.sin(dLon) * Math.cos(lat2)
+    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon)
+    const bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360
 
-      setHeading(bearing)
-    }
+    setHeading(bearing)
+  }
 
-    setGpsAccuracy(position.coords.accuracy)
+  setGpsAccuracy(position.coords.accuracy)
 
-    // Se accuracy è buona, considera GPS "fixed"
-    if (position.coords.accuracy < (settings?.gpsAccuracyMax || 50)) {
-      setWaitingForGoodFix(false)
-    }
+  if (position.coords.accuracy > (settings?.gpsAccuracyMax || 2000)) {
+    setWaitingForGoodFix(false)
+  }
 
-    // Se in pausa o non tracking, non registrare punti
-    if (!isTrackingRef.current || isPausedRef.current) return
-
-    // Ignora punti con accuratezza troppo bassa
-    if (position.coords.accuracy > (settings?.gpsAccuracyMax || 50)) {
-      logger.warn('GPS accuracy too low:', position.coords.accuracy)
-      return
-    }
+  // Se in pausa o non tracking, non registrare punti
+  if (!isTrackingRef.current || isPausedRef.current) {
+    console.log('📍 Posizione aggiornata ma tracking in pausa o non attivo')
+    return
+  }
 
     // Aggiungi punto alla traccia
     if (trackPoints.length === 0) {
@@ -644,40 +640,68 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   /**
    * Avvia tracking
    */
-  const handleStart = async () => {
-    if (!isTracking) {
-      // Se il percorso non è salvato, salvalo
-      if (!savedRouteId) {
-        try {
-          await ensureRouteSaved()
-          toast.info('Percorso salvato automaticamente per il tracking')
-        } catch (error) {
-          toast.error('Errore nel salvare il percorso: ' + error.message)
-        }
+ const handleStart = async () => {
+  console.log('🚀 handleStart chiamato - isTracking:', isTracking)
+  
+  if (!isTracking) {
+    // Se il percorso non è salvato, salvalo
+    if (!savedRouteId) {
+      try {
+        console.log('💾 Salvataggio percorso...')
+        await ensureRouteSaved()
+        toast.info('Percorso salvato automaticamente per il tracking')
+      } catch (error) {
+        toast.error('Errore nel salvare il percorso: ' + error.message)
       }
-
-      // Avvia tracking
-      startTimeRef.current = Date.now()
-      pausedTimeRef.current = 0
-      setIsTracking(true)
-      setIsPaused(false)
-      isTrackingRef.current = true
-      isPausedRef.current = false
-      setShouldCenterMap(true)
-      setWaitingForGoodFix(true)
-
-      // Avvia GPS
-      geolocation.start(
-        handlePositionUpdate,
-        handlePositionError,
-        {
-          enableHighAccuracy: true,
-          timeout: 30000,
-          maximumAge: 0
-        }
-      )
     }
+
+    // Avvia tracking
+    console.log('⏱️ Inizializzazione tracking...')
+    startTimeRef.current = Date.now()
+    pausedTimeRef.current = 0
+    setIsTracking(true)
+    setIsPaused(false)
+    isTrackingRef.current = true
+    isPausedRef.current = false
+    setShouldCenterMap(true)
+    setWaitingForGoodFix(true)
+
+    // Test permessi GPS
+    console.log('🔍 Verifica permessi GPS...')
+    if (!navigator.geolocation) {
+      console.error('❌ Geolocation non supportato!')
+      toast.error('GPS non disponibile su questo dispositivo')
+      return
+    }
+
+    // Avvia GPS
+    console.log('📡 Avvio GPS con geolocation.start()...')
+    const watchId = geolocation.start(
+  handlePositionUpdate,  // ← Passa direttamente la funzione!
+  handlePositionError,
+  {
+    enableHighAccuracy: true,
+    timeout: 30000,
+    maximumAge: 0
   }
+)
+    
+    console.log('📡 GPS watchId:', watchId)
+    
+    // Test immediato posizione
+    console.log('🧪 Test getCurrentPosition immediato...')
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        console.log('✅ getCurrentPosition OK:', pos.coords.latitude, pos.coords.longitude)
+      },
+      (err) => {
+        console.error('❌ getCurrentPosition FAIL:', err.code, err.message)
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    )
+  }
+}
+
 
   /**
    * Pausa tracking
