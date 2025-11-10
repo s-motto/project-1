@@ -538,7 +538,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
 
   setGpsAccuracy(position.coords.accuracy)
 
-  if (position.coords.accuracy > (settings?.gpsAccuracyMax || 2000)) {
+  if (position.coords.accuracy > (settings?.gpsAccuracyMax || 150)) {
     setWaitingForGoodFix(false)
   }
 
@@ -564,8 +564,8 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
         newPoint.lat, newPoint.lng
       )
 
-      // Aggiungi solo se supera la distanza minima (default 5m)
-      const minDistance = (settings?.minPointDistanceMeters || 5) / 1000 // converti in km
+      // Aggiungi solo se supera la distanza minima
+      const minDistance = (settings?.minPointDistanceMeters || 3) / 1000 // converti in km
 
       if (dist >= minDistance) {
         setTrackPoints(prev => [...prev, newPoint])
