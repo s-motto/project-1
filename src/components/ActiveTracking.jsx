@@ -16,7 +16,7 @@
 // Mobile-first: Layout ottimizzato per schermi piccoli
 // ==========================================
 
-import React, { useState, useEffect, useRef, useMemo } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import {
@@ -512,41 +512,41 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
    * Calcola distanza, elevazione, direzione
    */
   const handlePositionUpdate = (position) => {
-  const newPoint = {
-    lat: position.coords.latitude,
-    lng: position.coords.longitude,
-    altitude: position.coords.altitude,
-    timestamp: position.timestamp,
-    accuracy: position.coords.accuracy
-  }
+    const newPoint = {
+      lat: position.coords.latitude,
+      lng: position.coords.longitude,
+      altitude: position.coords.altitude,
+      timestamp: position.timestamp,
+      accuracy: position.coords.accuracy
+    }
 
-  setCurrentPosition(newPoint)
+    setCurrentPosition(newPoint)
 
-  // Calcola direzione dal movimento
-  if (trackPoints.length > 0 && !isPausedRef.current && isTrackingRef.current) {
-    const lastPoint = trackPoints[trackPoints.length - 1]
-    const lat1 = lastPoint.lat * Math.PI / 180
-    const lat2 = newPoint.lat * Math.PI / 180
-    const dLon = (newPoint.lng - lastPoint.lng) * Math.PI / 180
+    // Calcola direzione dal movimento
+    if (trackPoints.length > 0 && !isPausedRef.current && isTrackingRef.current) {
+      const lastPoint = trackPoints[trackPoints.length - 1]
+      const lat1 = lastPoint.lat * Math.PI / 180
+      const lat2 = newPoint.lat * Math.PI / 180
+      const dLon = (newPoint.lng - lastPoint.lng) * Math.PI / 180
 
-    const y = Math.sin(dLon) * Math.cos(lat2)
-    const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon)
-    const bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360
+      const y = Math.sin(dLon) * Math.cos(lat2)
+      const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon)
+      const bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360
 
-    setHeading(bearing)
-  }
+      setHeading(bearing)
+    }
 
-  setGpsAccuracy(position.coords.accuracy)
+    setGpsAccuracy(position.coords.accuracy)
 
-  if (position.coords.accuracy > (settings?.gpsAccuracyMax || 150)) {
-    setWaitingForGoodFix(false)
-  }
+    if (position.coords.accuracy > (settings?.gpsAccuracyMax || 150)) {
+      setWaitingForGoodFix(false)
+    }
 
-  // Se in pausa o non tracking, non registrare punti
-  if (!isTrackingRef.current || isPausedRef.current) {
-    console.log('📍 Posizione aggiornata ma tracking in pausa o non attivo')
-    return
-  }
+    // Se in pausa o non tracking, non registrare punti
+    if (!isTrackingRef.current || isPausedRef.current) {
+      console.log('📍 Posizione aggiornata ma tracking in pausa o non attivo')
+      return
+    }
 
     // Aggiungi punto alla traccia
     if (trackPoints.length === 0) {
@@ -640,67 +640,67 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   /**
    * Avvia tracking
    */
- const handleStart = async () => {
-  console.log('🚀 handleStart chiamato - isTracking:', isTracking)
-  
-  if (!isTracking) {
-    // Se il percorso non è salvato, salvalo
-    if (!savedRouteId) {
-      try {
-        console.log('💾 Salvataggio percorso...')
-        await ensureRouteSaved()
-        toast.info('Percorso salvato automaticamente per il tracking')
-      } catch (error) {
-        toast.error('Errore nel salvare il percorso: ' + error.message)
+  const handleStart = async () => {
+    console.log('🚀 handleStart chiamato - isTracking:', isTracking)
+
+    if (!isTracking) {
+      // Se il percorso non è salvato, salvalo
+      if (!savedRouteId) {
+        try {
+          console.log('💾 Salvataggio percorso...')
+          await ensureRouteSaved()
+          toast.info('Percorso salvato automaticamente per il tracking')
+        } catch (error) {
+          toast.error('Errore nel salvare il percorso: ' + error.message)
+        }
       }
+
+      // Avvia tracking
+      console.log('⏱️ Inizializzazione tracking...')
+      startTimeRef.current = Date.now()
+      pausedTimeRef.current = 0
+      setIsTracking(true)
+      setIsPaused(false)
+      isTrackingRef.current = true
+      isPausedRef.current = false
+      setShouldCenterMap(true)
+      setWaitingForGoodFix(true)
+
+      // Test permessi GPS
+      console.log('🔍 Verifica permessi GPS...')
+      if (!navigator.geolocation) {
+        console.error('❌ Geolocation non supportato!')
+        toast.error('GPS non disponibile su questo dispositivo')
+        return
+      }
+
+      // Avvia GPS
+      console.log('📡 Avvio GPS con geolocation.start()...')
+      const watchId = geolocation.start(
+        handlePositionUpdate,  // ← Passa direttamente la funzione!
+        handlePositionError,
+        {
+          enableHighAccuracy: true,
+          timeout: 30000,
+          maximumAge: 0
+        }
+      )
+
+      console.log('📡 GPS watchId:', watchId)
+
+      // Test immediato posizione
+      console.log('🧪 Test getCurrentPosition immediato...')
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          console.log('✅ getCurrentPosition OK:', pos.coords.latitude, pos.coords.longitude)
+        },
+        (err) => {
+          console.error('❌ getCurrentPosition FAIL:', err.code, err.message)
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      )
     }
-
-    // Avvia tracking
-    console.log('⏱️ Inizializzazione tracking...')
-    startTimeRef.current = Date.now()
-    pausedTimeRef.current = 0
-    setIsTracking(true)
-    setIsPaused(false)
-    isTrackingRef.current = true
-    isPausedRef.current = false
-    setShouldCenterMap(true)
-    setWaitingForGoodFix(true)
-
-    // Test permessi GPS
-    console.log('🔍 Verifica permessi GPS...')
-    if (!navigator.geolocation) {
-      console.error('❌ Geolocation non supportato!')
-      toast.error('GPS non disponibile su questo dispositivo')
-      return
-    }
-
-    // Avvia GPS
-    console.log('📡 Avvio GPS con geolocation.start()...')
-    const watchId = geolocation.start(
-  handlePositionUpdate,  // ← Passa direttamente la funzione!
-  handlePositionError,
-  {
-    enableHighAccuracy: true,
-    timeout: 30000,
-    maximumAge: 0
   }
-)
-    
-    console.log('📡 GPS watchId:', watchId)
-    
-    // Test immediato posizione
-    console.log('🧪 Test getCurrentPosition immediato...')
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        console.log('✅ getCurrentPosition OK:', pos.coords.latitude, pos.coords.longitude)
-      },
-      (err) => {
-        console.error('❌ getCurrentPosition FAIL:', err.code, err.message)
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    )
-  }
-}
 
 
   /**
@@ -734,92 +734,92 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     setIsSaving(true)
 
     try {
-  // Ferma GPS
-  geolocation.stop()
-  setIsTracking(false)
-  isTrackingRef.current = false
+      // Ferma GPS
+      geolocation.stop()
+      setIsTracking(false)
+      isTrackingRef.current = false
 
-  // Assicura che il percorso sia salvato
-  const routeId = await ensureRouteSaved()
+      // Assicura che il percorso sia salvato
+      const routeId = await ensureRouteSaved()
 
-  // Prepara dati da salvare
-  const completedData = {
-    status: 'completed',
-    completedAt: new Date().toISOString(),
-    actualDistance: parseFloat(distance.toFixed(2)),
-    actualDuration: Math.floor(elapsedTime / 60),
-    actualAscent: elevationGain,
-    actualDescent: elevationLoss,
-    actualCoordinates: JSON.stringify(trackPoints)
-  }
+      // Prepara dati da salvare
+      const completedData = {
+        status: 'completed',
+        completedAt: new Date().toISOString(),
+        actualDistance: parseFloat(distance.toFixed(2)),
+        actualDuration: Math.floor(elapsedTime / 60),
+        actualAscent: elevationGain,
+        actualDescent: elevationLoss,
+        actualCoordinates: JSON.stringify(trackPoints)
+      }
 
-  // Aggiorna il percorso
-  const result = await routesService.updateRoute(routeId, completedData)
+      // Aggiorna il percorso
+      const result = await routesService.updateRoute(routeId, completedData)
 
-  if (result.success) {
-    toast.success('Percorso completato e salvato!')
-    
-    // 🎮 AGGIORNA ACHIEVEMENTS
-    try {
-      // Carica percorsi completati aggiornati
-      const completedRoutes = await routesService.getCompletedRoutes(user.$id)
-      if (completedRoutes.success) {
-        // Calcola nuove statistiche
-        const statsService = await import('../services/statsService').then(m => m.default)
-        const stats = statsService.calculateStats(completedRoutes.data)
-        
-        // Aggiorna achievements
-        const achievementsService = await import('../services/achievementsService').then(m => m.default)
-        const achievementResult = await achievementsService.updateAchievements(user.$id, stats, completedRoutes.data)
-        
-        if (achievementResult.success && achievementResult.data.newBadges.length > 0) {
-          // Mostra toast per ogni badge sbloccato
-          achievementResult.data.newBadges.forEach(badgeId => {
-            const badge = achievementsService.getBadgeInfo(badgeId)
-            toast.success(`🏆 Badge sbloccato: ${badge.name}!`)
-          })
-        }
-        
-       if (achievementResult.success && achievementResult.data.leveledUp) {
-          const levelInfo = achievementsService.getLevelInfo(achievementResult.data.currentLevel)
-          toast.success(`🎉 Livello ${levelInfo.level}: ${levelInfo.name}!`)
-        }
+      if (result.success) {
+        toast.success('Percorso completato e salvato!')
 
-        // 🔥 Notifiche Streak  
-        if (achievementResult.success) {
-          if (achievementResult.data.streakLost) {
-            toast.error('💔 Streak perso! Riparti da oggi!')
-          } else if (achievementResult.data.newStreak > 1) {
-            toast.success(`🔥 Streak: ${achievementResult.data.newStreak} giorni consecutivi!`)
-          }
-        }
+        // 🎮 AGGIORNA ACHIEVEMENTS
+        try {
+          // Carica percorsi completati aggiornati
+          const completedRoutes = await routesService.getCompletedRoutes(user.$id)
+          if (completedRoutes.success) {
+            // Calcola nuove statistiche
+            const statsService = await import('../services/statsService').then(m => m.default)
+            const stats = statsService.calculateStats(completedRoutes.data)
 
-        // 🎯 Notifiche Sfide Completate
-        if (achievementResult.success && achievementResult.data.challengesCompleted?.length > 0) {
-          achievementResult.data.challengesCompleted.forEach(challengeId => {
-            const challenges = achievementsService.getAllChallenges()
-            const challenge = challenges.find(c => c.id === challengeId)
-            if (challenge) {
-              toast.success(`🎯 Sfida completata: ${challenge.name}!`)
+            // Aggiorna achievements
+            const achievementsService = await import('../services/achievementsService').then(m => m.default)
+            const achievementResult = await achievementsService.updateAchievements(user.$id, stats, completedRoutes.data)
+
+            if (achievementResult.success && achievementResult.data.newBadges.length > 0) {
+              // Mostra toast per ogni badge sbloccato
+              achievementResult.data.newBadges.forEach(badgeId => {
+                const badge = achievementsService.getBadgeInfo(badgeId)
+                toast.success(`🏆 Badge sbloccato: ${badge.name}!`)
+              })
             }
-          })
+
+            if (achievementResult.success && achievementResult.data.leveledUp) {
+              const levelInfo = achievementsService.getLevelInfo(achievementResult.data.currentLevel)
+              toast.success(`🎉 Livello ${levelInfo.level}: ${levelInfo.name}!`)
+            }
+
+            // 🔥 Notifiche Streak  
+            if (achievementResult.success) {
+              if (achievementResult.data.streakLost) {
+                toast.error('💔 Streak perso! Riparti da oggi!')
+              } else if (achievementResult.data.newStreak > 1) {
+                toast.success(`🔥 Streak: ${achievementResult.data.newStreak} giorni consecutivi!`)
+              }
+            }
+
+            // 🎯 Notifiche Sfide Completate
+            if (achievementResult.success && achievementResult.data.challengesCompleted?.length > 0) {
+              achievementResult.data.challengesCompleted.forEach(challengeId => {
+                const challenges = achievementsService.getAllChallenges()
+                const challenge = challenges.find(c => c.id === challengeId)
+                if (challenge) {
+                  toast.success(`🎯 Sfida completata: ${challenge.name}!`)
+                }
+              })
+            }
+          }
+        } catch (error) {
+          logger.error('Error updating achievements:', error)
         }
+
+        if (onComplete) onComplete()
+        onClose()
+      } else {
+        throw new Error(result.error)
       }
     } catch (error) {
-      logger.error('Error updating achievements:', error)
+      logger.error('Error saving track:', error)
+      toast.error('Errore nel salvare il percorso: ' + error.message)
+    } finally {
+      setIsSaving(false)
     }
-    
-    if (onComplete) onComplete()
-    onClose()
-  } else {
-    throw new Error(result.error)
-  }
-} catch (error) {
-  logger.error('Error saving track:', error)
-  toast.error('Errore nel salvare il percorso: ' + error.message)
-} finally {
-  setIsSaving(false)
-}
   }
 
   /**
