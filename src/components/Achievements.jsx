@@ -141,15 +141,18 @@ const Achievements = ({ onClose, stats }) => {
                 {!progress.isMaxLevel ? (
                   <>
                     <div 
-                      className="w-full rounded-full h-2 mb-2 overflow-hidden"
-                      style={{ backgroundColor: 'var(--bg-secondary)' }}
+                      className="w-full rounded-full h-2 mb-2 relative"
+                      style={{ 
+                        backgroundColor: '#e5e7eb',
+                        overflow: 'hidden'
+                      }}
                     >
                       <div 
-                        className="h-full rounded-full transition-all duration-500"
+                        className="h-full rounded-full transition-all duration-500 absolute top-0 left-0"
                         style={{ 
-                          width: `${progress.percentage}%`,
-                          background: 'linear-gradient(90deg, var(--gradient-start), var(--gradient-end))',
-                          minWidth: progress.percentage > 0 ? '2%' : '0%'
+                          width: `${Math.max(progress.percentage, 0)}%`,
+                          background: 'linear-gradient(90deg, #A9CBB7, #5A8370)',
+                          minWidth: progress.percentage > 0 ? '4px' : '0'
                         }}
                       />
                     </div>

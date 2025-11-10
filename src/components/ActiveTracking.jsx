@@ -756,9 +756,29 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
           })
         }
         
-        if (achievementResult.success && achievementResult.data.leveledUp) {
+       if (achievementResult.success && achievementResult.data.leveledUp) {
           const levelInfo = achievementsService.getLevelInfo(achievementResult.data.currentLevel)
           toast.success(`🎉 Livello ${levelInfo.level}: ${levelInfo.name}!`)
+        }
+
+        // 🔥 Notifiche Streak  
+        if (achievementResult.success) {
+          if (achievementResult.data.streakLost) {
+            toast.error('💔 Streak perso! Riparti da oggi!')
+          } else if (achievementResult.data.newStreak > 1) {
+            toast.success(`🔥 Streak: ${achievementResult.data.newStreak} giorni consecutivi!`)
+          }
+        }
+
+        // 🎯 Notifiche Sfide Completate
+        if (achievementResult.success && achievementResult.data.challengesCompleted?.length > 0) {
+          achievementResult.data.challengesCompleted.forEach(challengeId => {
+            const challenges = achievementsService.getAllChallenges()
+            const challenge = challenges.find(c => c.id === challengeId)
+            if (challenge) {
+              toast.success(`🎯 Sfida completata: ${challenge.name}!`)
+            }
+          })
         }
       }
     } catch (error) {
