@@ -511,7 +511,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
    * Gestisce l'aggiornamento della posizione GPS
    * Calcola distanza, elevazione, direzione
    */
-  const handlePositionUpdate = (position) => {
+  const handlePositionUpdate = useCallback((position) => {
     const newPoint = {
       lat: position.coords.latitude,
       lng: position.coords.longitude,
@@ -521,21 +521,6 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     }
 
     setCurrentPosition(newPoint)
-
-    // Calcola direzione dal movimento
-    if (trackPoints.length > 0 && !isPausedRef.current && isTrackingRef.current) {
-      const lastPoint = trackPoints[trackPoints.length - 1]
-      const lat1 = lastPoint.lat * Math.PI / 180
-      const lat2 = newPoint.lat * Math.PI / 180
-      const dLon = (newPoint.lng - lastPoint.lng) * Math.PI / 180
-
-      const y = Math.sin(dLon) * Math.cos(lat2)
-      const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon)
-      const bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360
-
-      setHeading(bearing)
-    }
-
     setGpsAccuracy(position.coords.accuracy)
 
     if (position.coords.accuracy > (settings?.gpsAccuracyMax || 150)) {
@@ -548,27 +533,41 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       return
     }
 
-    // Aggiungi punto alla traccia
-    if (trackPoints.length === 0) {
-      // Primo punto
-      setTrackPoints([newPoint])
-      if (newPoint.altitude !== null) {
-        lastElevation.current = newPoint.altitude
+    // Aggiungi punto alla traccia usando functional update
+    setTrackPoints(prevTrackPoints => {
+      // Calcola direzione dal movimento
+      if (prevTrackPoints.length > 0 && !isPausedRef.current && isTrackingRef.current) {
+        const lastPoint = prevTrackPoints[prevTrackPoints.length - 1]
+        const lat1 = lastPoint.lat * Math.PI / 180
+        const lat2 = newPoint.lat * Math.PI / 180
+        const dLon = (newPoint.lng - lastPoint.lng) * Math.PI / 180
+
+        const y = Math.sin(dLon) * Math.cos(lat2)
+        const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon)
+        const bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360
+
+        setHeading(bearing)
       }
-    } else {
-      const lastPoint = trackPoints[trackPoints.length - 1]
+
+      // Primo punto
+      if (prevTrackPoints.length === 0) {
+        if (newPoint.altitude !== null) {
+          lastElevation.current = newPoint.altitude
+        }
+        return [newPoint]
+      }
 
       // Calcola distanza dal punto precedente
+      const lastPoint = prevTrackPoints[prevTrackPoints.length - 1]
       const dist = calculateDistance(
         lastPoint.lat, lastPoint.lng,
         newPoint.lat, newPoint.lng
       )
 
       // Aggiungi solo se supera la distanza minima
-      const minDistance = (settings?.minPointDistanceMeters || 3) / 1000 // converti in km
+      const minDistance = (settings?.minPointDistanceMeters || 3) / 1000
 
       if (dist >= minDistance) {
-        setTrackPoints(prev => [...prev, newPoint])
         setDistance(prev => prev + dist)
 
         // Calcola dislivello
@@ -583,9 +582,13 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
 
           lastElevation.current = newPoint.altitude
         }
+
+        return [...prevTrackPoints, newPoint]
       }
-    }
-  }
+
+      return prevTrackPoints
+    })
+  }, [settings?.gpsAccuracyMax, settings?.minPointDistanceMeters])
 
   /**
    * Gestisce errori GPS
