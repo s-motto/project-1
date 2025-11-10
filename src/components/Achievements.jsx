@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { FaTimes, FaTrophy, FaStar, FaLock, FaSpinner, FaFire } from 'react-icons/fa'
+import { FaTimes, FaTrophy, FaStar, FaLock, FaSpinner, FaFire, FaCheckCircle, FaClock } from 'react-icons/fa'
 import { useAuth } from '../contexts/AuthContext'
 import achievementsService from '../services/achievementsService'
 import logger from '../utils/logger'
@@ -78,15 +78,17 @@ const Achievements = ({ onClose, stats }) => {
   const unlockedCount = badgesWithStatus.filter(b => b.isUnlocked).length
   const totalBadges = badgesWithStatus.length
 
-  // 🔥 Dati Streak
   const currentStreak = achievements?.currentStreak || 0
   const longestStreak = achievements?.longestStreak || 0
   const isStreakActive = currentStreak > 0
 
+  const dailyChallenges = achievements?.dailyChallenges || []
+  const completedChallengesCount = dailyChallenges.filter(c => c.completed).length
+  const allChallengesCompleted = dailyChallenges.length > 0 && completedChallengesCount === dailyChallenges.length
+
   return (
     <div className="modal-overlay">
       <div className="modal-content max-w-xl">
-        {/* Header */}
         <div className="modal-header-primary">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold flex items-center gap-2">
@@ -99,7 +101,6 @@ const Achievements = ({ onClose, stats }) => {
           </div>
         </div>
 
-        {/* Content */}
         <div className="modal-body">
           {loading ? (
             <div className="text-center py-12">
@@ -137,7 +138,7 @@ const Achievements = ({ onClose, stats }) => {
                   </div>
                 </div>
 
-                {/* Progress Bar */}
+                {/* PROGRESS BAR FIXATA */}
                 {!progress.isMaxLevel ? (
                   <>
                     <div 
@@ -171,9 +172,8 @@ const Achievements = ({ onClose, stats }) => {
                 )}
               </div>
 
-              {/* 🔥 SEZIONE STREAK - NUOVA */}
-              <div
-                className="card p-4"
+              {/* Sezione Streak */}
+              <div className="card p-4"
                 style={{
                   background: isStreakActive
                     ? 'linear-gradient(135deg, #FF6B35 0%, #F7931E 100%)'
@@ -182,132 +182,144 @@ const Achievements = ({ onClose, stats }) => {
                 }}
               >
                 <div className="flex items-center justify-between mb-3">
-                  <h3
-                    className="text-base font-bold"
-                    style={{
-                      color: isStreakActive ? '#fff' : 'var(--text-primary)'
-                    }}
-                  >
-                    🔥 Il Tuo Streak
+                  <h3 className="text-base font-bold" style={{ color: isStreakActive ? '#fff' : 'var(--text-primary)' }}>
+                    🔥 Streak
                   </h3>
-                  <FaFire
-                    className="text-2xl"
-                    style={{
-                      color: isStreakActive ? '#FFE66D' : '#ccc'
-                    }}
-                  />
+                  <FaFire className="text-2xl" style={{ color: isStreakActive ? '#FFE66D' : '#ccc' }} />
                 </div>
 
-                {/* Streak Corrente */}
-                <div className="text-center mb-3">
-                  <div
-                    className="text-4xl font-bold"
-                    style={{
-                      color: isStreakActive ? '#fff' : 'var(--text-primary)'
-                    }}
-                  >
+                <div className="flex items-baseline gap-2 mb-2">
+                  <span className="text-4xl font-bold" style={{ color: isStreakActive ? '#fff' : 'var(--text-primary)' }}>
                     {currentStreak}
-                  </div>
-                  <div
-                    className="text-sm"
-                    style={{
-                      color: isStreakActive ? '#fff' : 'var(--text-secondary)',
-                      opacity: isStreakActive ? 0.9 : 0.7
-                    }}
-                  >
+                  </span>
+                  <span className="text-base" style={{ color: isStreakActive ? 'rgba(255,255,255,0.8)' : 'var(--text-secondary)' }}>
                     {currentStreak === 1 ? 'giorno consecutivo' : 'giorni consecutivi'}
-                  </div>
-                </div>
-
-                {/* Record Personale */}
-                <div
-                  className="flex items-center justify-center gap-2 pt-3 border-t"
-                  style={{
-                    borderColor: isStreakActive ? 'rgba(255, 255, 255, 0.2)' : 'var(--border-color)'
-                  }}
-                >
-                  <FaTrophy
-                    className="text-sm"
-                    style={{
-                      color: isStreakActive ? '#FFE66D' : 'var(--text-secondary)'
-                    }}
-                  />
-                  <span
-                    className="text-xs font-medium"
-                    style={{
-                      color: isStreakActive ? '#fff' : 'var(--text-secondary)',
-                      opacity: isStreakActive ? 0.9 : 0.7
-                    }}
-                  >
-                    Record: {longestStreak} {longestStreak === 1 ? 'giorno' : 'giorni'}
                   </span>
                 </div>
 
-                {/* Messaggio motivazionale se streak = 0 */}
-                {!isStreakActive && currentStreak === 0 && (
-                  <div
-                    className="text-xs mt-3 text-center"
-                    style={{
-                      color: 'var(--text-secondary)',
-                      opacity: 0.7
-                    }}
-                  >
+                <div className="pt-2 border-t" style={{ borderColor: isStreakActive ? 'rgba(255,255,255,0.2)' : 'var(--border-color)' }}>
+                  <div className="flex items-center justify-between text-sm">
+                    <span style={{ color: isStreakActive ? 'rgba(255,255,255,0.9)' : 'var(--text-secondary)' }}>
+                      🏆 Record personale
+                    </span>
+                    <span className="font-bold" style={{ color: isStreakActive ? '#FFE66D' : 'var(--text-primary)' }}>
+                      {longestStreak} {longestStreak === 1 ? 'giorno' : 'giorni'}
+                    </span>
+                  </div>
+                </div>
+
+                {!isStreakActive && (
+                  <div className="text-xs mt-3 pt-3 border-t" style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)', opacity: 0.7 }}>
                     💡 Completa un percorso oggi per iniziare lo streak!
                   </div>
                 )}
               </div>
 
+              {/* SEZIONE SFIDE MIGLIORATA */}
+              {dailyChallenges.length > 0 && (
+                <div className="card p-4"
+                  style={{
+                    background: allChallengesCompleted
+                      ? 'linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%)'
+                      : 'var(--bg-card)',
+                    border: allChallengesCompleted ? 'none' : '2px solid var(--border-color)'
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-base font-bold" style={{ color: allChallengesCompleted ? '#fff' : 'var(--text-primary)' }}>
+                      🎯 Sfide del Giorno
+                    </h3>
+                    <div className="flex items-center gap-1 text-sm font-bold"
+                      style={{ color: allChallengesCompleted ? '#FFE66D' : 'var(--color-green)' }}
+                    >
+                      {completedChallengesCount}/{dailyChallenges.length}
+                      {allChallengesCompleted && <FaTrophy className="ml-1" />}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {dailyChallenges.map((challenge) => (
+                      <div key={challenge.id} className="flex items-start gap-3">
+                        <div className="flex-shrink-0 mt-1">
+                          {challenge.completed ? (
+                            <FaCheckCircle className="text-lg" style={{ color: allChallengesCompleted ? '#FFE66D' : '#4CAF50' }} />
+                          ) : (
+                            <FaClock className="text-lg" style={{ color: allChallengesCompleted ? 'rgba(255,255,255,0.5)' : 'var(--text-secondary)', opacity: 0.5 }} />
+                          )}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xl">{challenge.icon}</span>
+                            <span className="font-bold text-sm" style={{ color: allChallengesCompleted ? '#fff' : 'var(--text-primary)' }}>
+                              {challenge.name}
+                            </span>
+                          </div>
+                          <p className="text-xs leading-relaxed" style={{ color: allChallengesCompleted ? 'rgba(255,255,255,0.9)' : 'var(--text-secondary)' }}>
+                            {challenge.description}
+                          </p>
+                        </div>
+
+                        {challenge.completed && (
+                          <div className="flex-shrink-0">
+                            <div className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold"
+                              style={{
+                                backgroundColor: allChallengesCompleted ? 'rgba(255,230,109,0.3)' : 'rgba(76,175,80,0.2)',
+                                color: allChallengesCompleted ? '#FFE66D' : '#4CAF50'
+                              }}
+                            >
+                              ✓
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {allChallengesCompleted && (
+                    <div className="text-xs mt-4 pt-3 border-t border-white/20 text-center font-bold" style={{ color: '#FFE66D' }}>
+                      🎉 Tutte le sfide completate oggi!
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Sezione Badge */}
-              <div>
-                <h3 className="text-base font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
-                  Badge Sbloccati ({unlockedCount}/{totalBadges})
-                </h3>
+              <div className="card p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>
+                    🏆 Badge Sbloccati
+                  </h3>
+                  <span className="text-sm font-bold" style={{ color: 'var(--color-green)' }}>
+                    {unlockedCount}/{totalBadges}
+                  </span>
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
-                  {badgesWithStatus.map(badge => (
+                  {badgesWithStatus.map((badge) => (
                     <div
                       key={badge.id}
-                      className={`card p-3 text-center transition-all ${
-                        badge.isUnlocked 
-                          ? 'border-2 border-green-500' 
-                          : 'opacity-50 grayscale'
-                      }`}
+                      className={`p-3 rounded-lg transition-all ${badge.isUnlocked ? 'card-hover' : ''}`}
+                      style={{
+                        backgroundColor: badge.isUnlocked ? 'var(--bg-card)' : 'var(--bg-secondary)',
+                        border: `2px solid ${badge.isUnlocked ? 'var(--color-green)' : 'var(--border-color)'}`,
+                        opacity: badge.isUnlocked ? 1 : 0.5
+                      }}
                     >
-                      <div className="text-3xl mb-2">
-                        {badge.isUnlocked ? badge.icon : <FaLock className="text-gray-400 mx-auto text-2xl" />}
-                      </div>
-                      <div 
-                        className="font-semibold text-xs mb-1" 
-                        style={{ color: 'var(--text-primary)' }}
-                      >
-                        {badge.name}
-                      </div>
-                      <div 
-                        className="text-xs leading-tight" 
-                        style={{ color: 'var(--text-secondary)' }}
-                      >
-                        {badge.description}
-                      </div>
-                      {badge.isUnlocked && (
-                        <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                          ✓ Sbloccato
+                      <div className="text-center">
+                        <div className="text-3xl mb-2">
+                          {badge.isUnlocked ? badge.icon : <FaLock style={{ color: 'var(--text-secondary)' }} />}
                         </div>
-                      )}
+                        <div className="text-xs font-bold mb-1" style={{ color: badge.isUnlocked ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                          {badge.isUnlocked ? badge.name.split(' ').slice(1).join(' ') : '???'}
+                        </div>
+                        <div className="text-xs" style={{ color: 'var(--text-secondary)', opacity: 0.7 }}>
+                          {badge.isUnlocked ? badge.description : 'Badge bloccato'}
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
-              </div>
-
-              {/* Info Punti */}
-              <div className="card p-3" style={{ backgroundColor: 'var(--card-bg)' }}>
-                <h4 className="font-semibold text-sm mb-2" style={{ color: 'var(--text-primary)' }}>
-                  💡 Come Guadagnare Punti
-                </h4>
-                <ul className="text-xs space-y-1" style={{ color: 'var(--text-secondary)' }}>
-                  <li>• 1 km percorso = 10 punti</li>
-                  <li>• 100m dislivello = 5 punti</li>
-                  <li>• Percorso completato = 50 punti</li>
-                  <li>• Badge sbloccato = 100 punti</li>
-                </ul>
               </div>
             </div>
           )}

@@ -215,13 +215,10 @@ const Dashboard = ({ onClose }) => {
                       onClick={() => setShowAchievements(true)}
                     />
 
-                    {/* Daily Challenges Widget - Solo se ci sono stats */}
-                    {stats && (
-                      <DailyChallengesWidget
-                        stats={stats}
-                        achievements={achievements}
-                      />
-                    )}
+                    {/* Daily Challenges Widget */}
+                    <DailyChallengesWidget
+                      achievements={achievements}
+                    />
                   </div>
                 </div>
               )}

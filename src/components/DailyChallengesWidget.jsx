@@ -1,160 +1,134 @@
 import React from 'react'
-import { FaCheckCircle, FaClock } from 'react-icons/fa'
+import { FaCheckCircle, FaClock, FaTrophy } from 'react-icons/fa'
 
-/**
- * Widget Sfide Giornaliere - Mostra 3 sfide del giorno con progress
- * 
- * @param {Object} props
- * @param {Object} props.stats - Statistiche utente (totalKm, totalAscent, ecc.)
- * @param {Object} props.achievements - Dati achievements
- */
-const DailyChallengesWidget = ({ stats, achievements }) => {
-  if (!stats) return null
+const DailyChallengesWidget = ({ achievements, onClick }) => {
+  if (!achievements) return null
 
-  // Definizione delle 3 sfide giornaliere (per ora fisse, poi le renderemo dinamiche)
-  const challenges = [
-    {
-      id: 'daily_km',
-      icon: '🚶',
-      title: 'Percorri 5 km oggi',
-      target: 5,
-      current: stats.totalKm, // In futuro useremo stats del giorno corrente
-      unit: 'km'
-    },
-    {
-      id: 'daily_elevation',
-      icon: '⛰️',
-      title: 'Supera 200m di dislivello',
-      target: 200,
-      current: stats.totalAscent, // In futuro useremo stats del giorno corrente
-      unit: 'm'
-    },
-    {
-      id: 'daily_route',
-      icon: '🆕',
-      title: 'Completa un nuovo sentiero',
-      target: 1,
-      current: stats.totalRoutes, // In futuro useremo routes del giorno corrente
-      unit: 'percorso'
-    }
-  ]
+  const challenges = achievements.dailyChallenges || []
+  if (challenges.length === 0) return null
 
-  // Calcola progresso per ogni sfida
-  const getChallengeProgress = (challenge) => {
-    const percentage = Math.min((challenge.current / challenge.target) * 100, 100)
-    const isCompleted = percentage >= 100
-
-    return {
-      percentage: Math.round(percentage),
-      isCompleted,
-      currentFormatted: challenge.current >= 1000 
-        ? `${(challenge.current / 1000).toFixed(1)}k` 
-        : challenge.current.toFixed(challenge.unit === 'km' ? 1 : 0),
-      targetFormatted: challenge.target >= 1000
-        ? `${(challenge.target / 1000).toFixed(1)}k`
-        : challenge.target
-    }
-  }
+  const completedCount = challenges.filter(c => c.completed).length
+  const allCompleted = completedCount === challenges.length
 
   return (
     <div
-      className="card p-4"
+      onClick={onClick}
+      className="card card-hover p-4 cursor-pointer transition-all"
       style={{
-        backgroundColor: 'var(--bg-card)',
-        border: '2px solid var(--border-color)'
+        background: allCompleted
+          ? 'linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%)'
+          : 'var(--bg-card)',
+        border: allCompleted ? 'none' : '2px solid var(--border-color)'
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <h3
-          className="text-base font-bold flex items-center gap-2"
-          style={{ color: 'var(--text-primary)' }}
+          className="text-sm font-bold uppercase tracking-wide"
+          style={{
+            color: allCompleted ? '#fff' : 'var(--text-primary)'
+          }}
         >
-          🎯 Sfide del Giorno
+          Sfide del Giorno
         </h3>
         <div
-          className="text-xs flex items-center gap-1"
-          style={{ color: 'var(--text-secondary)', opacity: 0.7 }}
+          className="flex items-center gap-1 text-sm font-bold"
+          style={{
+            color: allCompleted ? '#FFE66D' : 'var(--color-green)'
+          }}
         >
-          <FaClock className="text-xs" />
-          <span>Reset a mezzanotte</span>
+          {completedCount}/{challenges.length}
+          {allCompleted && <FaTrophy className="ml-1" />}
         </div>
       </div>
 
       {/* Lista Sfide */}
       <div className="space-y-3">
-        {challenges.map(challenge => {
-          const progress = getChallengeProgress(challenge)
+        {challenges.map((challenge) => (
+          <div key={challenge.id} className="flex items-start gap-2">
+            {/* Icona */}
+            <div className="flex-shrink-0 mt-0.5">
+              {challenge.completed ? (
+                <FaCheckCircle
+                  className="text-base"
+                  style={{
+                    color: allCompleted ? '#FFE66D' : '#4CAF50'
+                  }}
+                />
+              ) : (
+                <FaClock
+                  className="text-base"
+                  style={{
+                    color: allCompleted ? 'rgba(255,255,255,0.5)' : 'var(--text-secondary)',
+                    opacity: allCompleted ? 1 : 0.5
+                  }}
+                />
+              )}
+            </div>
 
-          return (
-            <div key={challenge.id}>
-              {/* Titolo Sfida */}
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="flex items-center gap-2">
-                  <span className="text-lg">{challenge.icon}</span>
-                  <span
-                    className="text-sm font-medium"
-                    style={{
-                      color: progress.isCompleted
-                        ? 'var(--color-green)'
-                        : 'var(--text-primary)'
-                    }}
-                  >
-                    {challenge.title}
-                  </span>
-                  {progress.isCompleted && (
-                    <FaCheckCircle
-                      className="text-sm"
-                      style={{ color: 'var(--color-green)' }}
-                    />
-                  )}
-                </div>
+            {/* Contenuto */}
+            <div className="flex-1 min-w-0">
+              <div
+                className="text-xs font-medium mb-0.5 flex items-center gap-1.5"
+                style={{
+                  color: allCompleted ? '#fff' : 'var(--text-primary)',
+                  opacity: challenge.completed ? 1 : 0.8
+                }}
+              >
+                <span>{challenge.icon}</span>
+                <span>{challenge.name}</span>
               </div>
-
-              {/* Progress Bar */}
-              <div className="space-y-1">
-                <div
-                  className="w-full rounded-full h-2"
-                  style={{ backgroundColor: 'var(--bg-secondary)' }}
-                >
-                  <div
-                    className="h-2 rounded-full transition-all duration-500"
-                    style={{
-                      width: `${progress.percentage}%`,
-                      backgroundColor: progress.isCompleted
-                        ? 'var(--color-green)'
-                        : '#FF934F'
-                    }}
-                  />
-                </div>
-
-                {/* Testo Progresso */}
-                <div
-                  className="flex justify-between text-xs"
-                  style={{ color: 'var(--text-secondary)', opacity: 0.7 }}
-                >
-                  <span>
-                    {progress.currentFormatted} / {progress.targetFormatted} {challenge.unit}
-                  </span>
-                  <span className="font-semibold">{progress.percentage}%</span>
-                </div>
+              <div
+                className="text-xs leading-snug"
+                style={{
+                  color: allCompleted ? 'rgba(255,255,255,0.85)' : 'var(--text-secondary)',
+                  opacity: allCompleted ? 1 : 0.7
+                }}
+              >
+                {challenge.description}
               </div>
             </div>
-          )
-        })}
+
+            {/* Checkmark */}
+            {challenge.completed && (
+              <div className="flex-shrink-0">
+                <div
+                  className="w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold"
+                  style={{
+                    backgroundColor: allCompleted ? 'rgba(255,230,109,0.3)' : 'rgba(76,175,80,0.2)',
+                    color: allCompleted ? '#FFE66D' : '#4CAF50'
+                  }}
+                >
+                  ✓
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
-      {/* Footer Info */}
-      <div
-        className="mt-4 pt-3 border-t text-xs text-center"
-        style={{
-          borderColor: 'var(--border-color)',
-          color: 'var(--text-secondary)',
-          opacity: 0.7
-        }}
-      >
-        💡 Completa tutte le sfide per guadagnare bonus punti!
-      </div>
+      {/* Footer */}
+      {allCompleted && (
+        <div
+          className="text-xs mt-3 pt-3 border-t border-white/20 text-center font-bold"
+          style={{ color: '#FFE66D' }}
+        >
+          🎉 Tutte completate!
+        </div>
+      )}
+
+      {completedCount === 0 && (
+        <div
+          className="text-xs mt-3 pt-3 border-t"
+          style={{
+            borderColor: 'var(--border-color)',
+            color: 'var(--text-secondary)',
+            opacity: 0.7
+          }}
+        >
+          💡 Completa percorsi per sbloccarle!
+        </div>
+      )}
     </div>
   )
 }

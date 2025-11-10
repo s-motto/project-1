@@ -80,8 +80,9 @@ const LEVELS = [
   { level: 5, name: 'Leggenda', minKm: 500, maxKm: Infinity, icon: '👑' }
 ]
 
-// Definizione pool sfide giornaliere
+// Definizione pool sfide giornaliere - POOL ESPANSO CON 16 SFIDE
 const DAILY_CHALLENGES_POOL = [
+  // SFIDE ORIGINALI (8)
   {
     id: 'distance_5km',
     name: 'Macinakm',
@@ -137,6 +138,65 @@ const DAILY_CHALLENGES_POOL = [
     description: 'Completa un percorso sotto il tempo stimato',
     icon: '⚡',
     checkCompletion: (todayStats) => todayStats.underTime >= 1
+  },
+  
+  // NUOVE SFIDE FASE 2 (8)
+  {
+    id: 'speed_avg_4kmh',
+    name: 'Passo Spedito',
+    description: 'Mantieni una velocità media di 4 km/h o superiore',
+    icon: '🏃',
+    checkCompletion: (todayStats) => todayStats.avgSpeed >= 4
+  },
+  {
+    id: 'sprint_hiking',
+    name: 'Sprint Hiking',
+    description: 'Mantieni una velocità media superiore a 5 km/h',
+    icon: '🏃‍♂️',
+    checkCompletion: (todayStats) => todayStats.avgSpeed >= 5
+  },
+  {
+    id: 'new_location',
+    name: 'Esploratore',
+    description: 'Visita una località mai visitata prima',
+    icon: '🧭',
+    checkCompletion: (todayStats) => todayStats.newLocations >= 1
+  },
+  {
+    id: 'waypoints_5',
+    name: 'Cacciatore di Waypoint',
+    description: 'Passa attraverso almeno 5 waypoint oggi',
+    icon: '📍',
+    checkCompletion: (todayStats) => todayStats.waypointsVisited >= 5
+  },
+  {
+    id: 'afternoon_hike',
+    name: 'Pomeriggio Attivo',
+    description: 'Completa un percorso tra le 14:00 e le 18:00',
+    icon: '☀️',
+    checkCompletion: (todayStats) => todayStats.afternoonHikes >= 1
+  },
+  {
+    id: 'sunset_walker',
+    name: 'Camminata al Tramonto',
+    description: 'Completa un percorso dopo le 18:00',
+    icon: '🌅',
+    checkCompletion: (todayStats) => todayStats.eveningHikes >= 1
+  },
+  {
+    id: 'combo_5km_200m',
+    name: 'Sfida Completa',
+    description: 'Percorri 5 km E supera 200m di dislivello',
+    icon: '🎖️',
+    checkCompletion: (todayStats) => 
+      todayStats.distance >= 5 && todayStats.elevation >= 200
+  },
+  {
+    id: 'double_route',
+    name: 'Doppietta',
+    description: 'Completa 2 percorsi in un giorno',
+    icon: '✌️',
+    checkCompletion: (todayStats) => todayStats.routesCompleted >= 2
   }
 ]
 
@@ -310,9 +370,10 @@ class AchievementsService {
   }
 
   /**
-   * Calcola statistiche del giorno corrente
+   * Calcola statistiche del giorno corrente - VERSIONE AGGIORNATA
+   * Ora include anche: avgSpeed, newLocations, waypointsVisited, afternoonHikes, eveningHikes
    */
-  calculateTodayStats(routes) {
+  calculateTodayStats(routes, allRoutes = []) {
     const today = new Date()
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate())
 
@@ -321,19 +382,85 @@ class AchievementsService {
       return completedAt >= todayStart
     })
 
+    // Statistiche base
+    const totalDistance = todayRoutes.reduce((sum, r) => sum + (r.actualDistance || 0), 0)
+    const totalElevation = todayRoutes.reduce((sum, r) => sum + (r.actualAscent || 0), 0)
+    const totalDuration = todayRoutes.reduce((sum, r) => sum + (r.actualDuration || 0), 0) // in minuti
+    const routesCompleted = todayRoutes.length
+
+    // Calcolo velocità media (km/h)
+    // avgSpeed = distanza totale (km) / durata totale (ore)
+    const avgSpeed = totalDuration > 0 
+      ? totalDistance / (totalDuration / 60) 
+      : 0
+
+    // Early bird (prima delle 8:00)
+    const earlyBird = todayRoutes.filter(r => {
+      const hour = new Date(r.completedAt || r.createdAt).getHours()
+      return hour < 8
+    }).length
+
+    // Under time (completato sotto il tempo stimato)
+    const underTime = todayRoutes.filter(r => {
+      if (!r.actualDuration || !r.duration) return false
+      return (r.actualDuration / r.duration) < 1
+    }).length
+
+    // Afternoon hikes (14:00 - 18:00)
+    const afternoonHikes = todayRoutes.filter(r => {
+      const hour = new Date(r.completedAt || r.createdAt).getHours()
+      return hour >= 14 && hour < 18
+    }).length
+
+    // Evening hikes (dopo le 18:00)
+    const eveningHikes = todayRoutes.filter(r => {
+      const hour = new Date(r.completedAt || r.createdAt).getHours()
+      return hour >= 18
+    }).length
+
+    // Waypoints visitati oggi
+    const waypointsVisited = todayRoutes.reduce((sum, r) => {
+      return sum + (r.waypointsCompleted || 0)
+    }, 0)
+
+    // Nuove località visitate
+    // Estraiamo località uniche di oggi
+    const todayLocations = new Set()
+    todayRoutes.forEach(r => {
+      if (r.startLocation) {
+        todayLocations.add(r.startLocation)
+      }
+    })
+
+    // Estraiamo località visitate in passato (prima di oggi)
+    const pastLocations = new Set()
+    allRoutes.forEach(r => {
+      const routeDate = new Date(r.completedAt || r.createdAt)
+      if (routeDate < todayStart && r.startLocation) {
+        pastLocations.add(r.startLocation)
+      }
+    })
+
+    // Contiamo quante località di oggi sono nuove
+    let newLocations = 0
+    todayLocations.forEach(loc => {
+      if (!pastLocations.has(loc)) {
+        newLocations++
+      }
+    })
+
     return {
-      distance: todayRoutes.reduce((sum, r) => sum + (r.actualDistance || 0), 0),
-      elevation: todayRoutes.reduce((sum, r) => sum + (r.actualAscent || 0), 0),
-      duration: todayRoutes.reduce((sum, r) => sum + (r.actualDuration || 0), 0),
-      routesCompleted: todayRoutes.length,
-      earlyBird: todayRoutes.filter(r => {
-        const hour = new Date(r.completedAt || r.createdAt).getHours()
-        return hour < 8
-      }).length,
-      underTime: todayRoutes.filter(r => {
-        if (!r.actualDuration || !r.duration) return false
-        return (r.actualDuration / r.duration) < 1
-      }).length
+      distance: totalDistance,
+      elevation: totalElevation,
+      duration: totalDuration,
+      routesCompleted,
+      earlyBird,
+      underTime,
+      avgSpeed: parseFloat(avgSpeed.toFixed(2)),
+      afternoonHikes,
+      eveningHikes,
+      waypointsVisited,
+      newLocations
     }
   }
 
@@ -462,8 +589,8 @@ class AchievementsService {
         completedChallenges = []
       }
 
-      // Calcola stats di oggi
-      const todayStats = this.calculateTodayStats(routes)
+      // Calcola stats di oggi - PASSA TUTTE LE ROUTES per calcolo newLocations
+      const todayStats = this.calculateTodayStats(routes, routes)
       
       // Aggiorna progresso sfide
       dailyChallenges = this.updateChallengesProgress(dailyChallenges, todayStats)
@@ -475,7 +602,7 @@ class AchievementsService {
       
       completedChallenges = [...completedChallenges, ...newlyCompleted]
 
-      // Controlla  badge (inclusi badge streak)
+      // Controlla badge (inclusi badge streak)
       const newBadges = this.checkNewBadges(
         current.badgesEarned || [],
         stats,
@@ -513,7 +640,9 @@ class AchievementsService {
           lastActivityDate: now,
           dailyChallenges: JSON.stringify(dailyChallenges),
           completedChallenges,
-          challengesLastReset: dailyChallenges.length > 0 ? (current.challengesLastReset || now) : now,
+          challengesLastReset: dailyChallenges.length > 0 
+            ? (current.challengesLastReset || now) 
+            : now,
           lastUpdated: now
         }
       )
