@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react' // importo React e gli hook necessari
+import { useNavigate } from 'react-router-dom' // importo useNavigate per la navigazione
 import { FaRoute, FaTrash, FaMapMarkedAlt, FaSpinner, FaCheckCircle, FaPlay, FaEdit, FaCheck, FaTimes } from 'react-icons/fa' // importo le icone necessarie
 
 import { useAuth } from '../contexts/AuthContext' // importo il contesto di autenticazione
@@ -9,7 +10,8 @@ import { useSettings } from '../contexts/SettingsContext' // importo il contesto
 import { formatDistance, formatElevation, formatDurationMinutes, formatTimestamp } from '../utils/gpsUtils' // importo le funzioni di formattazione
 
 // Componente SavedRoutes per mostrare e gestire i percorsi salvati
-const SavedRoutes = ({ onLoadRoute }) => {
+const SavedRoutes = () => {
+  const navigate = useNavigate() // hook per navigazione con React Router
   const { user } = useAuth()
   const [routes, setRoutes] = useState([])
   const [loading, setLoading] = useState(true)
@@ -287,7 +289,7 @@ const handleComplete = async (routeId) => {
                   
                   {/* Bottone Carica sulla mappa */}
                   <button
-                    onClick={() => onLoadRoute(route)}
+                    onClick={() => navigate('/', { state: { preloadedRoute: route } })}
                     className="text-indigo-600 hover:text-indigo-800 p-1 transition-colors"
                     title="Visualizza percorso sulla mappa"
                   >

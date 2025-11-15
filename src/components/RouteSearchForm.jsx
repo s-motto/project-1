@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react' // importo React e gli hook necessari
+import { useLocation } from 'react-router-dom' // importo useLocation per leggere lo state della navigazione
 import NavigationMode from './NavigationMode' // importo il componente NavigationMode
 import SaveRouteButton from './SaveRouteButton' // importo il componente SaveRouteButton
 import ActiveTracking from './ActiveTracking' // importo il componente ActiveTracking
@@ -16,7 +17,12 @@ import { useSettings } from '../contexts/SettingsContext' // importo il contesto
 import logger from '../utils/logger'  // importo il logger
 
 // Componente RouteSearchForm per la ricerca e visualizzazione dei percorsi
-const RouteSearchForm = forwardRef(({preloadedRoute, preloadedHike}, ref) => {
+const RouteSearchForm = forwardRef((props, ref) => {
+  // Leggo lo state dalla navigazione React Router
+  const location = useLocation()
+  const [preloadedRoute, setPreloadedRoute] = useState(null) // percorso pre-caricato da navigazione
+  const [preloadedHike, setPreloadedHike] = useState(null) // hike pre-caricato da navigazione
+  
   const { settings } = useSettings()
   const [startPoint, setStartPoint] = useState(null) //latitudine e longitudine
   const [endPoint, setEndPoint] = useState(null) //latitudine e longitudine
@@ -58,6 +64,42 @@ const RouteSearchForm = forwardRef(({preloadedRoute, preloadedHike}, ref) => {
   const [showMapPointSelector, setShowMapPointSelector] = useState(false)//mostra selettore punti mappa
   const [selectedMapPoint, setSelectedMapPoint] = useState(null)//punto selezionato nella mappa
   const tempMarkerRef = useRef(null)//riferimento marcatore temporaneo
+  
+  // useEffect per leggere i dati passati tramite React Router state
+  useEffect(() => {
+    if (location.state?.preloadedRoute) {
+      setPreloadedRoute(location.state.preloadedRoute)
+    } else if (location.state?.preloadedHike) {
+      setPreloadedHike(location.state.preloadedHike)
+    } else if (location.pathname === '/' && !location.state) {
+      // Click su Home senza state -> reset del form
+      setPreloadedRoute(null)
+      setPreloadedHike(null)
+      // Resetto anche lo stato del form chiamando la logica di reset
+      if (map) {
+        if (routeLayer) map.removeLayer(routeLayer)
+        if (startMarkerRef.current) startMarkerRef.current.remove()
+        if (endMarkerRef.current) endMarkerRef.current.remove()
+        if (updateMarkersListenerRef.current) {
+          map.off('move zoom', updateMarkersListenerRef.current)
+        }
+        map.setView([45.4642, 9.1900], 13)
+      }
+      try { stopNavigation() } catch (err) { /* ignore */ }
+      setStartPoint(null)
+      setEndPoint(null)
+      setStartText('')
+      setEndText('')
+      setRouteLayer(null)
+      setRouteInfo(null)
+      setInstructions([])
+      setFullRouteData(null)
+      setRouteSaved(false)
+      setIsPreloaded(false)
+      setErrorMsg('')
+    }
+  }, [location])
+  
     useEffect(() => {
       const mapInstance = L.map('map').setView([45.4642, 9.1900], 13) //Centro su Milano di default
       
