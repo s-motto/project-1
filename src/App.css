@@ -1,0 +1,10 @@
+/* Stile per link attivi nella bottom nav */
+.bottom-nav .nav-item.active {
+  color: var(--color-green);
+  font-weight: 600;
+}
+
+.bottom-nav .nav-item.active svg {
+  color: var(--color-green);
+  transform: scale(1.1);
+}
