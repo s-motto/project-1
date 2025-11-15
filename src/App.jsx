@@ -1,13 +1,16 @@
-import { useState, useRef, lazy, Suspense } from 'react'
+import { lazy, Suspense } from 'react'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './App.css'
 import BottomNav from './components/BottomNav'
 import UserMenu from './components/UserMenu'
 import ToastContainer from './components/ToastContainer'
-import { useToast } from './contexts/ToastContext'
 
 // LAZY LOADING dei componenti pesanti
 const RouteSearchForm = lazy(() => import('./components/RouteSearchForm'))
 const SavedRoutes = lazy(() => import('./components/SavedRoutes'))
+const Dashboard = lazy(() => import('./components/Dashboard'))
+const Achievements = lazy(() => import('./components/Achievements'))
+const NearbyHikes = lazy(() => import('./components/NearbyHikes'))
 
 // Componente di caricamento
 const LoadingSpinner = () => (
@@ -16,90 +19,56 @@ const LoadingSpinner = () => (
   </div>
 )
 
-// Componente principale App
+// Componente principale App con routing
 function App() {
-  const [showSaved, setShowSaved] = useState(false)
-  const [preloadedRoute, setPreloadedRoute] = useState(null)
-  const [preloadedHike, setPreloadedHike] = useState(null)
-  const routeFormRef = useRef()
-  const { toast } = useToast()
-
-  // Gestori eventi per la navigazione
-  const handleHomeClick = () => {
-    setShowSaved(false)
-    setPreloadedRoute(null)
-    setPreloadedHike(null)
-    if (routeFormRef.current?.reset) {
-      routeFormRef.current.reset()
-    }
-  }
-
-  // Mostra le rotte salvate
-  const handleSavedClick = () => {
-    setShowSaved(true)
-    setPreloadedRoute(null)
-    setPreloadedHike(null)
-  }
-
-  // Carica una rotta salvata
-  const handleLoadRoute = (route) => {
-    setPreloadedRoute(route)
-    setPreloadedHike(null)
-    setShowSaved(false)
-  }
-
-  // Carica un percorso di hiking selezionato
-  const handleRouteSelected = (hike) => {
-    setPreloadedHike(hike)
-    setPreloadedRoute(null)
-    setShowSaved(false)
-  }
-
-  // Render del componente
   return (
-    <>
+    <BrowserRouter>
       <ToastContainer />
-       
+      
       <div className="page-container">
         {/* Header */}
         <header className="app-header">
           <div className="header-container">
-            <div className="logo-container cursor-pointer" onClick={handleHomeClick}>
-              <div className="logo-icon">
-                🚶
-              </div>
+            <div className="logo-container cursor-pointer" onClick={() => window.location.href = '/'}>
+              <div className="logo-icon">🚶</div>
               <div className="logo-text-container">
                 <h1 className="logo-title">Let's Walk!</h1>
                 <p className="logo-subtitle">Ciao! Dove andiamo oggi?</p>
               </div>
             </div>
-            <UserMenu onShowSavedRoutes={handleSavedClick} />
+            <UserMenu />
           </div>
         </header>
 
-        {/* Main Content con Suspense per lazy loading */}
+        {/* Main Content con Routes */}
         <main className="content-wrapper">
           <Suspense fallback={<LoadingSpinner />}>
-            {showSaved ? (
-              <SavedRoutes onLoadRoute={handleLoadRoute} />
-            ) : (
-              <RouteSearchForm
-                ref={routeFormRef}
-                preloadedRoute={preloadedRoute}
-                preloadedHike={preloadedHike}
-              />
-            )}
+            <Routes>
+              {/* Home - Ricerca percorsi */}
+              <Route path="/" element={<RouteSearchForm />} />
+              
+              {/* Percorsi salvati */}
+              <Route path="/saved" element={<SavedRoutes />} />
+              
+              {/* Dashboard statistiche */}
+              <Route path="/dashboard" element={<Dashboard />} />
+              
+              {/* Achievements */}
+              <Route path="/achievements" element={<Achievements />} />
+              
+              {/* Sentieri vicini */}
+              <Route path="/nearby" element={<NearbyHikes />} />
+              
+              {/* Redirect percorsi non trovati */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
           </Suspense>
         </main>
 
         {/* Bottom Navigation */}
-        <BottomNav
-          onHomeClick={handleHomeClick}
-          onSavedClick={handleSavedClick}
-          onRouteSelected={handleRouteSelected}
-        />
+        <BottomNav />
       </div>
-    </>
+    </BrowserRouter>
   )
 }
 
