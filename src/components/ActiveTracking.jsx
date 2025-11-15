@@ -17,15 +17,9 @@
 // ==========================================
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import { MapContainer, TileLayer, Polyline, Marker, useMap } from 'react-leaflet'
-import L from 'leaflet'
 import {
-  FaPlay,
-  FaPause,
-  FaStop,
   FaTimes,
-  FaMapMarkerAlt,
-  FaSpinner
+  FaMapMarkerAlt
 } from 'react-icons/fa'
 
 // Services e utilities
@@ -37,15 +31,14 @@ import routesService from '../services/routesService'
 import logger from '../utils/logger'
 import {
   calculateDistance,
-  calculateSpeed,
-  formatDistance,
-  formatSpeedKmh,
-  formatElevation,
-  formatDurationSeconds
+  calculateSpeed
 } from '../utils/gpsUtils'
 
-// Componente helper per long press
-import MapLongPressHandler from './MapLongPressHandler'
+// Componenti tracking
+import TrackingMap from './ActiveTracking/TrackingMap'
+import TrackingStats from './ActiveTracking/TrackingStats'
+import TrackingControls from './ActiveTracking/TrackingControls'
+import WaypointDialog from './ActiveTracking/WaypointDialog'
 
 // ==========================================
 // COMPONENTE PRINCIPALE
@@ -864,236 +857,11 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     }
   }, [])
 
-  // ==========================================
-  // COMPONENTI HELPER
-  // ==========================================
-
-  /**
-   * Componente per auto-centrare la mappa sulla posizione corrente
-   * Si disabilita automaticamente quando l'utente muove la mappa
-   */
-  const MapCenterController = ({ position, shouldCenter, onMapReady, onDisableCenter }) => {
-    const map = useMap()
-
-    useEffect(() => {
-      if (onMapReady) onMapReady(map)
-    }, [map, onMapReady])
-
-    // Rileva quando l'utente muove la mappa manualmente
-    useEffect(() => {
-      if (!map || !onDisableCenter) return
-
-      const handleUserInteraction = () => {
-        onDisableCenter()
-      }
-
-      // Ascolta tutti gli eventi di interazione utente
-      map.on('dragstart', handleUserInteraction)
-      map.on('zoomstart', handleUserInteraction)
-
-      return () => {
-        map.off('dragstart', handleUserInteraction)
-        map.off('zoomstart', handleUserInteraction)
-      }
-    }, [map, onDisableCenter])
-
-    useEffect(() => {
-      if (shouldCenter && position) {
-        map.setView([position.lat, position.lng], map.getZoom())
-      }
-    }, [position, shouldCenter, map])
-
-    return null
-  }
-
-  /**
-   * Dialog di conferma waypoint
-   * Mostra preview del percorso con distanza e tempo stimati
-   */
-  const WaypointDialog = () => {
-    if (!showWaypointDialog) return null
-
-    return (
-      <div className="modal-overlay" style={{ zIndex: 2000 }}>
-        <div
-          className="card mx-4"
-          style={{
-            maxWidth: '320px',
-            padding: '1rem',
-            margin: '0 auto',
-            marginTop: '25vh',
-            boxShadow: 'var(--shadow-xl)'
-          }}
-        >
-          {/* Header */}
-          <div className="flex items-center space-x-2 mb-3">
-            <span className="text-xl">📍</span>
-            <h3 className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>
-              Aggiungi Waypoint?
-            </h3>
-          </div>
-
-          {/* Contenuto */}
-          {loadingPreview ? (
-            // Loading
-            <div className="flex flex-col items-center py-4 space-y-2">
-              <FaSpinner className="spinner text-xl" style={{ color: 'var(--color-green)' }} />
-              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                Calcolo percorso...
-              </p>
-            </div>
-          ) : waypointPreview ? (
-            // Preview caricata
-            <div className="space-y-2">
-              {/* Nome del luogo */}
-              <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
-                {waypointPreview.name}
-              </div>
-
-              {/* Statistiche preview */}
-              <div
-                className="flex items-center justify-around py-2 rounded-lg"
-                style={{ backgroundColor: 'var(--bg-secondary)' }}
-              >
-                <div className="text-center">
-                  <div className="text-xs mb-1" style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
-                    Distanza
-                  </div>
-                  <div className="font-bold text-xs" style={{ color: 'var(--icon-distance)' }}>
-                    📏 {formatPreviewDistance(waypointPreview.distance)}
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xs mb-1" style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
-                    Tempo
-                  </div>
-                  <div className="font-bold text-xs" style={{ color: 'var(--icon-duration)' }}>
-                    ⏱️ {formatPreviewDuration(waypointPreview.duration)}
-                  </div>
-                </div>
-              </div>
-
-              {/* Info */}
-              <p className="text-xs text-center" style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
-                Il percorso verrà ricalcolato con questo waypoint
-              </p>
-            </div>
-          ) : (
-            // Errore
-            <div className="text-center py-3">
-              <p className="text-xs" style={{ color: 'var(--status-error)' }}>
-                Errore nel calcolo del percorso
-              </p>
-            </div>
-          )}
-
-          {/* Bottoni */}
-          <div className="flex space-x-2 mt-3">
-            <button
-              onClick={handleCancelWaypoint}
-              className="btn-secondary flex-1"
-              style={{ padding: '0.5rem' }}
-              disabled={loadingPreview}
-            >
-              Annulla
-            </button>
-            <button
-              onClick={handleConfirmWaypoint}
-              className="btn-primary flex-1"
-              style={{ padding: '0.5rem' }}
-              disabled={loadingPreview || !waypointPreview}
-            >
-              Conferma
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  /**
-   * Lista waypoints attivi
-   * Mostrata in alto a destra, design minimale per mobile
-   */
-  const WaypointsList = () => {
-    if (waypoints.length === 0) return null
-
-    return (
-      <div
-        className="card absolute top-16 right-2 z-[1000]"
-        style={{
-          maxWidth: '160px',
-          fontSize: '0.65rem',
-          padding: '0.4rem',
-          backgroundColor: 'var(--bg-card)',
-          opacity: 0.95
-        }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-1 pb-1 border-b" style={{ borderColor: 'var(--border-color)' }}>
-          <span className="font-bold" style={{ color: 'var(--text-primary)', fontSize: '0.65rem' }}>
-            🎯 Waypoints ({waypoints.length}/5)
-          </span>
-        </div>
-
-        {/* Lista */}
-        <div className="space-y-1">
-          {waypoints.map((wp, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-1 rounded transition-colors"
-              style={{
-                ':hover': { backgroundColor: 'var(--bg-secondary)' }
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--bg-secondary)'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            >
-              {/* Numero e nome */}
-              <div className="flex items-center space-x-1 flex-1 min-w-0">
-                <span className="font-bold" style={{ color: 'var(--icon-distance)', fontSize: '0.65rem' }}>
-                  {index + 1}.
-                </span>
-                <span className="truncate" style={{ color: 'var(--text-primary)', fontSize: '0.6rem' }}>
-                  {wp.name}
-                </span>
-              </div>
-
-              {/* Bottone rimuovi */}
-              <button
-                onClick={() => handleRemoveWaypoint(index)}
-                className="ml-1 p-1 rounded transition-colors"
-                style={{ color: 'var(--status-error)', fontSize: '0.6rem' }}
-                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'}
-                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                title="Rimuovi waypoint"
-              >
-                <FaTimes />
-              </button>
-            </div>
-          ))}
-        </div>
-
-        {/* Hint */}
-        {waypoints.length < 5 && (
-          <div className="mt-1 pt-1 border-t" style={{
-            borderColor: 'var(--border-color)',
-            color: 'var(--text-secondary)',
-            fontSize: '0.6rem'
-          }}>
-            💡 Tieni premuto sulla mappa
-          </div>
-        )}
-      </div>
-    )
-  }
 
   // ==========================================
   // CALCOLI STATISTICHE
   // ==========================================
   const avgSpeed = calculateSpeed(distance, elapsedTime)
-  const distanceLabel = formatDistance(distance, settings?.distanceUnit || 'km')
-  const speedLabel = formatSpeedKmh(avgSpeed, settings?.distanceUnit || 'km')
-  const gainLabel = formatElevation(elevationGain, settings?.elevationUnit || 'm')
 
   // Centro iniziale mappa
   const getInitialCenter = () => {
@@ -1118,6 +886,11 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
         map.invalidateSize()
       }
     }, 300)
+  }
+
+  // Callback ricentra mappa
+  const handleCenterMap = () => {
+    setShouldCenterMap(true)
   }
 
   // ==========================================
@@ -1179,338 +952,58 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
         </div>
 
         {/* ========== MAPPA ========== */}
-        <div className="flex-1 relative">
-          <MapContainer
-            center={initialCenter}
-            zoom={14}
-            className="h-full w-full"
-            zoomControl={false}
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-
-            {/* Long Press Handler - Abilita waypoints */}
-            <MapLongPressHandler
-              onLongPress={handleMapLongPress}
-              disabled={!isTracking || isSaving}
-            />
-
-            {/* Percorso pianificato (BLU TRATTEGGIATO) */}
-            {useMemo(() => {
-              if (!currentRouteData.coordinates || currentRouteData.coordinates.length === 0) {
-                return null
-              }
-
-              return (
-                <Polyline
-                  key={`route-${waypoints.length}`}
-                  positions={currentRouteData.coordinates}
-                  color="#2563eb"
-                  weight={4}
-                  opacity={0.6}
-                  dashArray="5, 10"
-                />
-              )
-            }, [currentRouteData.coordinates, waypoints.length])}
-
-            {/* Waypoints markers (ARANCIONI NUMERATI) */}
-            {waypoints.map((wp, index) => (
-              <Marker
-                key={`waypoint-${index}`}
-                position={[wp.lat, wp.lng]}
-                icon={L.divIcon({
-                  html: `
-                    <div style="
-                      background: #f97316;
-                      color: white;
-                      border: 3px solid white;
-                      border-radius: 50%;
-                      width: 30px;
-                      height: 30px;
-                      display: flex;
-                      align-items: center;
-                      justify-content: center;
-                      font-weight: bold;
-                      font-size: 13px;
-                      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-                    ">
-                      ${index + 1}
-                    </div>
-                  `,
-                  className: 'waypoint-marker',
-                  iconSize: [30, 30],
-                  iconAnchor: [15, 15]
-                })}
-              />
-            ))}
-
-            {/* Marker temporaneo (GIALLO PULSANTE) */}
-            {tempWaypoint && (
-              <Marker
-                position={[tempWaypoint.lat, tempWaypoint.lng]}
-                icon={L.divIcon({
-                  html: `
-                    <div style="
-                      background: #eab308;
-                      color: white;
-                      border: 3px solid white;
-                      border-radius: 50%;
-                      width: 34px;
-                      height: 34px;
-                      display: flex;
-                      align-items: center;
-                      justify-content: center;
-                      font-size: 16px;
-                      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-                      animation: pulse 1.5s ease-in-out infinite;
-                    ">
-                      ?
-                    </div>
-                    <style>
-                      @keyframes pulse {
-                        0%, 100% { transform: scale(1); }
-                        50% { transform: scale(1.1); }
-                      }
-                    </style>
-                  `,
-                  className: 'temp-waypoint-marker',
-                  iconSize: [34, 34],
-                  iconAnchor: [17, 17]
-                })}
-              />
-            )}
-
-            {/* Traccia GPS (VERDE) - mai modificata */}
-            {useMemo(() => {
-              if (trackPoints.length < 2) return null
-              return (
-                <Polyline
-                  key={`track-${trackPoints.length}`}
-                  positions={trackPoints.map(p => [p.lat, p.lng])}
-                  color="#10b981"
-                  weight={5}
-                  opacity={0.9}
-                  smoothFactor={1}
-                />
-              )
-            }, [trackPoints])}
-
-            {/* Posizione corrente */}
-            {currentPosition && (
-              <Marker
-                position={[currentPosition.lat, currentPosition.lng]}
-                icon={L.divIcon({
-                  html: `
-                    <div style="transform: rotate(${heading || 0}deg); width: 36px; height: 36px;">
-                      <svg viewBox="0 0 24 24" width="36" height="36">
-                        <path fill="#2563eb" stroke="#fff" stroke-width="2" 
-                              d="M12 2 L4 22 L12 18 L20 22 Z"/>
-                        <circle cx="12" cy="12" r="3" fill="#fff"/>
-                      </svg>
-                    </div>
-                  `,
-                  className: 'custom-gps-marker',
-                  iconSize: [36, 36],
-                  iconAnchor: [18, 18]
-                })}
-              />
-            )}
-
-            {/* Auto-center */}
-            {currentPosition && (
-              <MapCenterController
-                position={currentPosition}
-                shouldCenter={shouldCenterMap}
-                onMapReady={handleMapReady}
-                onDisableCenter={() => setShouldCenterMap(false)}
-              />
-            )}
-          </MapContainer>
-
-
-
-
-          {/* ========== BOTTONE RICENTRA ========== */}
-          {isTracking && !shouldCenterMap && (
-            <button
-              onClick={() => setShouldCenterMap(true)}
-              className="card absolute bottom-4 right-4 z-[1000] p-2 flex items-center space-x-2 hover:scale-105 transition-transform"
-              style={{
-                backgroundColor: 'var(--bg-card)',
-                boxShadow: 'var(--shadow-xl)',
-                cursor: 'pointer'
-              }}
-              title="Ricentra sulla posizione"
-            >
-              <span className="text-2xl">🎯</span>
-              <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
-                Centra
-              </span>
-            </button>
-          )}
-
-          {/* ========== LOADING RICALCOLO ========== */}
-          {recalculatingRoute && (
-            <div className="card absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[1500] p-3 flex items-center space-x-2">
-              <FaSpinner className="spinner text-lg" style={{ color: 'var(--color-green)' }} />
-              <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                Ricalcolo...
-              </span>
-            </div>
-          )}
-        </div>
+        <TrackingMap
+          initialCenter={initialCenter}
+          currentRouteData={currentRouteData}
+          trackPoints={trackPoints}
+          waypoints={waypoints}
+          tempWaypoint={tempWaypoint}
+          currentPosition={currentPosition}
+          heading={heading}
+          shouldCenterMap={shouldCenterMap}
+          recalculatingRoute={recalculatingRoute}
+          isTracking={isTracking}
+          isSaving={isSaving}
+          onMapLongPress={handleMapLongPress}
+          onMapReady={handleMapReady}
+          onCenterMap={handleCenterMap}
+        />
 
         {/* ========== STATISTICHE ========== */}
-        <div
-          className="card border-t"
-          style={{
-            borderColor: 'var(--border-color)',
-            padding: '0.75rem'
-          }}
-        >
-          <div className="grid grid-cols-3 gap-2 text-center">
-            {/* Distanza */}
-            <div>
-              <p className="text-xs mb-1" style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
-                Distanza
-              </p>
-              <p className="text-base font-bold" style={{ color: 'var(--icon-distance)' }}>
-                {distanceLabel}
-              </p>
-              {waypoints.length > 0 && (
-                <p className="mt-1" style={{ color: 'var(--text-muted)', fontSize: '0.6rem' }}>
-                  Piano: {formatDistance(currentRouteData.distance, settings?.distanceUnit || 'km')}
-                </p>
-              )}
-            </div>
-
-            {/* Tempo */}
-            <div>
-              <p className="text-xs mb-1" style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
-                Tempo
-              </p>
-              <p className="text-base font-bold" style={{ color: 'var(--icon-duration)' }}>
-                {formatDurationSeconds(elapsedTime, settings?.durationFormat || 'hms')}
-              </p>
-              {waypoints.length > 0 && (
-                <p className="mt-1" style={{ color: 'var(--text-muted)', fontSize: '0.6rem' }}>
-                  Stima: {Math.round(currentRouteData.duration)}min
-                </p>
-              )}
-            </div>
-
-            {/* Velocità */}
-            <div>
-              <p className="text-xs mb-1" style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
-                Velocità
-              </p>
-              <p className="text-base font-bold" style={{ color: 'var(--icon-distance)' }}>
-                {speedLabel}
-              </p>
-            </div>
-          </div>
-
-          {/* Dislivelli */}
-          <div className="grid grid-cols-2 gap-2 mt-2 pt-2 border-t" style={{ borderColor: 'var(--border-color)' }}>
-            <div className="text-center">
-              <p className="mb-1" style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
-                ↗ Salita
-              </p>
-              <p className="text-sm font-bold" style={{ color: 'var(--icon-ascent)' }}>
-                {gainLabel}
-              </p>
-              {waypoints.length > 0 && (
-                <p className="mt-1" style={{ color: 'var(--text-muted)', fontSize: '0.6rem' }}>
-                  Piano: {formatElevation(currentRouteData.ascent, settings?.elevationUnit || 'm')}
-                </p>
-              )}
-            </div>
-            <div className="text-center">
-              <p className="mb-1" style={{ color: 'var(--text-secondary)', fontSize: '0.65rem' }}>
-                ↘ Discesa
-              </p>
-              <p className="text-sm font-bold" style={{ color: 'var(--icon-descent)' }}>
-                {formatElevation(elevationLoss, settings?.elevationUnit || 'm')}
-              </p>
-              {waypoints.length > 0 && (
-                <p className="mt-1" style={{ color: 'var(--text-muted)', fontSize: '0.6rem' }}>
-                  Piano: {formatElevation(currentRouteData.descent, settings?.elevationUnit || 'm')}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
+        <TrackingStats
+          distance={distance}
+          elapsedTime={elapsedTime}
+          elevationGain={elevationGain}
+          elevationLoss={elevationLoss}
+          avgSpeed={avgSpeed}
+          settings={settings}
+          waypoints={waypoints}
+          currentRouteData={currentRouteData}
+        />
 
         {/* ========== CONTROLLI ========== */}
-        <div
-          className="card border-t flex-center space-x-2"
-          style={{
-            borderColor: 'var(--border-color)',
-            padding: '0.75rem',
-            flexShrink: 0
-          }}
-        >
-          {!isTracking ? (
-            <button
-              onClick={handleStart}
-              className="btn-primary"
-              style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
-            >
-              <FaPlay className="mr-1" /> Avvia
-            </button>
-          ) : (
-            <>
-              {!isPaused ? (
-                <button
-                  onClick={handlePause}
-                  className="btn-secondary"
-                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
-                >
-                  <FaPause className="mr-1" /> Pausa
-                </button>
-              ) : (
-                <button
-                  onClick={handleResume}
-                  className="btn-primary"
-                  style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
-                >
-                  <FaPlay className="mr-1" /> Riprendi
-                </button>
-              )}
-              <button
-                onClick={handleStop}
-                className="btn-danger"
-                disabled={isSaving}
-                style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
-              >
-                {isSaving ? (
-                  <>
-                    <FaSpinner className="spinner mr-1" />
-                    Salvo...
-                  </>
-                ) : (
-                  <>
-                    <FaStop className="mr-1" />
-                    Fine
-                  </>
-                )}
-              </button>
-              <button
-                onClick={handleCancel}
-                className="btn-secondary"
-                style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
-              >
-                <FaTimes className="mr-1" /> Annulla
-              </button>
-            </>
-          )}
-        </div>
+        <TrackingControls
+          isTracking={isTracking}
+          isPaused={isPaused}
+          isSaving={isSaving}
+          onStart={handleStart}
+          onPause={handlePause}
+          onResume={handleResume}
+          onStop={handleStop}
+          onCancel={handleCancel}
+        />
       </div>
 
       {/* ========== DIALOG WAYPOINT ========== */}
-      <WaypointDialog />
+      <WaypointDialog
+        showWaypointDialog={showWaypointDialog}
+        loadingPreview={loadingPreview}
+        waypointPreview={waypointPreview}
+        onConfirm={handleConfirmWaypoint}
+        onCancel={handleCancelWaypoint}
+        formatPreviewDistance={formatPreviewDistance}
+        formatPreviewDuration={formatPreviewDuration}
+      />
     </div>
   )
 }
