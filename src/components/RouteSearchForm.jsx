@@ -6,6 +6,7 @@ import { FaMapMarkerAlt, FaFlag, FaWalking, FaClock, FaRoute, FaLocationArrow, F
 import L from 'leaflet' // importo Leaflet per la gestione della mappa
 import 'leaflet/dist/leaflet.css' // importo stili di Leaflet
 import MapPointSelector from './MapPointSelector' // importo il componente MapPointSelector
+import { createMapMarker, createMarkersUpdateListener, MarkerType } from '../utils/mapMarkers' // importo il factory dei marker
 import useNavigation from '../contexts/NavigationContext' // importo il contesto di navigazione
 import { useToast } from '../contexts/ToastContext' // importo il contesto delle notifiche
 import { useAuth } from '../contexts/AuthContext' // importo il contesto di autenticazione
@@ -39,12 +40,12 @@ const RouteSearchForm = forwardRef(({preloadedRoute, preloadedHike}, ref) => {
   const { toast } = useToast() //sistema di notifiche
   const { user } = useAuth() //dati utente
   
- 
+
   const startMarkerRef = useRef(null) //marcatore partenza
   const endMarkerRef = useRef(null) //marcatore arrivo
   const updateMarkersListenerRef = useRef(null) // riferimento al listener
   
-  
+
   const { isNavigating, currentPosition, heading, startNavigation, stopNavigation } = useNavigation() //stato di navigazione
   const [fullRouteData, setFullRouteData] = useState(null) // salva tutti i dati del percorso
   const [isPreloaded, setIsPreloaded] = useState(false) //indica se il percorso è pre-caricato
@@ -213,60 +214,28 @@ useEffect(() => {
       }).addTo(map)
       setRouteLayer(newRouteLayer)
 
-      // Creo il marker di partenza
-      const startMarkerDiv = document.createElement('div')
-      startMarkerDiv.className = 'custom-html-marker start-marker'
-      startMarkerDiv.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="32" height="32" fill="#10b981" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-          <path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/>
-        </svg>
-      `
-      // Posiziono il marcatore di partenza
-      const startPointPixel = map.latLngToContainerPoint([route.startPoint.lat, route.startPoint.lon])
-      startMarkerDiv.style.position = 'absolute'
-      startMarkerDiv.style.left = `${startPointPixel.x}px`
-      startMarkerDiv.style.top = `${startPointPixel.y}px`
-      startMarkerDiv.style.transform = 'translate(-50%, -100%)'
-      startMarkerDiv.style.zIndex = '400'
-      startMarkerDiv.style.pointerEvents = 'none'
-      document.getElementById('map').appendChild(startMarkerDiv)
-      startMarkerRef.current = startMarkerDiv
+      // Creo marker di partenza e arrivo usando il factory
+      startMarkerRef.current = createMapMarker(
+        map,
+        MarkerType.START,
+        { lat: route.startPoint.lat, lng: route.startPoint.lon }
+      )
 
-      // Creo il marker di arrivo
-      const endMarkerDiv = document.createElement('div')
-      endMarkerDiv.className = 'custom-html-marker end-marker'
-      endMarkerDiv.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="32" height="32" fill="#ef4444" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-          <path d="M32 0C49.7 0 64 14.3 64 32V48l69-17.2c38.1-9.5 78.3-5.1 113.5 12.5c46.3 23.2 100.8 23.2 147.1 0l9.6-4.8C423.8 28.1 448 43.1 448 66.1V345.8c0 13.3-8.3 25.3-20.8 30l-34.7 13c-46.2 17.3-97.6 14.6-141.7-7.4c-37.9-19-81.3-23.7-122.5-13.4L64 384v96c0 17.7-14.3 32-32 32s-32-14.3-32-32V400 334 64 32C0 14.3 14.3 0 32 0zM64 187.1l64-13.9v65.5L64 252.6V187.1zm0 96.8l64-13.9v65.5L64 349.4V283.9zM320 128c-13.3 0-24 10.7-24 24s10.7 24 24 24h32c13.3 0 24-10.7 24-24s-10.7-24-24-24H320z"/>
-        </svg>
-      `
-      // Posiziono il marcatore di arrivo
-      const endPointPixel = map.latLngToContainerPoint([route.endPoint.lat, route.endPoint.lon])
-      endMarkerDiv.style.position = 'absolute'
-      endMarkerDiv.style.left = `${endPointPixel.x}px`
-      endMarkerDiv.style.top = `${endPointPixel.y}px`
-      endMarkerDiv.style.transform = 'translate(-50%, -100%)'
-      endMarkerDiv.style.zIndex = '400'
-      endMarkerDiv.style.pointerEvents = 'none'
-      document.getElementById('map').appendChild(endMarkerDiv)
-      endMarkerRef.current = endMarkerDiv
+      endMarkerRef.current = createMapMarker(
+        map,
+        MarkerType.END,
+        { lat: route.endPoint.lat, lng: route.endPoint.lon }
+      )
 
-      // Funzione per aggiornare la posizione del marker
-      const updateMarkerPositions = () => {
-        if (startMarkerRef.current) {
-          const newStartPoint = map.latLngToContainerPoint([route.startPoint.lat, route.startPoint.lon])
-          startMarkerRef.current.style.left = `${newStartPoint.x}px`
-          startMarkerRef.current.style.top = `${newStartPoint.y}px`
-        }
-        if (endMarkerRef.current) {
-          const newEndPoint = map.latLngToContainerPoint([route.endPoint.lat, route.endPoint.lon])
-          endMarkerRef.current.style.left = `${newEndPoint.x}px`
-          endMarkerRef.current.style.top = `${newEndPoint.y}px`
-        }
-      }
-
-      updateMarkersListenerRef.current = updateMarkerPositions
-      map.on('move zoom', updateMarkerPositions)
+      // Creo listener per aggiornare posizioni marker
+      updateMarkersListenerRef.current = createMarkersUpdateListener(
+        map,
+        [
+          { marker: startMarkerRef.current, position: { lat: route.startPoint.lat, lng: route.startPoint.lon } },
+          { marker: endMarkerRef.current, position: { lat: route.endPoint.lat, lng: route.endPoint.lon } }
+        ]
+      )
+      map.on('move zoom', updateMarkersListenerRef.current)
 
       // Adatto la vista della mappa al percorso
       map.fitBounds(newRouteLayer.getBounds(), { padding: [50, 50] })
@@ -341,62 +310,32 @@ const loadHikingRoute = (hike) => {
       descent: hike.descent || 0 
     })
 
-    // Marker di inizio (primo punto)
+    // Marker di inizio e fine
     const startCoord = hike.coordinates[0]
-    const startMarkerDiv = document.createElement('div')
-    startMarkerDiv.className = 'custom-html-marker start-marker'
-    startMarkerDiv.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="32" height="32" fill="#10b981" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-        <path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/>
-      </svg>
-    `
-    // Posiziono il marcatore di partenza
-    const startPointPixel = map.latLngToContainerPoint([startCoord[1], startCoord[0]])
-    startMarkerDiv.style.position = 'absolute'
-    startMarkerDiv.style.left = `${startPointPixel.x}px`
-    startMarkerDiv.style.top = `${startPointPixel.y}px`
-    startMarkerDiv.style.transform = 'translate(-50%, -100%)'
-    startMarkerDiv.style.zIndex = '400'
-    startMarkerDiv.style.pointerEvents = 'none'
-    document.getElementById('map').appendChild(startMarkerDiv)
-    startMarkerRef.current = startMarkerDiv
-
-    // Marker di fine (ultimo punto)
     const endCoord = hike.coordinates[hike.coordinates.length - 1]
-    const endMarkerDiv = document.createElement('div')
-    endMarkerDiv.className = 'custom-html-marker end-marker'
-    endMarkerDiv.innerHTML = `
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="32" height="32" fill="#ef4444" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-        <path d="M32 0C49.7 0 64 14.3 64 32V48l69-17.2c38.1-9.5 78.3-5.1 113.5 12.5c46.3 23.2 100.8 23.2 147.1 0l9.6-4.8C423.8 28.1 448 43.1 448 66.1V345.8c0 13.3-8.3 25.3-20.8 30l-34.7 13c-46.2 17.3-97.6 14.6-141.7-7.4c-37.9-19-81.3-23.7-122.5-13.4L64 384v96c0 17.7-14.3 32-32 32s-32-14.3-32-32V400 334 64 32C0 14.3 14.3 0 32 0zM64 187.1l64-13.9v65.5L64 252.6V187.1zm0 96.8l64-13.9v65.5L64 349.4V283.9zM320 128c-13.3 0-24 10.7-24 24s10.7 24 24 24h32c13.3 0 24-10.7 24-24s-10.7-24-24-24H320z"/>
-      </svg>
-    `
-    // Posiziono il marcatore di arrivo
-    const endPointPixel = map.latLngToContainerPoint([endCoord[1], endCoord[0]])
-    endMarkerDiv.style.position = 'absolute'
-    endMarkerDiv.style.left = `${endPointPixel.x}px`
-    endMarkerDiv.style.top = `${endPointPixel.y}px`
-    endMarkerDiv.style.transform = 'translate(-50%, -100%)'
-    endMarkerDiv.style.zIndex = '400'
-    endMarkerDiv.style.pointerEvents = 'none'
-    document.getElementById('map').appendChild(endMarkerDiv)
-    endMarkerRef.current = endMarkerDiv
 
-    // Funzione per aggiornare la posizione dei marker
-    const updateMarkerPositions = () => {
-      if (startMarkerRef.current) {
-        const newStartPoint = map.latLngToContainerPoint([startCoord[1], startCoord[0]])
-        startMarkerRef.current.style.left = `${newStartPoint.x}px`
-        startMarkerRef.current.style.top = `${newStartPoint.y}px`
-      }
-      if (endMarkerRef.current) {
-        const newEndPoint = map.latLngToContainerPoint([endCoord[1], endCoord[0]])
-        endMarkerRef.current.style.left = `${newEndPoint.x}px`
-        endMarkerRef.current.style.top = `${newEndPoint.y}px`
-      }
-    }
+    // Creo marker usando il factory
+    startMarkerRef.current = createMapMarker(
+      map,
+      MarkerType.START,
+      { lat: startCoord[1], lng: startCoord[0] }
+    )
 
-    updateMarkersListenerRef.current = updateMarkerPositions
-    map.on('move zoom', updateMarkerPositions)
+    endMarkerRef.current = createMapMarker(
+      map,
+      MarkerType.END,
+      { lat: endCoord[1], lng: endCoord[0] }
+    )
+
+    // Creo listener per aggiornare posizioni marker
+    updateMarkersListenerRef.current = createMarkersUpdateListener(
+      map,
+      [
+        { marker: startMarkerRef.current, position: { lat: startCoord[1], lng: startCoord[0] } },
+        { marker: endMarkerRef.current, position: { lat: endCoord[1], lng: endCoord[0] } }
+      ]
+    )
+    map.on('move zoom', updateMarkersListenerRef.current)
 
     // Adatto la vista della mappa al percorso
     map.fitBounds(newRouteLayer.getBounds(), { padding: [50, 50] })
@@ -658,65 +597,28 @@ const handleReset = () => {
         }).addTo(map)
         setRouteLayer(newRouteLayer)
 
-        
-        const startMarkerDiv = document.createElement('div')
-        startMarkerDiv.className = 'custom-html-marker start-marker'
-        startMarkerDiv.innerHTML = `
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="32" height="32" fill="#10b981" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-            <path d="M215.7 499.2C267 435 384 279.4 384 192C384 86 298 0 192 0S0 86 0 192c0 87.4 117 243 168.3 307.2c12.3 15.3 35.1 15.3 47.4 0zM192 128a64 64 0 1 1 0 128 64 64 0 1 1 0-128z"/>
-          </svg>
-        `
-        
-        // Converto coordinate in pixel e posiziono il marcatore
-        const startPointPixel = map.latLngToContainerPoint([sp.lat, sp.lon])
-        startMarkerDiv.style.position = 'absolute'
-        startMarkerDiv.style.left = `${startPointPixel.x}px`
-        startMarkerDiv.style.top = `${startPointPixel.y}px`
-        startMarkerDiv.style.transform = 'translate(-50%, -100%)'
-        startMarkerDiv.style.zIndex = '400'
-        startMarkerDiv.style.pointerEvents = 'none'
-        
-        document.getElementById('map').appendChild(startMarkerDiv)
-        startMarkerRef.current = startMarkerDiv
+        // Creo marker usando il factory
+        startMarkerRef.current = createMapMarker(
+          map,
+          MarkerType.START,
+          { lat: sp.lat, lng: sp.lon }
+        )
 
-        // Creo il marcatore di arrivo
-        const endMarkerDiv = document.createElement('div')
-        endMarkerDiv.className = 'custom-html-marker end-marker'
-        endMarkerDiv.innerHTML = `
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="32" height="32" fill="#ef4444" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-            <path d="M32 0C49.7 0 64 14.3 64 32V48l69-17.2c38.1-9.5 78.3-5.1 113.5 12.5c46.3 23.2 100.8 23.2 147.1 0l9.6-4.8C423.8 28.1 448 43.1 448 66.1V345.8c0 13.3-8.3 25.3-20.8 30l-34.7 13c-46.2 17.3-97.6 14.6-141.7-7.4c-37.9-19-81.3-23.7-122.5-13.4L64 384v96c0 17.7-14.3 32-32 32s-32-14.3-32-32V400 334 64 32C0 14.3 14.3 0 32 0zM64 187.1l64-13.9v65.5L64 252.6V187.1zm0 96.8l64-13.9v65.5L64 349.4V283.9zM320 128c-13.3 0-24 10.7-24 24s10.7 24 24 24h32c13.3 0 24-10.7 24-24s-10.7-24-24-24H320z"/>
-          </svg>
-        `
-        // Converto coordinate in pixel e posiziono il marcatore
-        const endPointPixel = map.latLngToContainerPoint([ep.lat, ep.lon])
-        endMarkerDiv.style.position = 'absolute'
-        endMarkerDiv.style.left = `${endPointPixel.x}px`
-        endMarkerDiv.style.top = `${endPointPixel.y}px`
-        endMarkerDiv.style.transform = 'translate(-50%, -100%)'
-        endMarkerDiv.style.zIndex = '400'
-        endMarkerDiv.style.pointerEvents = 'none'
-        
-        document.getElementById('map').appendChild(endMarkerDiv)
-        endMarkerRef.current = endMarkerDiv
-        
-        // Funzione per aggiornare la posizione dei marker durante lo zoom/move
-        const updateMarkerPositions = () => {
-          if (startMarkerRef.current) {
-            const newStartPoint = map.latLngToContainerPoint([sp.lat, sp.lon])
-            startMarkerRef.current.style.left = `${newStartPoint.x}px`
-            startMarkerRef.current.style.top = `${newStartPoint.y}px`
-          }
-          
-          if (endMarkerRef.current) {
-            const newEndPoint = map.latLngToContainerPoint([ep.lat, ep.lon])
-            endMarkerRef.current.style.left = `${newEndPoint.x}px`
-            endMarkerRef.current.style.top = `${newEndPoint.y}px`
-          }
-        }
-        
-        // Salvo il listener in un ref
-        updateMarkersListenerRef.current = updateMarkerPositions
-        map.on('move zoom', updateMarkerPositions)
+        endMarkerRef.current = createMapMarker(
+          map,
+          MarkerType.END,
+          { lat: ep.lat, lng: ep.lon }
+        )
+
+        // Creo listener per aggiornare posizioni marker
+        updateMarkersListenerRef.current = createMarkersUpdateListener(
+          map,
+          [
+            { marker: startMarkerRef.current, position: { lat: sp.lat, lng: sp.lon } },
+            { marker: endMarkerRef.current, position: { lat: ep.lat, lng: ep.lon } }
+          ]
+        )
+        map.on('move zoom', updateMarkersListenerRef.current)
         
         // Adatto la vista della mappa al percorso
         map.fitBounds(newRouteLayer.getBounds(), { padding: [50, 50] })
