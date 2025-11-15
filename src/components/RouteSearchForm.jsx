@@ -6,24 +6,26 @@ import { FaMapMarkerAlt, FaFlag, FaWalking, FaClock, FaRoute, FaLocationArrow, F
 import L from 'leaflet' // importo Leaflet per la gestione della mappa
 import 'leaflet/dist/leaflet.css' // importo stili di Leaflet
 import MapPointSelector from './MapPointSelector' // importo il componente MapPointSelector
+import useDebounce from '../hooks/useDebounce' // importo il custom hook per debounce
 import { createMapMarker, createMarkersUpdateListener, MarkerType } from '../utils/mapMarkers' // importo il factory dei marker
 import useNavigation from '../contexts/NavigationContext' // importo il contesto di navigazione
 import { useToast } from '../contexts/ToastContext' // importo il contesto delle notifiche
 import { useAuth } from '../contexts/AuthContext' // importo il contesto di autenticazione
 import { calculateDistance, formatDistance, formatElevation, KM_TO_MI, M_TO_FT, formatDurationSeconds } from '../utils/gpsUtils'  // importo le funzioni di utilità GPS
 import { useSettings } from '../contexts/SettingsContext' // importo il contesto delle impostazioni
-
 import logger from '../utils/logger'  // importo il logger
+
 // Componente RouteSearchForm per la ricerca e visualizzazione dei percorsi
 const RouteSearchForm = forwardRef(({preloadedRoute, preloadedHike}, ref) => {
   const { settings } = useSettings()
-
   const [startPoint, setStartPoint] = useState(null) //latitudine e longitudine
   const [endPoint, setEndPoint] = useState(null) //latitudine e longitudine
   const [map, setMap] = useState(null) //istanza della mappa
   const [routeLayer, setRouteLayer] = useState(null) //layer del percorso
   const [startText, setStartText] = useState('') //testo input partenza
   const [endText, setEndText] = useState('') //testo input arrivo
+  const debouncedStartText = useDebounce(startText, 300) //debounce per partenza
+  const debouncedEndText = useDebounce(endText, 300) //debounce per arrivo
   const [loading, setLoading] = useState(false) //stato di caricamento
   const [errorMsg, setErrorMsg] = useState('') //messaggi di errore
   const [routeInfo, setRouteInfo] = useState(null) //info del percorso
@@ -163,6 +165,36 @@ useEffect(() => {
     if (tempMarkerRef.current) tempMarkerRef.current.remove()
   }
 }, [map, ORS_KEY, toast])
+
+// useEffect per autocomplete partenza con debounce
+  useEffect(() => {
+    const fetchStartSuggestions = async () => {
+      if (debouncedStartText && debouncedStartText.length > 1) {
+        setStartLoading(true)
+        const suggestions = await fetchSuggestions(debouncedStartText)
+        setStartSuggestions(suggestions)
+        setStartLoading(false)
+      } else {
+        setStartSuggestions([])
+      }
+    }
+    fetchStartSuggestions()
+  }, [debouncedStartText])
+
+  // useEffect per autocomplete arrivo con debounce
+  useEffect(() => {
+    const fetchEndSuggestions = async () => {
+      if (debouncedEndText && debouncedEndText.length > 1) {
+        setEndLoading(true)
+        const suggestions = await fetchSuggestions(debouncedEndText)
+        setEndSuggestions(suggestions)
+        setEndLoading(false)
+      } else {
+        setEndSuggestions([])
+      }
+    }
+    fetchEndSuggestions()
+  }, [debouncedEndText])
 
       // Espongo la funzione di reset al componente genitore
       useImperativeHandle(ref, () => ({
@@ -761,18 +793,13 @@ const handleCloseSelector = () => {
         disabled={isPreloaded || gettingLocation}
         onFocus={() => { if (startText.length > 1) setShowStartDropdown(true) }}
         onBlur={() => setTimeout(() => setShowStartDropdown(false), 150)}
-        onChange={async (e) => {
+        onChange={(e) => {
           const val = e.target.value
           setStartText(val)
           setStartPoint(null)
           if (val.length > 1) {
-            setStartLoading(true)
             setShowStartDropdown(true)
-            const suggestions = await fetchSuggestions(val)
-            setStartSuggestions(suggestions)
-            setStartLoading(false)
           } else {
-            setStartSuggestions([])
             setShowStartDropdown(false)
           }
         }}
@@ -836,18 +863,14 @@ const handleCloseSelector = () => {
                     disabled={isPreloaded}
                     onFocus={() => { if (endText.length > 1) setShowEndDropdown(true) }}
                     onBlur={() => setTimeout(() => setShowEndDropdown(false), 150)}
-                    onChange={async (e) => {
+                    onChange={(e) => {
                       const val = e.target.value
                       setEndText(val)
                       setEndPoint(null)
+                      // Mostra dropdown se ci sono più di 1 carattere
                       if (val.length > 1) {
-                        setEndLoading(true)
                         setShowEndDropdown(true)
-                        const suggestions = await fetchSuggestions(val)
-                        setEndSuggestions(suggestions)
-                        setEndLoading(false)
                       } else {
-                        setEndSuggestions([])
                         setShowEndDropdown(false)
                       }
                     }}
