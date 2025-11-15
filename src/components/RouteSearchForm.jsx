@@ -15,6 +15,8 @@ import { useAuth } from '../contexts/AuthContext' // importo il contesto di aute
 import { calculateDistance, formatDistance, formatElevation, KM_TO_MI, M_TO_FT, formatDurationSeconds } from '../utils/gpsUtils'  // importo le funzioni di utilità GPS
 import { useSettings } from '../contexts/SettingsContext' // importo il contesto delle impostazioni
 import logger from '../utils/logger'  // importo il logger
+import { geocodeText, fetchSuggestions, reverseGeocode } from '../services/geocodingService' // importo il service per geocoding
+import { calculateRoute } from '../services/routeCalculationService' // importo il service per calcolo percorsi
 
 // Componente RouteSearchForm per la ricerca e visualizzazione dei percorsi
 const RouteSearchForm = forwardRef((props, ref) => {
@@ -173,15 +175,10 @@ useEffect(() => {
     toast.info('Ricerca indirizzo...')
     
     try {
-      // Reverse geocoding
-      const response = await fetch(
-        `https://api.openrouteservice.org/geocode/reverse?api_key=${ORS_KEY}&point.lat=${lat}&point.lon=${lng}&size=1`
-      )
+      // Reverse geocoding usando il service
+      const placeName = await reverseGeocode(lat, lng, ORS_KEY)
       
-      if (response.ok) {
-        const data = await response.json()
-        const placeName = data.features?.[0]?.properties?.label || 'Punto selezionato sulla mappa'
-        
+      if (placeName) {
         // Mostra modal di selezione
         setSelectedMapPoint({
           lat,
@@ -213,7 +210,7 @@ useEffect(() => {
     const fetchStartSuggestions = async () => {
       if (debouncedStartText && debouncedStartText.length > 1) {
         setStartLoading(true)
-        const suggestions = await fetchSuggestions(debouncedStartText)
+        const suggestions = await fetchSuggestions(debouncedStartText, ORS_KEY)
         setStartSuggestions(suggestions)
         setStartLoading(false)
       } else {
@@ -228,7 +225,7 @@ useEffect(() => {
     const fetchEndSuggestions = async () => {
       if (debouncedEndText && debouncedEndText.length > 1) {
         setEndLoading(true)
-        const suggestions = await fetchSuggestions(debouncedEndText)
+        const suggestions = await fetchSuggestions(debouncedEndText, ORS_KEY)
         setEndSuggestions(suggestions)
         setEndLoading(false)
       } else {
@@ -465,31 +462,23 @@ const getCurrentLocation = () => {
         name: 'La tua posizione'
       })
       
-      // Reverse geocoding per ottenere il nome del luogo
+      // Reverse geocoding per ottenere il nome del luogo usando il service
       try {
-        const response = await fetch(
-          `https://api.openrouteservice.org/geocode/reverse?api_key=${ORS_KEY}&point.lat=${lat}&point.lon=${lon}&size=1`
-        )
+        const placeName = await reverseGeocode(lat, lon, ORS_KEY)
         
-        if (response.ok) {
-          const data = await response.json()
-          if (data.features && data.features.length > 0) {
-            const placeName = data.features[0].properties.label
-            setStartText(` ${placeName}`)
-            setStartPoint({
-              lat,
-              lon,
-              name: placeName
-            })
-          } else {
-            setStartText(' La tua posizione')
-          }
+        if (placeName) {
+          setStartText(`📍 ${placeName}`)
+          setStartPoint({
+            lat,
+            lon,
+            name: placeName
+          })
         } else {
-          setStartText(' La tua posizione')
+          setStartText('📍 La tua posizione')
         }
       } catch (error) {
         logger.error('Reverse geocoding error:', error)
-        setStartText(' La tua posizione')
+        setStartText('📍 La tua posizione')
       }
       
       setGettingLocation(false)
@@ -521,46 +510,7 @@ const getCurrentLocation = () => {
 }
 
 // Funzione di geocoding per ottenere coordinate da testo
- const geocodeText = async (text) => {
-  if (!text) return null
-  try {
-    const url = `https://api.openrouteservice.org/geocode/search?api_key=${ORS_KEY}&text=${encodeURIComponent(text)}&boundary.country=IT&size=1`
-    const resp = await fetch(url)
-    if (!resp.ok) return null
-    const json = await resp.json()
-    if (json.features && json.features.length > 0) {
-      const coords = json.features[0].geometry.coordinates
-      return { 
-        lat: coords[1], 
-        lon: coords[0], 
-        name: json.features[0].properties.label 
-      }
-    }
-    return null
-  } catch (err) {
-    logger.error('Geocoding error:', err)
-    return null
-  }
-}
-// Funzione per ottenere suggerimenti di autocompletamento
-const fetchSuggestions = async (text) => {
-  if (!text || text.length < 2) return []
-  try {
-    const url = `https://api.openrouteservice.org/geocode/autocomplete?api_key=${ORS_KEY}&text=${encodeURIComponent(text)}&boundary.country=IT&size=5`
-    const resp = await fetch(url)
-    if (!resp.ok) return []
-    const json = await resp.json()
-    return json.features.map(feature => ({
-      lat: feature.geometry.coordinates[1],
-      lon: feature.geometry.coordinates[0],
-      display_name: feature.properties.label,
-      place_id: feature.properties.id
-    }))
-  } catch (err) {
-    logger.error('Suggestions error:', err)
-    return []
-  }
-}
+// NOTA: Le funzioni geocodeText e fetchSuggestions sono ora in services/geocodingService.js
 
 //Resetto tutto il form e la mappa
 const handleReset = () => {
@@ -611,12 +561,12 @@ const handleReset = () => {
 
     // Geocodifico se necessario il punto di partenza
     if (!sp && startText) {
-      sp = await geocodeText(startText)
+      sp = await geocodeText(startText, ORS_KEY)
       if (sp) setStartPoint(sp)
     }
     // Geocodifico se necessario il punto di arrivo
     if (!ep && endText) {
-      ep = await geocodeText(endText)
+      ep = await geocodeText(endText, ORS_KEY)
       if (ep) setEndPoint(ep)
     }
     // Controllo che entrambi i punti siano disponibili
