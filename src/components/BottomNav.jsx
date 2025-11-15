@@ -1,34 +1,42 @@
 
-import React from 'react' // importo React
-import { FaHome, FaRoute, FaBookmark, FaInfoCircle } from 'react-icons/fa'  // importo le icone necessarie
-import InfoModal from './InfoModal' // importo il componente InfoModal
-import { useState } from 'react'  // importo l'hook useState
-import NearbyHikes from './NearbyHikes' // importo il componente NearbyHikes
+import React, { useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import { FaHome, FaRoute, FaBookmark, FaInfoCircle } from 'react-icons/fa'
+import InfoModal from './InfoModal'
+import NearbyHikes from './NearbyHikes'
+import { useNavigate } from 'react-router-dom'
 
-// Componente BottomNav per la navigazione inferiore
-const BottomNav = ({ onHomeClick, onSavedClick, onRouteSelected }) => { 
+// Componente BottomNav con React Router
+const BottomNav = () => {
   const [showInfo, setShowInfo] = useState(false)
   const [showNearbyHikes, setShowNearbyHikes] = useState(false)
-  // Gestore della selezione di un percorso di hiking
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  // Controlla se un path è attivo
+  const isActive = (path) => location.pathname === path
+
+  // Gestore selezione hike
   const handleSelectHike = (hike) => {
     setShowNearbyHikes(false)
-    if (onRouteSelected) {
-      onRouteSelected(hike)
-    }
+    // Naviga alla home e passa hike tramite state
+    navigate('/', { state: { preloadedHike: hike } })
   }
- // Render del componente
+
   return (
     <>
       <nav className="bottom-nav">
-        <button 
-          onClick={onHomeClick} 
+        {/* Home */}
+        <Link 
+          to="/" 
           aria-label="Home" 
-          className="nav-item"
+          className={`nav-item ${isActive('/') ? 'active' : ''}`}
         >
           <FaHome className="text-lg" />
           <span className="nav-item-label">Home</span>
-        </button>
+        </Link>
 
+        {/* Route (modal) */}
         <button 
           onClick={() => setShowNearbyHikes(true)} 
           aria-label="Route" 
@@ -38,15 +46,17 @@ const BottomNav = ({ onHomeClick, onSavedClick, onRouteSelected }) => {
           <span className="nav-item-label">Route</span>
         </button>
 
-        <button 
-          onClick={onSavedClick} 
+        {/* Saved */}
+        <Link 
+          to="/saved" 
           aria-label="Saved" 
-          className="nav-item"
+          className={`nav-item ${isActive('/saved') ? 'active' : ''}`}
         >
           <FaBookmark className="text-lg" />
           <span className="nav-item-label">Saved</span>
-        </button>
+        </Link>
 
+        {/* Info */}
         <button 
           onClick={() => setShowInfo(true)} 
           aria-label="Info" 
@@ -60,8 +70,8 @@ const BottomNav = ({ onHomeClick, onSavedClick, onRouteSelected }) => {
       {showInfo && <InfoModal onClose={() => setShowInfo(false)} />}
       {showNearbyHikes && (
         <NearbyHikes 
-          onClose={() => setShowNearbyHikes(false)} // Chiusura del modal
-          onSelectHike={handleSelectHike} // Selezione di un percorso di hiking
+          onClose={() => setShowNearbyHikes(false)}
+          onSelectHike={handleSelectHike}
         />
       )}
     </>
