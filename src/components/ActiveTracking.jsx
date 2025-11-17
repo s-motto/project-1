@@ -53,7 +53,6 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   const [currentPosition, setCurrentPosition] = useState(null)
   const [trackPoints, setTrackPoints] = useState([]) // Traccia GPS reale (verde)
   const [distance, setDistance] = useState(0) // Distanza percorsa (km)
-  // ✅ RIMOSSO: const [elapsedTime, setElapsedTime] = useState(0) - ora viene dall'hook!
   const [elevationGain, setElevationGain] = useState(0) // Salita accumulata (m)
   const [elevationLoss, setElevationLoss] = useState(0) // Discesa accumulata (m)
   const [heading, setHeading] = useState(0) // Direzione movimento (gradi)
@@ -105,11 +104,10 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   // ========== REFS ==========
   const isTrackingRef = useRef(false)
   const isPausedRef = useRef(false)
-  // ✅ RIMOSSO: startTimeRef, pausedTimeRef, timerRef - ora sono nell'hook!
   const mapRef = useRef(null)
   const lastElevation = useRef(null)
 
-  // ✅ HOOK TIMER - gestisce tutto automaticamente!
+  // hook per gestire il timer del tracking GPS
   const { elapsedTime } = useTrackingTimer(isTracking, isPaused)
 
   // ==========================================
@@ -574,7 +572,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
         }
       }
 
-      // ✅ SEMPLIFICATO - L'hook gestisce il reset automaticamente!
+     
       setIsTracking(true)
       setIsPaused(false)
       isTrackingRef.current = true
@@ -700,7 +698,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     }
   }, [])
 
-  // ✅ RIMOSSO - Effect del timer ora è dentro l'hook!
+  
 
   // Cleanup: ferma GPS quando unmount
   useEffect(() => {
