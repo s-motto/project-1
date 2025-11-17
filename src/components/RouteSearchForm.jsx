@@ -13,6 +13,7 @@ import MapPointSelector from './MapPointSelector' // importo il componente MapPo
 import useDebounce from '../hooks/useDebounce' // importo il custom hook per debounce
 import { useRouteLoader } from '../hooks/useRouteLoader' // importo il custom hook per caricare percorsi
 import { useMapClick } from '../hooks/useMapClick' // importo il custom hook per gestire click sulla mappa
+import { useUserLocation } from '../hooks/useUserLocation' // importo il custom hook per geolocalizzazione
 import { createMapMarker, createMarkersUpdateListener, MarkerType } from '../utils/mapMarkers' // importo il factory dei marker
 import useNavigation from '../contexts/NavigationContext' // importo il contesto di navigazione
 import { useToast } from '../contexts/ToastContext' // importo il contesto delle notifiche
@@ -66,8 +67,6 @@ const RouteSearchForm = forwardRef((props, ref) => {
   const [fullRouteData, setFullRouteData] = useState(null) // salva tutti i dati del percorso
   const [isPreloaded, setIsPreloaded] = useState(false) //indica se il percorso è pre-caricato
   const [routeSaved, setRouteSaved] = useState(false) //indica se l'utente ha già salvato il percorso
-  const [gettingLocation, setGettingLocation] = useState(false)//stato ottenimento posizione utente
-  const [userLocation, setUserLocation] = useState(null)//posizione utente
   const [showTracking, setShowTracking] = useState(false) //mostra componente ActiveTracking
   const [showMapPointSelector, setShowMapPointSelector] = useState(false)//mostra selettore punti mappa
   const [selectedMapPoint, setSelectedMapPoint] = useState(null)//punto selezionato nella mappa
@@ -114,6 +113,16 @@ const RouteSearchForm = forwardRef((props, ref) => {
     removeTempMarkerRef.current = pointData.removeTempMarker
     setShowMapPointSelector(true)
   })
+
+  // Hook per geolocalizzazione utente
+  const { getCurrentLocation, gettingLocation, userLocation, locationError } = useUserLocation(map, ORS_KEY)
+
+  // Sincronizza errori di geolocalizzazione con errorMsg principale
+  useEffect(() => {
+    if (locationError) {
+      setErrorMsg(locationError)
+    }
+  }, [locationError])
   
   // useEffect per leggere i dati passati tramite React Router state
   useEffect(() => {
@@ -212,76 +221,21 @@ const RouteSearchForm = forwardRef((props, ref) => {
       reset: handleReset
       }))
 
-// Funzione per ottenere la posizione corrente dell'utente
-const getCurrentLocation = () => {
-  setGettingLocation(true)
-  setErrorMsg('')
-  
-  if (!navigator.geolocation) {
-    setErrorMsg('Il tuo browser non supporta la geolocalizzazione')
-    setGettingLocation(false)
-    return
-  }
-
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      const lat = position.coords.latitude
-      const lon = position.coords.longitude
-      
-      // Centro la mappa sulla posizione dell'utente
-      if (map) {
-      map.setView([lat, lon], 13)
-    }
-      // Imposta le coordinate come punto di partenza
+// Handler per ottenere posizione corrente (usa l'hook)
+const handleGetCurrentLocation = () => {
+  getCurrentLocation(
+    // Callback success
+    (locationData) => {
       setStartPoint({
-        lat,
-        lon,
-        name: 'La tua posizione'
+        lat: locationData.lat,
+        lon: locationData.lon,
+        name: locationData.name
       })
-      
-      // Reverse geocoding per ottenere il nome del luogo usando il service
-      try {
-        const placeName = await reverseGeocode(lat, lon, ORS_KEY)
-        
-        if (placeName) {
-          setStartText(`📍 ${placeName}`)
-          setStartPoint({
-            lat,
-            lon,
-            name: placeName
-          })
-        } else {
-          setStartText('📍 La tua posizione')
-        }
-      } catch (error) {
-        logger.error('Reverse geocoding error:', error)
-        setStartText('📍 La tua posizione')
-      }
-      
-      setGettingLocation(false)
-      setUserLocation({ lat, lon })
+      setStartText(locationData.displayText)
     },
+    // Callback error
     (error) => {
-      logger.error('Geolocation error:', error)
-      switch(error.code) {
-        case error.PERMISSION_DENIED:
-          setErrorMsg('Permesso di geolocalizzazione negato')
-          break
-        case error.POSITION_UNAVAILABLE:
-          setErrorMsg('Posizione non disponibile')
-          break
-        case error.TIMEOUT:
-          setErrorMsg('Richiesta posizione scaduta')
-          break
-        default:
-          setErrorMsg('Errore nel recupero della posizione')
-      }
-      setGettingLocation(false)
-    },
-    {
-      enableHighAccuracy: true,
-      timeout: 10000,
-      maximumAge: 0
+      setErrorMsg(error)
     }
   )
 }
@@ -606,7 +560,7 @@ const handleCloseSelector = () => {
             onEndBlur={handleEndBlur}
             onSelectStartSuggestion={handleSelectStartSuggestion}
             onSelectEndSuggestion={handleSelectEndSuggestion}
-            onGetCurrentLocation={getCurrentLocation}
+            onGetCurrentLocation={handleGetCurrentLocation}
             onSubmit={handleSubmit}
           />
 
