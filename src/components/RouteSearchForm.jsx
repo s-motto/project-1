@@ -3,6 +3,8 @@ import { useLocation } from 'react-router-dom' // importo useLocation per legger
 import NavigationMode from './NavigationMode' // importo il componente NavigationMode
 import SaveRouteButton from './SaveRouteButton' // importo il componente SaveRouteButton
 import ActiveTracking from './ActiveTracking' // importo il componente ActiveTracking
+import RouteInfo from './RouteInfo' // importo il componente RouteInfo
+import RouteInstructions from './RouteInstructions' // importo il componente RouteInstructions
 import { FaMapMarkerAlt, FaFlag, FaWalking, FaClock, FaRoute, FaLocationArrow, FaSpinner, FaPlay } from 'react-icons/fa'  // importo le icone necessarie
 import L from 'leaflet' // importo Leaflet per la gestione della mappa
 import 'leaflet/dist/leaflet.css' // importo stili di Leaflet
@@ -543,11 +545,77 @@ const handleReset = () => {
   }
 }
 
+// ========== CALLBACK FUNCTIONS PER ROUTEINPUTS ==========
+
+// Gestione cambio testo input partenza
+const handleStartTextChange = (val) => {
+  setStartText(val)
+  setStartPoint(null)
+  if (val.length > 1) {
+    setShowStartDropdown(true)
+  } else {
+    setShowStartDropdown(false)
+  }
+}
+
+// Gestione cambio testo input arrivo
+const handleEndTextChange = (val) => {
+  setEndText(val)
+  setEndPoint(null)
+  if (val.length > 1) {
+    setShowEndDropdown(true)
+  } else {
+    setShowEndDropdown(false)
+  }
+}
+
+// Gestione selezione suggerimento partenza
+const handleSelectStartSuggestion = (suggestion) => {
+  setStartText(suggestion.display_name)
+  setStartPoint({
+    lat: suggestion.lat,
+    lon: suggestion.lon,
+    name: suggestion.display_name,
+  })
+  setShowStartDropdown(false)
+  setStartSuggestions([])
+}
+
+// Gestione selezione suggerimento arrivo
+const handleSelectEndSuggestion = (suggestion) => {
+  setEndText(suggestion.display_name)
+  setEndPoint({
+    lat: suggestion.lat,
+    lon: suggestion.lon,
+    name: suggestion.display_name,
+  })
+  setShowEndDropdown(false)
+  setEndSuggestions([])
+}
+
+// Gestione focus/blur input partenza
+const handleStartFocus = () => {
+  if (startText.length > 1) setShowStartDropdown(true)
+}
+
+const handleStartBlur = () => {
+  setTimeout(() => setShowStartDropdown(false), 150)
+}
+
+// Gestione focus/blur input arrivo
+const handleEndFocus = () => {
+  if (endText.length > 1) setShowEndDropdown(true)
+}
+
+const handleEndBlur = () => {
+  setTimeout(() => setShowEndDropdown(false), 150)
+}
+
+// ========== FINE CALLBACK FUNCTIONS ==========
 
 
 
-  const handleSubmit = async (e) => { //gestisco l'invio del form
-    e.preventDefault()
+  const handleSubmit = async () => { //gestisco l'invio del form
     setErrorMsg('')
     setLoading(true)
     setRouteInfo(null)
@@ -769,6 +837,7 @@ const handleCloseSelector = () => {
     <div className="flex flex-col space-y-4">
   {!isNavigating ? (
         <>
+          {/* Form di ricerca percorso */}
           <form onSubmit={handleSubmit} className="route-search-form">
             {/* Input punto di partenza con bottone GPS */}
 <div className="flex items-center space-x-2 relative">
@@ -933,106 +1002,26 @@ const handleCloseSelector = () => {
 
           {/* Route Information Card */}
           {routeInfo && (
-            <div className="route-info-container">
-  <h3 className="route-info-header">Informazioni Percorso</h3>
-  <div className="route-info-stats-grid">
-                <div className="route-stat-card">
-  <FaRoute className="route-stat-icon-distance" />
-  <div className="route-stat-details">
-    <p className="route-stat-label">Distanza</p>
-    <p className="route-stat-value">{formatDistance(routeInfo.distance, settings?.distanceUnit || 'km')}</p>
-  </div>
-</div>
-                <div className="route-stat-card">
-  <FaClock className="route-stat-icon-duration" />
-  <div className="route-stat-details">
-    <p className="route-stat-label">Durata</p>
-    <p className="route-stat-value">{routeInfo.duration} min</p>
-  </div>
-</div>
-                <div className="route-stat-card">
-  <FaWalking className="route-stat-icon-ascent" />
-  <div className="route-stat-details">
-    <p className="route-stat-label">Salita</p>
-    <p className="route-stat-value">{formatElevation(routeInfo.ascent, settings?.elevationUnit || 'm')}</p>
-  </div>
-</div>
-                <div className="route-stat-card">
-  <FaWalking className="route-stat-icon-descent" />
-  <div className="route-stat-details">
-    <p className="route-stat-label">Discesa</p>
-    <p className="route-stat-value">{formatElevation(routeInfo.descent, settings?.elevationUnit || 'm')}</p>
-  </div>
-</div>
-              </div>
-
-              <div className="mt-4 pt-4 border-t space-y-2">
-               {fullRouteData && (!isPreloaded || preloadedHike) && !routeSaved && (
-    <SaveRouteButton
-      routeData={fullRouteData}
-      onSaved={(savedId) => {
-        setRouteSaved(true)
-        if (savedId) {
-          setFullRouteData((prev) => ({ ...(prev || {}), savedId }))
-        }
-      }}
-    />
-  )}
-          
-  
-  {/*  Pulsante per ActiveTracking */}
-  <button
-    onClick={handleStartTracking}
-    className="btn-tracking"
-  >
-    <FaPlay />
-    <span> Tracking GPS con Statistiche</span>
-  </button>
-  
-  {/* Pulsante Navigazione guidata  */}
-  <button
-    onClick={() => startNavigation()}
-    className="route-gps-btn"
-  >
-    <FaLocationArrow />
-    <span> Navigazione Guidata</span>
-  </button>
-</div>
-</div>  
+            <RouteInfo
+              routeInfo={routeInfo}
+              fullRouteData={fullRouteData}
+              isPreloaded={isPreloaded}
+              preloadedHike={preloadedHike}
+              routeSaved={routeSaved}
+              onSaved={(savedId) => {
+                setRouteSaved(true)
+                if (savedId) {
+                  setFullRouteData((prev) => ({ ...(prev || {}), savedId }))
+                }
+              }}
+              onStartTracking={handleStartTracking}
+              onStartNavigation={() => startNavigation()}
+            />
           )}
 
 
           {/* Turn-by-turn Instructions */}
-          {Array.isArray(instructions) && instructions.length > 0 && (
-            <div className="route-instructions-container">
-  <h3 className="route-instructions-title">Indicazioni Stradali</h3>
-  <div className="route-instructions-list">
-    {instructions.map((step, idx) => (
-      <div key={idx} className="route-instruction-step">
-        <span className="route-instruction-badge">
-          {idx + 1}
-        </span>
-        <div className="route-instruction-content">
-          <p className="route-instruction-text">{step.instruction}</p>
-          <p className="route-instruction-meta">
-                        {(() => {
-              const dKm = step.distance || 0 // ORS returns km when units:'km'
-              if ((settings?.distanceUnit || 'km') === 'mi') {
-                if (dKm >= 0.1) return `${(dKm * KM_TO_MI).toFixed(2)} mi`
-                const feet = Math.round(dKm * 1000 * M_TO_FT)
-                return `${feet} ft`
-              } else {
-                if (dKm >= 1) return `${dKm.toFixed(2)} km`
-                return `${Math.round(dKm * 1000)} m`
-              }
-            })()} · {formatDurationSeconds(Math.round(step.duration || 0), settings?.durationFormat || 'hms')}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <RouteInstructions instructions={instructions} />
         </>
       ) : (
   <NavigationMode
