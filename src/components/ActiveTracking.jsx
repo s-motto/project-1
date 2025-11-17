@@ -27,6 +27,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 import { useSettings } from '../contexts/SettingsContext'
 import useGeolocation from '../hooks/useGeolocation'
+import useTrackingTimer from '../hooks/useTrackingTimer' // ✅ NUOVO HOOK
 import routesService from '../services/routesService'
 import logger from '../utils/logger'
 import {
@@ -52,7 +53,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   const [currentPosition, setCurrentPosition] = useState(null)
   const [trackPoints, setTrackPoints] = useState([]) // Traccia GPS reale (verde)
   const [distance, setDistance] = useState(0) // Distanza percorsa (km)
-  const [elapsedTime, setElapsedTime] = useState(0) // Tempo trascorso (secondi)
+  // ✅ RIMOSSO: const [elapsedTime, setElapsedTime] = useState(0) - ora viene dall'hook!
   const [elevationGain, setElevationGain] = useState(0) // Salita accumulata (m)
   const [elevationLoss, setElevationLoss] = useState(0) // Discesa accumulata (m)
   const [heading, setHeading] = useState(0) // Direzione movimento (gradi)
@@ -104,11 +105,12 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   // ========== REFS ==========
   const isTrackingRef = useRef(false)
   const isPausedRef = useRef(false)
-  const startTimeRef = useRef(null)
-  const pausedTimeRef = useRef(0)
-  const timerRef = useRef(null)
+  // ✅ RIMOSSO: startTimeRef, pausedTimeRef, timerRef - ora sono nell'hook!
   const mapRef = useRef(null)
   const lastElevation = useRef(null)
+
+  // ✅ HOOK TIMER - gestisce tutto automaticamente!
+  const { elapsedTime } = useTrackingTimer(isTracking, isPaused)
 
   // ==========================================
   // WAYPOINT UTILITIES
@@ -186,151 +188,116 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       // 4. Destinazione finale
       coordinates.push([route.endPoint.lon, route.endPoint.lat])
 
-      // Chiamata API OpenRouteService
-      const response = await fetch(
-        'https://api.openrouteservice.org/v2/directions/foot-hiking/geojson',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': ORS_KEY,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            coordinates: coordinates,
-            instructions: true,
-            language: 'it',
-            units: 'km',
-            elevation: true
-          })
-        }
-      )
+      // Chiamata API
+      const url = 'https://api.openrouteservice.org/v2/directions/foot-hiking/geojson'
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': ORS_KEY
+        },
+        body: JSON.stringify({ coordinates })
+      })
 
       if (!response.ok) {
-        throw new Error('Errore nel calcolo del percorso')
+        throw new Error('API error')
       }
 
       const data = await response.json()
+      const feature = data.features[0]
+      const props = feature.properties.segments[0]
 
-      if (data.features && data.features.length > 0) {
-        const feature = data.features[0]
-        const props = feature.properties
-
-        // Ottieni nome del waypoint
-        const name = await reverseGeocode(newWaypoint.lat, newWaypoint.lng)
-
-        return {
-          distance: props.summary.distance, // km
-          duration: props.summary.duration, // secondi
-          name: name,
-          coordinates: feature.geometry.coordinates,
-          ascent: props.ascent || 0,
-          descent: props.descent || 0
-        }
+      // Estrai dati preview
+      const preview = {
+        distance: (props.distance / 1000).toFixed(2), // km
+        duration: Math.round(props.duration / 60), // minuti
+        name: newWaypoint.name,
+        coordinates: feature.geometry.coordinates.map(c => [c[1], c[0]]), // Converti a Leaflet
+        ascent: props.ascent || 0,
+        descent: props.descent || 0
       }
 
-      throw new Error('Nessun percorso trovato')
-
-    } catch (error) {
-      logger.error('Error calculating waypoint preview:', error)
-      toast.error('Errore nel calcolo del percorso con waypoint')
-      return null
-    } finally {
+      setWaypointPreview(preview)
       setLoadingPreview(false)
+      return preview
+    } catch (error) {
+      logger.error('Waypoint preview error:', error)
+      setLoadingPreview(false)
+      toast.error('Errore nel calcolo del percorso')
+      return null
     }
   }
 
   /**
-   * Ricalcola il percorso completo con tutti i waypoints
+   * Ricalcola il percorso completo con tutti i waypoints confermati
    * Aggiorna currentRouteData con il nuovo percorso
-   * 
-   * @param {Array} waypointsToUse - Optional array of waypoints to use (defaults to current state)
-   * Viene chiamato dopo la conferma del waypoint
    */
-  const recalculateRouteWithWaypoints = async (waypointsToUse = null) => {
+  const recalculateRouteWithWaypoints = async () => {
+    if (waypoints.length === 0) {
+      // Nessun waypoint, usa percorso originale
+      setCurrentRouteData(originalRouteRef.current)
+      return
+    }
+
     setRecalculatingRoute(true)
 
     try {
       const ORS_KEY = import.meta.env.VITE_OPENROUTE_API_KEY
 
-      // Usa i waypoints passati o quelli nello state
-      const wps = waypointsToUse || waypoints
-
-      // Costruisci coordinate
+      // Costruisci coordinate: start -> waypoints -> end
       const coordinates = []
 
-      // Posizione corrente o start originale
+      // Start (posizione corrente o originale)
       if (currentPosition) {
         coordinates.push([currentPosition.lng, currentPosition.lat])
       } else {
         coordinates.push([route.startPoint.lon, route.startPoint.lat])
       }
 
-      // Tutti i waypoints
-      wps.forEach(wp => {
+      // Waypoints
+      waypoints.forEach(wp => {
         coordinates.push([wp.lng, wp.lat])
       })
 
-      // Destinazione
+      // End
       coordinates.push([route.endPoint.lon, route.endPoint.lat])
 
-      // Chiamata API
-      const response = await fetch(
-        'https://api.openrouteservice.org/v2/directions/foot-hiking/geojson',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': ORS_KEY,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            coordinates: coordinates,
-            instructions: true,
-            language: 'it',
-            units: 'km',
-            elevation: true
-          })
-        }
-      )
+      // API Call
+      const url = 'https://api.openrouteservice.org/v2/directions/foot-hiking/geojson'
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': ORS_KEY
+        },
+        body: JSON.stringify({ coordinates })
+      })
 
       if (!response.ok) {
-        throw new Error('Errore nel ricalcolo del percorso')
+        throw new Error('API error')
       }
 
       const data = await response.json()
+      const feature = data.features[0]
+      const props = feature.properties.segments[0]
 
-      if (data.features && data.features.length > 0) {
-        const feature = data.features[0]
-        const props = feature.properties
-
-        // Aggiorna route data
-        const updatedRoute = {
-          ...route,
-          coordinates: feature.geometry.coordinates.map(coord => [coord[1], coord[0]]), // [lat, lon]
-          distance: props.summary.distance,
-          duration: Math.round(props.summary.duration / 60), // minuti
-          ascent: props.ascent || 0,
-          descent: props.descent || 0,
-          instructions: props.segments.flatMap(seg =>
-            seg.steps.map(step => ({
-              instruction: step.instruction,
-              distance: step.distance,
-              duration: step.duration
-            }))
-          )
-        }
-
-        setCurrentRouteData(updatedRoute)
-        toast.success('Percorso aggiornato con successo!')
-
-      } else {
-        throw new Error('Nessun percorso trovato')
+      // Aggiorna percorso visualizzato
+      const newRouteData = {
+        ...originalRouteRef.current,
+        coordinates: feature.geometry.coordinates.map(c => [c[1], c[0]]), // Leaflet format
+        distance: (props.distance / 1000).toFixed(2),
+        duration: Math.round(props.duration / 60),
+        ascent: props.ascent || 0,
+        descent: props.descent || 0
       }
 
-    } catch (error) {
-      logger.error('Error recalculating route:', error)
-      toast.error('Errore nel ricalcolo del percorso')
-    } finally {
+      setCurrentRouteData(newRouteData)
       setRecalculatingRoute(false)
+      toast.success('Percorso aggiornato con waypoint!')
+    } catch (error) {
+      logger.error('Route recalculation error:', error)
+      setRecalculatingRoute(false)
+      toast.error('Errore nel ricalcolo del percorso')
     }
   }
 
@@ -339,144 +306,95 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   // ==========================================
 
   /**
-   * Handler chiamato quando l'utente fa long press sulla mappa
-   * 
-   * Logica:
-   * 1. Verifica che il tracking sia attivo
-   * 2. Verifica che non ci siano già 5 waypoints
-   * 3. Salva waypoint temporaneo
-   * 4. Calcola preview
-   * 5. Mostra dialog
-   * 
-   * @param {Object} latlng - Coordinate Leaflet {lat, lng}
+   * Gestisce long press sulla mappa per aggiungere waypoint
    */
   const handleMapLongPress = async (latlng) => {
-    // Validazioni
+    // Verifica limiti
+    if (waypoints.length >= 5) {
+      toast.warning('Massimo 5 waypoints consentiti')
+      return
+    }
+
     if (!isTracking) {
       toast.info('Avvia il tracking per aggiungere waypoints')
       return
     }
 
-    if (waypoints.length >= 5) {
-      toast.warning('Massimo 5 waypoints raggiunto')
-      return
-    }
+    // Ottieni nome luogo
+    const placeName = await reverseGeocode(latlng.lat, latlng.lng)
 
     // Salva waypoint temporaneo
-    const tempWp = {
+    setTempWaypoint({
       lat: latlng.lat,
-      lng: latlng.lng
-    }
-    setTempWaypoint(tempWp)
+      lng: latlng.lng,
+      name: placeName
+    })
 
-    // Mostra dialog con loading
+    // Mostra dialog e calcola preview
     setShowWaypointDialog(true)
-    setWaypointPreview(null)
-
-    // Calcola preview
-    const preview = await calculateWaypointPreview(tempWp)
-
-    if (preview) {
-      setWaypointPreview(preview)
-    } else {
-      // Se fallisce, chiudi dialog
-      setShowWaypointDialog(false)
-      setTempWaypoint(null)
-    }
+    await calculateWaypointPreview({
+      lat: latlng.lat,
+      lng: latlng.lng,
+      name: placeName
+    })
   }
 
   /**
-   * Conferma l'aggiunta del waypoint
-   * Aggiunge il waypoint all'array e usa i dati del preview già calcolati
+   * Conferma aggiunta waypoint
    */
-  const handleConfirmWaypoint = async () => {
-    if (!tempWaypoint || !waypointPreview) return
+  const handleConfirmWaypoint = () => {
+    if (!tempWaypoint) return
 
-    // Aggiungi waypoint
-    const newWaypoint = {
-      lat: tempWaypoint.lat,
-      lng: tempWaypoint.lng,
-      name: waypointPreview.name,
-      addedAt: new Date().toISOString()
-    }
+    // Aggiungi waypoint alla lista
+    setWaypoints(prev => [...prev, tempWaypoint])
 
-    const updatedWaypoints = [...waypoints, newWaypoint]
-    setWaypoints(updatedWaypoints)
-
-    // Usa i dati del preview già calcolati per aggiornare il percorso
-    const updatedRoute = {
-      ...route,
-      coordinates: waypointPreview.coordinates.map(coord => [coord[1], coord[0]]), // [lat, lon]
-      distance: waypointPreview.distance,
-      duration: Math.round(waypointPreview.duration / 60), // minuti
-      ascent: waypointPreview.ascent || 0,
-      descent: waypointPreview.descent || 0
-    }
-
-    setCurrentRouteData(updatedRoute)
-
-    // Chiudi dialog
-    setShowWaypointDialog(false)
+    // Reset stati temporanei
     setTempWaypoint(null)
+    setShowWaypointDialog(false)
     setWaypointPreview(null)
 
-    toast.success(`Waypoint "${newWaypoint.name}" aggiunto!`)
+    // Ricalcola percorso
+    setTimeout(() => {
+      recalculateRouteWithWaypoints()
+    }, 100)
   }
 
   /**
-   * Annulla l'aggiunta del waypoint
+   * Annulla aggiunta waypoint
    */
   const handleCancelWaypoint = () => {
-    setShowWaypointDialog(false)
     setTempWaypoint(null)
+    setShowWaypointDialog(false)
     setWaypointPreview(null)
   }
 
   /**
-   * Rimuove un waypoint dalla lista
-   * 
-   * @param {Number} index - Indice del waypoint da rimuovere
+   * Rimuovi waypoint specifico
    */
-  const handleRemoveWaypoint = async (index) => {
-    if (!confirm(`Rimuovere il waypoint "${waypoints[index].name}"?`)) {
-      return
-    }
+  const handleRemoveWaypoint = (index) => {
+    setWaypoints(prev => prev.filter((_, i) => i !== index))
 
-    // Rimuovi waypoint
-    const newWaypoints = waypoints.filter((_, i) => i !== index)
-    setWaypoints(newWaypoints)
-
-    toast.info('Waypoint rimosso')
-
-    // Se non ci sono più waypoints, torna al percorso originale
-    if (newWaypoints.length === 0) {
-      setCurrentRouteData(originalRouteRef.current)
-      toast.info('Percorso ripristinato')
-    } else {
-      // Ricalcola con i waypoints rimanenti, passando l'array aggiornato
-      recalculateRouteWithWaypoints(newWaypoints)
-    }
+    // Ricalcola dopo breve delay
+    setTimeout(() => {
+      recalculateRouteWithWaypoints()
+    }, 100)
   }
 
-  /**
-   * Formatta la distanza per la preview
-   */
+  // ==========================================
+  // FORMATTAZIONE PREVIEW
+  // ==========================================
+
   const formatPreviewDistance = (km) => {
     if (!km) return '---'
 
-    const unit = settings?.distanceUnit || 'km'
-
-    if (unit === 'mi') {
+    if (settings?.distanceUnit === 'mi') {
       const miles = km * 0.621371
       return `${miles.toFixed(2)} mi`
     }
 
-    return `${km.toFixed(2)} km`
+    return `${km} km`
   }
 
-  /**
-   * Formatta la durata per la preview
-   */
   const formatPreviewDuration = (seconds) => {
     if (!seconds) return '---'
 
@@ -511,7 +429,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     setCurrentPosition(newPoint)
     setGpsAccuracy(position.coords.accuracy)
 
-    if (position.coords.accuracy > (settings?.gpsAccuracyMax || 150)) {
+    if (position.coords.accuracy <= (settings?.gpsAccuracyMax || 150)) {
       setWaitingForGoodFix(false)
     }
 
@@ -536,85 +454,99 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
         setHeading(bearing)
       }
 
-      // Primo punto
-      if (prevTrackPoints.length === 0) {
-        if (newPoint.altitude !== null) {
+      // Calcola distanza dall'ultimo punto
+      if (prevTrackPoints.length > 0) {
+        const lastPoint = prevTrackPoints[prevTrackPoints.length - 1]
+        const pointDistance = calculateDistance(
+          lastPoint.lat,
+          lastPoint.lng,
+          newPoint.lat,
+          newPoint.lng
+        )
+
+        // Aggiungi solo se movimento significativo (>3m) e accuratezza buona
+        if (pointDistance >= 0.003 && newPoint.accuracy <= (settings?.gpsAccuracyMax || 150)) {
+          // Aggiorna distanza totale
+          setDistance(prev => prev + pointDistance)
+
+          // Calcola elevazione (se disponibile)
+          if (newPoint.altitude && lastElevation.current !== null) {
+            const elevDiff = newPoint.altitude - lastElevation.current
+
+            if (elevDiff > 0) {
+              setElevationGain(prev => prev + elevDiff)
+            } else if (elevDiff < 0) {
+              setElevationLoss(prev => prev + Math.abs(elevDiff))
+            }
+          }
+
+          if (newPoint.altitude) {
+            lastElevation.current = newPoint.altitude
+          }
+
+          return [...prevTrackPoints, newPoint]
+        }
+      } else {
+        // Primo punto
+        if (newPoint.altitude) {
           lastElevation.current = newPoint.altitude
         }
         return [newPoint]
       }
 
-      // Calcola distanza dal punto precedente
-      const lastPoint = prevTrackPoints[prevTrackPoints.length - 1]
-      const dist = calculateDistance(
-        lastPoint.lat, lastPoint.lng,
-        newPoint.lat, newPoint.lng
-      )
-
-      // Aggiungi solo se supera la distanza minima
-      const minDistance = (settings?.minPointDistanceMeters || 3) / 1000
-
-      if (dist >= minDistance) {
-        setDistance(prev => prev + dist)
-
-        // Calcola dislivello
-        if (newPoint.altitude !== null && lastElevation.current !== null) {
-          const elevDiff = newPoint.altitude - lastElevation.current
-
-          if (elevDiff > 0) {
-            setElevationGain(prev => prev + elevDiff)
-          } else if (elevDiff < 0) {
-            setElevationLoss(prev => prev + Math.abs(elevDiff))
-          }
-
-          lastElevation.current = newPoint.altitude
-        }
-
-        return [...prevTrackPoints, newPoint]
-      }
-
       return prevTrackPoints
     })
-  }, [settings?.gpsAccuracyMax, settings?.minPointDistanceMeters])
+  }, [settings])
 
   /**
    * Gestisce errori GPS
    */
-  const handlePositionError = (error) => {
-    let errorMsg = 'Errore GPS: '
+  const handlePositionError = useCallback((error) => {
+    logger.error('GPS error:', error)
+    let message = 'Errore GPS'
 
-    if (error.code === 1) {
-      errorMsg += 'Abilita il GPS nelle impostazioni del browser.'
-    } else if (error.code === 2) {
-      errorMsg += 'Posizione non disponibile. Sei all\'aperto?'
-    } else if (error.code === 3) {
-      errorMsg += 'Timeout. Il GPS impiega troppo tempo.'
-    } else {
-      errorMsg += error.message
+    switch (error.code) {
+      case error.PERMISSION_DENIED:
+        message = 'Permesso GPS negato. Attiva la geolocalizzazione nelle impostazioni.'
+        break
+      case error.POSITION_UNAVAILABLE:
+        message = 'Posizione non disponibile. Verifica di essere all\'aperto.'
+        break
+      case error.TIMEOUT:
+        message = 'Timeout GPS. Riprovo...'
+        break
+      default:
+        message = 'Errore GPS sconosciuto'
     }
 
-    toast.error(errorMsg)
-  }
+    toast.error(message)
+  }, [toast])
+
+  // ==========================================
+  // SAVING LOGIC
+  // ==========================================
 
   /**
-   * Salva il percorso se non già salvato
+   * Assicura che il percorso sia salvato su Appwrite
+   * Se non esiste, lo crea automaticamente
    */
   const ensureRouteSaved = async () => {
     if (savedRouteId) {
       return savedRouteId
     }
 
+    // Salva percorso
     const result = await routesService.saveRoute(
       {
-        name: route.name || 'Percorso tracciato',
+        name: route.name || 'Percorso senza nome',
         startPoint: route.startPoint,
         endPoint: route.endPoint,
         distance: route.distance,
         duration: route.duration,
         ascent: route.ascent || 0,
         descent: route.descent || 0,
-        coordinates: route.coordinates,
-        instructions: Array.isArray(route.instructions) ? route.instructions : []
+        coordinates: JSON.stringify(route.coordinates),
+        instructions: route.instructions || route.instructions
       },
       user.$id
     )
@@ -642,9 +574,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
         }
       }
 
-      // Avvia tracking
-      startTimeRef.current = Date.now()
-      pausedTimeRef.current = 0
+      // ✅ SEMPLIFICATO - L'hook gestisce il reset automaticamente!
       setIsTracking(true)
       setIsPaused(false)
       isTrackingRef.current = true
@@ -672,14 +602,12 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     }
   }
 
-
   /**
    * Pausa tracking
    */
   const handlePause = () => {
     if (!isPaused) {
-      const now = Date.now()
-      pausedTimeRef.current += now - startTimeRef.current - elapsedTime * 1000
+      // ✅ SEMPLIFICATO - L'hook gestisce il tempo pausato automaticamente!
       setIsPaused(true)
       isPausedRef.current = true
     }
@@ -729,71 +657,27 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       if (result.success) {
         toast.success('Percorso completato e salvato!')
 
-        // 🎮 AGGIORNA ACHIEVEMENTS
-        try {
-          // Carica percorsi completati aggiornati
-          const completedRoutes = await routesService.getCompletedRoutes(user.$id)
-          if (completedRoutes.success) {
-            // Calcola nuove statistiche
-            const statsService = await import('../services/statsService').then(m => m.default)
-            const stats = statsService.calculateStats(completedRoutes.data)
-
-            // Aggiorna achievements
-            const achievementsService = await import('../services/achievementsService').then(m => m.default)
-            const achievementResult = await achievementsService.updateAchievements(user.$id, stats, completedRoutes.data)
-
-            if (achievementResult.success && achievementResult.data.newBadges.length > 0) {
-              // Mostra toast per ogni badge sbloccato
-              achievementResult.data.newBadges.forEach(badgeId => {
-                const badge = achievementsService.getBadgeInfo(badgeId)
-                toast.success(`🏆 Badge sbloccato: ${badge.name}!`)
-              })
-            }
-
-            if (achievementResult.success && achievementResult.data.leveledUp) {
-              const levelInfo = achievementsService.getLevelInfo(achievementResult.data.currentLevel)
-              toast.success(`🎉 Livello ${levelInfo.level}: ${levelInfo.name}!`)
-            }
-
-            // 🔥 Notifiche Streak  
-            if (achievementResult.success) {
-              if (achievementResult.data.streakLost) {
-                toast.error('💔 Streak perso! Riparti da oggi!')
-              } else if (achievementResult.data.newStreak > 1) {
-                toast.success(`🔥 Streak: ${achievementResult.data.newStreak} giorni consecutivi!`)
-              }
-            }
-
-            // 🎯 Notifiche Sfide Completate
-            if (achievementResult.success && achievementResult.data.challengesCompleted?.length > 0) {
-              achievementResult.data.challengesCompleted.forEach(challengeId => {
-                const challenges = achievementsService.getAllChallenges()
-                const challenge = challenges.find(c => c.id === challengeId)
-                if (challenge) {
-                  toast.success(`🎯 Sfida completata: ${challenge.name}!`)
-                }
-              })
-            }
-          }
-        } catch (error) {
-          logger.error('Error updating achievements:', error)
+        // Callback onComplete se esiste
+        if (onComplete) {
+          onComplete(result.data)
         }
 
-        if (onComplete) onComplete()
-        onClose()
+        // Chiudi modal
+        setTimeout(() => {
+          onClose()
+        }, 1000)
       } else {
         throw new Error(result.error)
       }
     } catch (error) {
-      logger.error('Error saving track:', error)
-      toast.error('Errore nel salvare il percorso: ' + error.message)
-    } finally {
+      logger.error('Save tracking error:', error)
+      toast.error('Errore nel salvare: ' + error.message)
       setIsSaving(false)
     }
   }
 
   /**
-   * Annulla tracking
+   * Annulla tracking senza salvare
    */
   const handleCancel = () => {
     if (!confirm('Vuoi annullare il tracking? I dati non verranno salvati.')) return
@@ -816,26 +700,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     }
   }, [])
 
-  // Timer per tempo trascorso
-  useEffect(() => {
-    if (isTracking && !isPaused) {
-      timerRef.current = setInterval(() => {
-        const now = Date.now()
-        const elapsed = Math.floor((now - startTimeRef.current - pausedTimeRef.current) / 1000)
-        setElapsedTime(elapsed)
-      }, 1000)
-    } else {
-      if (timerRef.current) {
-        clearInterval(timerRef.current)
-      }
-    }
-
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current)
-      }
-    }
-  }, [isTracking, isPaused])
+  // ✅ RIMOSSO - Effect del timer ora è dentro l'hook!
 
   // Cleanup: ferma GPS quando unmount
   useEffect(() => {
@@ -853,7 +718,6 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       setWaypointPreview(null)
     }
   }, [])
-
 
   // ==========================================
   // CALCOLI STATISTICHE
@@ -907,16 +771,17 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
                   {currentRouteData.name || 'Tracking GPS'}
                 </h2>
                 <p className="text-xs text-white/90">
-                  {isTracking ? (isPaused ? 'In pausa' : 'In corso') : 'Pronto'}
+                  {isTracking ? (isPaused ? 'In pausa' : 'Tracking attivo') : 'Pronto per iniziare'}
                 </p>
-                {/* Waypoints collassabili nell'header */}
-                {waypoints.length > 0 && (
-                  <div className="mt-2">
+              </div>
+              {waypoints.length > 0 && (
+                <div className="ml-4">
+                  <div className="bg-white/20 rounded px-2 py-1">
                     <button
                       onClick={() => setShowWaypointsList(!showWaypointsList)}
-                      className="flex items-center space-x-2 text-xs text-white/90 hover:text-white"
+                      className="flex items-center text-xs text-white"
                     >
-                      <span>🎯 Waypoints ({waypoints.length}/5)</span>
+                      <span className="mr-1">{waypoints.length} waypoint{waypoints.length > 1 ? 's' : ''}</span>
                       <span style={{ transform: showWaypointsList ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
                     </button>
                     {showWaypointsList && (
@@ -935,8 +800,8 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
                       </div>
                     )}
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
             <button
               onClick={handleCancel}
