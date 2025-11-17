@@ -5,7 +5,8 @@ import SaveRouteButton from './SaveRouteButton' // importo il componente SaveRou
 import ActiveTracking from './ActiveTracking' // importo il componente ActiveTracking
 import RouteInfo from './RouteInfo' // importo il componente RouteInfo
 import RouteInstructions from './RouteInstructions' // importo il componente RouteInstructions
-import { FaMapMarkerAlt, FaFlag, FaWalking, FaClock, FaRoute, FaLocationArrow, FaSpinner, FaPlay } from 'react-icons/fa'  // importo le icone necessarie
+import RouteInputs from './RouteInputs' // importo il componente RouteInputs
+import { FaLocationArrow } from 'react-icons/fa'  // importo l'icona necessaria
 import L from 'leaflet' // importo Leaflet per la gestione della mappa
 import 'leaflet/dist/leaflet.css' // importo stili di Leaflet
 import MapPointSelector from './MapPointSelector' // importo il componente MapPointSelector
@@ -548,7 +549,8 @@ const handleReset = () => {
 // ========== CALLBACK FUNCTIONS PER ROUTEINPUTS ==========
 
 // Gestione cambio testo input partenza
-const handleStartTextChange = (val) => {
+const handleStartTextChange = (e) => {
+  const val = e.target.value
   setStartText(val)
   setStartPoint(null)
   if (val.length > 1) {
@@ -559,7 +561,8 @@ const handleStartTextChange = (val) => {
 }
 
 // Gestione cambio testo input arrivo
-const handleEndTextChange = (val) => {
+const handleEndTextChange = (e) => {
+  const val = e.target.value
   setEndText(val)
   setEndPoint(null)
   if (val.length > 1) {
@@ -567,30 +570,6 @@ const handleEndTextChange = (val) => {
   } else {
     setShowEndDropdown(false)
   }
-}
-
-// Gestione selezione suggerimento partenza
-const handleSelectStartSuggestion = (suggestion) => {
-  setStartText(suggestion.display_name)
-  setStartPoint({
-    lat: suggestion.lat,
-    lon: suggestion.lon,
-    name: suggestion.display_name,
-  })
-  setShowStartDropdown(false)
-  setStartSuggestions([])
-}
-
-// Gestione selezione suggerimento arrivo
-const handleSelectEndSuggestion = (suggestion) => {
-  setEndText(suggestion.display_name)
-  setEndPoint({
-    lat: suggestion.lat,
-    lon: suggestion.lon,
-    name: suggestion.display_name,
-  })
-  setShowEndDropdown(false)
-  setEndSuggestions([])
 }
 
 // Gestione focus/blur input partenza
@@ -611,11 +590,37 @@ const handleEndBlur = () => {
   setTimeout(() => setShowEndDropdown(false), 150)
 }
 
+// Handler selezione suggerimenti
+const handleSelectStartSuggestion = (suggestion) => {
+  setStartText(suggestion.display_name)
+  setStartPoint({
+    lat: suggestion.lat,
+    lon: suggestion.lon,
+    name: suggestion.display_name,
+  })
+  setShowStartDropdown(false)
+  setStartSuggestions([])
+  startInputRef.current.blur()
+}
+
+const handleSelectEndSuggestion = (suggestion) => {
+  setEndText(suggestion.display_name)
+  setEndPoint({
+    lat: suggestion.lat,
+    lon: suggestion.lon,
+    name: suggestion.display_name,
+  })
+  setShowEndDropdown(false)
+  setEndSuggestions([])
+  endInputRef.current.blur()
+}
+
 // ========== FINE CALLBACK FUNCTIONS ==========
 
 
 
-  const handleSubmit = async () => { //gestisco l'invio del form
+  const handleSubmit = async (e) => { //gestisco l'invio del form
+    e.preventDefault()
     setErrorMsg('')
     setLoading(true)
     setRouteInfo(null)
@@ -838,150 +843,33 @@ const handleCloseSelector = () => {
   {!isNavigating ? (
         <>
           {/* Form di ricerca percorso */}
-          <form onSubmit={handleSubmit} className="route-search-form">
-            {/* Input punto di partenza con bottone GPS */}
-<div className="flex items-center space-x-2 relative">
-  <div className="flex-1">
-    <div className="relative">
-      {/* Icona marker sempre visibile */}
-      <FaMapMarkerAlt className="absolute left-3 top-1/2 transform -translate-y-1/2 text-green-600 pointer-events-none z-10" />
-      
-      <input
-        ref={startInputRef}
-        placeholder="Punto di partenza"
-        value={startText}
-        autoComplete="off"
-        disabled={isPreloaded || gettingLocation}
-        onFocus={() => { if (startText.length > 1) setShowStartDropdown(true) }}
-        onBlur={() => setTimeout(() => setShowStartDropdown(false), 150)}
-        onChange={(e) => {
-          const val = e.target.value
-          setStartText(val)
-          setStartPoint(null)
-          if (val.length > 1) {
-            setShowStartDropdown(true)
-          } else {
-            setShowStartDropdown(false)
-          }
-        }}
-        className="route-input"
-      />
-      
-      {/* Dropdown suggerimenti */}
-      {showStartDropdown && (startSuggestions.length > 0 || startLoading) && (
-        <ul className="route-suggestions-dropdown">
-          {startLoading && <li className="route-suggestion-loading">Caricamento…</li>}
-          {startSuggestions.map((suggestion) => (
-            <li
-              key={suggestion.place_id}
-              className="route-suggestion-item"
-              onMouseDown={() => {
-                setStartText(suggestion.display_name)
-                setStartPoint({
-                  lat: suggestion.lat,
-                  lon: suggestion.lon,
-                  name: suggestion.display_name,
-                })
-                setShowStartDropdown(false)
-                setStartSuggestions([])
-                startInputRef.current.blur()
-              }}
-            >
-              {suggestion.display_name}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  </div>
-  
-  {/* Bottone GPS */}
-  <button
-    type="button"
-    onClick={getCurrentLocation}
-    disabled={gettingLocation || isPreloaded}
-    className="gps-location-btn"
-    title="Usa la tua posizione"
-  >
-    {gettingLocation ? (
-      <FaSpinner className="animate-spin" />
-    ) : (
-      <FaLocationArrow />
-    )}
-  </button>
-</div>
+          <RouteInputs
+            startText={startText}
+            endText={endText}
+            startSuggestions={startSuggestions}
+            endSuggestions={endSuggestions}
+            startLoading={startLoading}
+            endLoading={endLoading}
+            showStartDropdown={showStartDropdown}
+            showEndDropdown={showEndDropdown}
+            isPreloaded={isPreloaded}
+            gettingLocation={gettingLocation}
+            loading={loading}
+            errorMsg={errorMsg}
+            startInputRef={startInputRef}
+            endInputRef={endInputRef}
+            onStartTextChange={handleStartTextChange}
+            onEndTextChange={handleEndTextChange}
+            onStartFocus={handleStartFocus}
+            onStartBlur={handleStartBlur}
+            onEndFocus={handleEndFocus}
+            onEndBlur={handleEndBlur}
+            onSelectStartSuggestion={handleSelectStartSuggestion}
+            onSelectEndSuggestion={handleSelectEndSuggestion}
+            onGetCurrentLocation={getCurrentLocation}
+            onSubmit={handleSubmit}
+          />
 
-            <div className="flex items-center space-x-2 relative">
-              
-              <div className="flex-1">
-                <div className="relative">
-                   <FaFlag className="absolute left-3 top-1/2 transform -translate-y-1/2 text-red-600 pointer-events-none z-10" />
-                  <input
-                    ref={endInputRef}
-                    placeholder="Punto di arrivo"
-                    value={endText}
-                    autoComplete="off"
-                    disabled={isPreloaded}
-                    onFocus={() => { if (endText.length > 1) setShowEndDropdown(true) }}
-                    onBlur={() => setTimeout(() => setShowEndDropdown(false), 150)}
-                    onChange={(e) => {
-                      const val = e.target.value
-                      setEndText(val)
-                      setEndPoint(null)
-                      // Mostra dropdown se ci sono più di 1 carattere
-                      if (val.length > 1) {
-                        setShowEndDropdown(true)
-                      } else {
-                        setShowEndDropdown(false)
-                      }
-                    }}
-                   className="route-input"
-                  />
-                  {showEndDropdown && (endSuggestions.length > 0 || endLoading) && (
-                    <ul className="route-suggestions-dropdown">
-                      {endLoading && <li className="route-suggestion-loading">Caricamento…</li>}
-                      {endSuggestions.map((suggestion) => (
-                        <li
-                          key={suggestion.place_id}
-                          className="route-suggestion-item"
-                          onMouseDown={() => {
-                            setEndText(suggestion.display_name)
-                            setEndPoint({
-                              lat: suggestion.lat,
-                              lon: suggestion.lon,
-                              name: suggestion.display_name,
-                            })
-                            setShowEndDropdown(false)
-                            setEndSuggestions([])
-                            endInputRef.current.blur()
-                          }}
-                        >
-                          {suggestion.display_name}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </div>
-              
-               <div className="w-12 h-12"></div>
-            </div>
-
-            {errorMsg && (
-              <div className="route-error-message">
-                {errorMsg}
-              </div>
-            )}
-{!isPreloaded && (
-  <button
-    type="submit"
-    disabled={loading}
-    className="route-submit-btn"
-  >
-    {loading ? 'Calcolo percorso...' : 'Trova percorso'}
-  </button>
-)}
-          </form>
 {/* Modal Selezione Punto Mappa */}
 {showMapPointSelector && selectedMapPoint && (
   <MapPointSelector
