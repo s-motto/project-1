@@ -512,9 +512,6 @@ const getCurrentLocation = () => {
   )
 }
 
-// Funzione di geocoding per ottenere coordinate da testo
-// NOTA: Le funzioni geocodeText e fetchSuggestions sono ora in services/geocodingService.js
-
 //Resetto tutto il form e la mappa
 const handleReset = () => {
   // Pulisco la mappa
@@ -617,153 +614,112 @@ const handleSelectEndSuggestion = (suggestion) => {
 
 // ========== FINE CALLBACK FUNCTIONS ==========
 
+// Funzione per calcolare e visualizzare il percorso (REFACTORED con service)
+const handleSubmit = async (e) => {
+  e.preventDefault()
+  setErrorMsg('')
+  setLoading(true)
+  setRouteInfo(null)
+  setInstructions([])
+  setFullRouteData(null)
+  setIsPreloaded(false)
 
+  // Ottengo coordinate se non già fornite
+  let sp = startPoint
+  let ep = endPoint
 
-  const handleSubmit = async (e) => { //gestisco l'invio del form
-    e.preventDefault()
-    setErrorMsg('')
-    setLoading(true)
-    setRouteInfo(null)
-    setInstructions([])
-    setFullRouteData(null)
-    setIsPreloaded(false) //resetto lo stato di pre-caricamento
-
-    // Ottengo coordinate se non già fornite
-    let sp = startPoint
-    let ep = endPoint
-
-    // Geocodifico se necessario il punto di partenza
-    if (!sp && startText) {
-      sp = await geocodeText(startText, ORS_KEY)
-      if (sp) setStartPoint(sp)
-    }
-    // Geocodifico se necessario il punto di arrivo
-    if (!ep && endText) {
-      ep = await geocodeText(endText, ORS_KEY)
-      if (ep) setEndPoint(ep)
-    }
-    // Controllo che entrambi i punti siano disponibili
-    if (!sp || !ep) {
-      setLoading(false)
-      setErrorMsg('Per favore inserisci sia il punto di partenza che quello di arrivo.')
-      return
-    }
-
-    try { // Chiamata a OpenRouteService per il calcolo del percorso
-      // Rimuovo layer e marker precedenti
-      if (routeLayer && map) map.removeLayer(routeLayer)
-      if (startMarkerRef.current) startMarkerRef.current.remove()
-      if (endMarkerRef.current) endMarkerRef.current.remove()
-      // Rimuovo listener precedente
-      if (updateMarkersListenerRef.current && map) {
-        map.off('move zoom', updateMarkersListenerRef.current)
-      }
-
-      const response = await fetch( 
-        'https://api.openrouteservice.org/v2/directions/foot-hiking/geojson',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': ORS_KEY,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            coordinates: [[sp.lon, sp.lat], [ep.lon, ep.lat]],
-            instructions: true,
-            language: 'it',
-            units: 'km',
-            elevation: true
-          })
-        }
-      )
-
-      if (!response.ok) {// Gestione errori dalla API
-        logger.error('ORS API error:', response.status)
-        setErrorMsg('Errore nel calcolo del percorso. Verifica la tua API key.')
-        setLoading(false)
-        return
-      }
-
-      const data = await response.json() // Processo la risposta
-
-      if (data.features && data.features.length > 0) { // Disegno il percorso sulla mappa
-        const feature = data.features[0]
-        
-        const newRouteLayer = L.geoJSON(feature, {
-          style: { color: '#2563eb', weight: 4, opacity: 0.8 }
-        }).addTo(map)
-        setRouteLayer(newRouteLayer)
-
-        // Creo marker usando il factory
-        startMarkerRef.current = createMapMarker(
-          map,
-          MarkerType.START,
-          { lat: sp.lat, lng: sp.lon }
-        )
-
-        endMarkerRef.current = createMapMarker(
-          map,
-          MarkerType.END,
-          { lat: ep.lat, lng: ep.lon }
-        )
-
-        // Creo listener per aggiornare posizioni marker
-        updateMarkersListenerRef.current = createMarkersUpdateListener(
-          map,
-          [
-            { marker: startMarkerRef.current, position: { lat: sp.lat, lng: sp.lon } },
-            { marker: endMarkerRef.current, position: { lat: ep.lat, lng: ep.lon } }
-          ]
-        )
-        map.on('move zoom', updateMarkersListenerRef.current)
-        
-        // Adatto la vista della mappa al percorso
-        map.fitBounds(newRouteLayer.getBounds(), { padding: [50, 50] })
-
-        // Estraggo e imposto le informazioni del percorso
-        const props = feature.properties
-        const summary = props.summary || {}
-        
-        //imposto le info del percorso
-       const routeData = {
-          distance: parseFloat((summary.distance).toFixed(2)), // converto in float
-          duration: Math.round(summary.duration / 60),
-          ascent: props.ascent ? Math.round(props.ascent) : 0,
-          descent: props.descent ? Math.round(props.descent) : 0
-        }
-        
-        // Salvo le info del percorso nello stato
-        setRouteInfo(routeData)
-
-        // Estraggo e imposto le istruzioni passo-passo
-        if (props.segments && props.segments[0].steps) {
-          setInstructions(Array.isArray(props.segments?.[0]?.steps) ? props.segments[0].steps : [])
-
-        }
-
-        // Salvo tutti i dati del percorso 
-        setFullRouteData({
-          startPoint: sp,
-          endPoint: ep,
-          distance: routeData.distance,
-          duration: routeData.duration,
-          ascent: routeData.ascent,
-          descent: routeData.descent,
-          coordinates: feature.geometry.coordinates,
-         instructions: Array.isArray(props.segments?.[0]?.steps) ? props.segments[0].steps : []
-
-        })
-        // Salvo il percorso come salvato
-        setRouteSaved(false)
-      } else { // Nessun percorso trovato
-        setErrorMsg('Non è stato possibile calcolare un percorso.')
-      }
-    } catch (error) { // Gestione errori generali
-      logger.error('Error:', error)
-      setErrorMsg('Errore nel calcolo del percorso.')
-    }
-    setLoading(false)
+  // Geocodifico se necessario il punto di partenza
+  if (!sp && startText) {
+    sp = await geocodeText(startText, ORS_KEY)
+    if (sp) setStartPoint(sp)
   }
+  // Geocodifico se necessario il punto di arrivo
+  if (!ep && endText) {
+    ep = await geocodeText(endText, ORS_KEY)
+    if (ep) setEndPoint(ep)
+  }
+  // Controllo che entrambi i punti siano disponibili
+  if (!sp || !ep) {
+    setLoading(false)
+    setErrorMsg('Per favore inserisci sia il punto di partenza che quello di arrivo.')
+    return
+  }
+
+  // Rimuovo layer e marker precedenti
+  if (routeLayer && map) map.removeLayer(routeLayer)
+  if (startMarkerRef.current) startMarkerRef.current.remove()
+  if (endMarkerRef.current) endMarkerRef.current.remove()
+  if (updateMarkersListenerRef.current && map) {
+    map.off('move zoom', updateMarkersListenerRef.current)
+  }
+
+  // === NUOVO: Uso il service per calcolare il percorso ===
+  const result = await calculateRoute({
+    start: sp,
+    end: ep,
+    apiKey: ORS_KEY,
+    language: 'it',
+    units: 'km'
+  })
+
+  // Gestione errore dal service
+  if (!result.success) {
+    setErrorMsg(result.error || 'Errore nel calcolo del percorso')
+    setLoading(false)
+    return
+  }
+
+  // Uso i dati già formattati dal service
+  const routeData = result.data
+
+  // Disegno il percorso sulla mappa usando il GeoJSON fornito dal service
+  const newRouteLayer = L.geoJSON(routeData.geojson, {
+    style: { color: '#2563eb', weight: 4, opacity: 0.8 }
+  }).addTo(map)
+  setRouteLayer(newRouteLayer)
+
+  // Creo marker usando il factory
+  startMarkerRef.current = createMapMarker(
+    map,
+    MarkerType.START,
+    { lat: sp.lat, lng: sp.lon }
+  )
+
+  endMarkerRef.current = createMapMarker(
+    map,
+    MarkerType.END,
+    { lat: ep.lat, lng: ep.lon }
+  )
+
+  // Creo listener per aggiornare posizioni marker
+  updateMarkersListenerRef.current = createMarkersUpdateListener(
+    map,
+    [
+      { marker: startMarkerRef.current, position: { lat: sp.lat, lng: sp.lon } },
+      { marker: endMarkerRef.current, position: { lat: ep.lat, lng: ep.lon } }
+    ]
+  )
+  map.on('move zoom', updateMarkersListenerRef.current)
+  
+  // Adatto la vista della mappa al percorso
+  map.fitBounds(newRouteLayer.getBounds(), { padding: [50, 50] })
+
+  // Imposto le info del percorso (già formattate dal service)
+  setRouteInfo({
+    distance: routeData.distance,
+    duration: routeData.duration,
+    ascent: routeData.ascent,
+    descent: routeData.descent
+  })
+
+  // Imposto le istruzioni (già estratte dal service)
+  setInstructions(routeData.instructions)
+
+  // Salvo tutti i dati del percorso
+  setFullRouteData(routeData)
+  setRouteSaved(false)
+  setLoading(false)
+}
 
 
   // Handlers per Tracking
