@@ -14,6 +14,7 @@ import useDebounce from '../hooks/useDebounce' // importo il custom hook per deb
 import { useRouteLoader } from '../hooks/useRouteLoader' // importo il custom hook per caricare percorsi
 import { useMapClick } from '../hooks/useMapClick' // importo il custom hook per gestire click sulla mappa
 import { useUserLocation } from '../hooks/useUserLocation' // importo il custom hook per geolocalizzazione
+import { useMapPointHandlers } from '../hooks/useMapPointHandlers' // importo il custom hook per handler MapPointSelector
 import { createMapMarker, createMarkersUpdateListener, MarkerType } from '../utils/mapMarkers' // importo il factory dei marker
 import useNavigation from '../contexts/NavigationContext' // importo il contesto di navigazione
 import { useToast } from '../contexts/ToastContext' // importo il contesto delle notifiche
@@ -116,6 +117,22 @@ const RouteSearchForm = forwardRef((props, ref) => {
 
   // Hook per geolocalizzazione utente
   const { getCurrentLocation, gettingLocation, userLocation, locationError } = useUserLocation(map, ORS_KEY)
+
+  // Hook per handler MapPointSelector
+  const { handleSetAsStart, handleSetAsEnd, handleSwapPoints, handleCloseSelector } = useMapPointHandlers({
+    selectedMapPoint,
+    startPoint,
+    endPoint,
+    startText,
+    endText,
+    setStartPoint,
+    setEndPoint,
+    setStartText,
+    setEndText,
+    setShowMapPointSelector,
+    toast,
+    removeTempMarkerRef
+  })
 
   // Sincronizza errori di geolocalizzazione con errorMsg principale
   useEffect(() => {
@@ -459,78 +476,6 @@ const handleSubmit = async (e) => {
     setShowTracking(false)
     // Opzionalmente ricarica o aggiorna qualcosa
   }
-
-  // Handlers per MapPointSelector
-const handleSetAsStart = () => {
-  if (selectedMapPoint) {
-    setStartPoint({
-      lat: selectedMapPoint.lat,
-      lon: selectedMapPoint.lng,
-      name: selectedMapPoint.name
-    })
-    setStartText(selectedMapPoint.name)
-    toast.success(' Punto di partenza impostato!')
-  }
-  setShowMapPointSelector(false)
-  // Rimuovo il marker temporaneo usando la funzione fornita dall'hook
-  if (removeTempMarkerRef.current) {
-    removeTempMarkerRef.current()
-    removeTempMarkerRef.current = null
-  }
-}
-
-// Handler per impostare il punto selezionato come punto di arrivo
-const handleSetAsEnd = () => {
-  if (selectedMapPoint) {
-    setEndPoint({
-      lat: selectedMapPoint.lat,
-      lon: selectedMapPoint.lng,
-      name: selectedMapPoint.name
-    })
-    setEndText(selectedMapPoint.name)
-    toast.success(' Punto di arrivo impostato!')
-  }
-  setShowMapPointSelector(false)
-  // Rimuovo il marker temporaneo usando la funzione fornita dall'hook
-  if (removeTempMarkerRef.current) {
-    removeTempMarkerRef.current()
-    removeTempMarkerRef.current = null
-  }
-}
-
-// Handler per invertire i punti di partenza e arrivo
-const handleSwapPoints = () => {
-  if (startPoint && endPoint) {
-    // Swap
-    const temp = { ...startPoint }
-    setStartPoint(endPoint)
-    setEndPoint(temp)
-    
-    const tempText = startText
-    setStartText(endText)
-    setEndText(tempText)
-    
-    toast.success(' Punti invertiti!')
-  }
-  setShowMapPointSelector(false)
-  // Rimuovo il marker temporaneo usando la funzione fornita dall'hook
-  if (removeTempMarkerRef.current) {
-    removeTempMarkerRef.current()
-    removeTempMarkerRef.current = null
-  }
-}
-
-// Handler per chiudere il selettore di punti sulla mappa senza fare modifiche
-const handleCloseSelector = () => {
-  setShowMapPointSelector(false)
-  // Rimuovo il marker temporaneo usando la funzione fornita dall'hook
-  if (removeTempMarkerRef.current) {
-    removeTempMarkerRef.current()
-    removeTempMarkerRef.current = null
-  }
-}
-
-    
 
   return (
     <div className="flex flex-col space-y-4">
