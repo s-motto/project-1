@@ -27,8 +27,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { useToast } from '../contexts/ToastContext'
 import { useSettings } from '../contexts/SettingsContext'
 import useGeolocation from '../hooks/useGeolocation'
-import useTrackingTimer from '../hooks/useTrackingTimer' // ✅ NUOVO HOOK
-import routesService from '../services/routesService'
+import useTrackingTimer from '../hooks/useTrackingTimer'
+import useTrackingSave from '../hooks/useTrackingSave' // ✅ NUOVO HOOK SALVATAGGIO
 import logger from '../utils/logger'
 import {
   calculateDistance,
@@ -59,8 +59,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   const [gpsAccuracy, setGpsAccuracy] = useState(null) // Accuratezza GPS (metri)
   const [waitingForGoodFix, setWaitingForGoodFix] = useState(false)
   const [shouldCenterMap, setShouldCenterMap] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-  const [savedRouteId, setSavedRouteId] = useState(route.savedId || null)
+ 
 
   // ========== WAYPOINTS STATE ==========
   const [waypoints, setWaypoints] = useState([]) // Array di waypoints: [{lat, lng, name}] - max 5
@@ -107,8 +106,23 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   const mapRef = useRef(null)
   const lastElevation = useRef(null)
 
-  // hook per gestire il timer del tracking GPS
+  // ========== HOOK TIMER TRACKING ==========
   const { elapsedTime } = useTrackingTimer(isTracking, isPaused)
+
+  // ========== HOOK SALVATAGGIO TRACKING ==========
+  const { isSaving, savedRouteId, ensureRouteSaved, saveCompletedTracking } = useTrackingSave({
+    route,
+    user,
+    trackingData: {
+      distance,
+      elapsedTime,
+      elevationGain,
+      elevationLoss,
+      trackPoints
+    },
+    toast,
+    onComplete
+  })
 
   // ==========================================
   // WAYPOINT UTILITIES
@@ -521,58 +535,26 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   }, [toast])
 
   // ==========================================
-  // SAVING LOGIC
+  // TRACKING CONTROL HANDLERS
   // ==========================================
-
-  /**
-   * Assicura che il percorso sia salvato su Appwrite
-   * Se non esiste, lo crea automaticamente
-   */
-  const ensureRouteSaved = async () => {
-    if (savedRouteId) {
-      return savedRouteId
-    }
-
-    // Salva percorso
-    const result = await routesService.saveRoute(
-      {
-        name: route.name || 'Percorso senza nome',
-        startPoint: route.startPoint,
-        endPoint: route.endPoint,
-        distance: route.distance,
-        duration: route.duration,
-        ascent: route.ascent || 0,
-        descent: route.descent || 0,
-        coordinates: JSON.stringify(route.coordinates),
-        instructions: route.instructions || route.instructions
-      },
-      user.$id
-    )
-
-    if (result.success) {
-      setSavedRouteId(result.data.$id)
-      return result.data.$id
-    } else {
-      throw new Error('Impossibile salvare il percorso')
-    }
-  }
 
   /**
    * Avvia tracking
    */
   const handleStart = async () => {
     if (!isTracking) {
-      // Se il percorso non è salvato, salvalo
+     
       if (!savedRouteId) {
         try {
           await ensureRouteSaved()
           toast.info('Percorso salvato automaticamente per il tracking')
         } catch (error) {
           toast.error('Errore nel salvare il percorso: ' + error.message)
+          return // Non avviare tracking se salvataggio fallisce
         }
       }
 
-     
+      // ✅ SEMPLIFICATO - L'hook gestisce il reset timer automaticamente!
       setIsTracking(true)
       setIsPaused(false)
       isTrackingRef.current = true
@@ -605,7 +587,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
    */
   const handlePause = () => {
     if (!isPaused) {
-      // ✅ SEMPLIFICATO - L'hook gestisce il tempo pausato automaticamente!
+      
       setIsPaused(true)
       isPausedRef.current = true
     }
@@ -621,56 +603,26 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     }
   }
 
+
   /**
    * Termina e salva tracking
    */
   const handleStop = async () => {
     if (!confirm('Vuoi terminare il percorso e salvare i dati?')) return
 
-    setIsSaving(true)
+    // Ferma GPS
+    geolocation.stop()
+    setIsTracking(false)
+    isTrackingRef.current = false
 
-    try {
-      // Ferma GPS
-      geolocation.stop()
-      setIsTracking(false)
-      isTrackingRef.current = false
+    // hook gestisce salvataggio automaticamente
+    const success = await saveCompletedTracking()
 
-      // Assicura che il percorso sia salvato
-      const routeId = await ensureRouteSaved()
-
-      // Prepara dati da salvare
-      const completedData = {
-        status: 'completed',
-        completedAt: new Date().toISOString(),
-        actualDistance: parseFloat(distance.toFixed(2)),
-        actualDuration: Math.floor(elapsedTime / 60),
-        actualAscent: elevationGain,
-        actualDescent: elevationLoss,
-        actualCoordinates: JSON.stringify(trackPoints)
-      }
-
-      // Aggiorna il percorso
-      const result = await routesService.updateRoute(routeId, completedData)
-
-      if (result.success) {
-        toast.success('Percorso completato e salvato!')
-
-        // Callback onComplete se esiste
-        if (onComplete) {
-          onComplete(result.data)
-        }
-
-        // Chiudi modal
-        setTimeout(() => {
-          onClose()
-        }, 1000)
-      } else {
-        throw new Error(result.error)
-      }
-    } catch (error) {
-      logger.error('Save tracking error:', error)
-      toast.error('Errore nel salvare: ' + error.message)
-      setIsSaving(false)
+    // Chiudi modal dopo salvataggio
+    if (success) {
+      setTimeout(() => {
+        onClose()
+      }, 1000)
     }
   }
 
@@ -698,7 +650,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     }
   }, [])
 
-  
+  // ✅ RIMOSSO - Effect del timer ora è dentro l'hook!
 
   // Cleanup: ferma GPS quando unmount
   useEffect(() => {
