@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { FaUser, FaSignOutAlt, FaBookmark, FaChevronDown, FaChartLine, FaCog } from 'react-icons/fa'
 import { useAuth } from '../contexts/AuthContext'
 import AuthPage from './AuthPage'
@@ -6,8 +7,9 @@ import Dashboard from './Dashboard'
 import SettingsModal from './SettingsModal'
 
 // Componente UserMenu per la gestione dell'utente
-const UserMenu = ({ onShowSavedRoutes }) => {
+const UserMenu = () => {
   const { user, logout } = useAuth()
+  const navigate = useNavigate()
   const [showMenu, setShowMenu] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [showDashboard, setShowDashboard] = useState(false)
@@ -96,7 +98,7 @@ const UserMenu = ({ onShowSavedRoutes }) => {
               <button
                 onClick={() => {
                   setShowMenu(false)
-                  if (onShowSavedRoutes) onShowSavedRoutes()
+                  navigate('/saved')
                 }}
                 className="user-dropdown-item"
               >

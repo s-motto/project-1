@@ -12,6 +12,7 @@ import 'leaflet/dist/leaflet.css' // importo stili di Leaflet
 import MapPointSelector from './MapPointSelector' // importo il componente MapPointSelector
 import useDebounce from '../hooks/useDebounce' // importo il custom hook per debounce
 import { useRouteLoader } from '../hooks/useRouteLoader' // importo il custom hook per caricare percorsi
+import { useMapClick } from '../hooks/useMapClick' // importo il custom hook per gestire click sulla mappa
 import { createMapMarker, createMarkersUpdateListener, MarkerType } from '../utils/mapMarkers' // importo il factory dei marker
 import useNavigation from '../contexts/NavigationContext' // importo il contesto di navigazione
 import { useToast } from '../contexts/ToastContext' // importo il contesto delle notifiche
@@ -70,7 +71,7 @@ const RouteSearchForm = forwardRef((props, ref) => {
   const [showTracking, setShowTracking] = useState(false) //mostra componente ActiveTracking
   const [showMapPointSelector, setShowMapPointSelector] = useState(false)//mostra selettore punti mappa
   const [selectedMapPoint, setSelectedMapPoint] = useState(null)//punto selezionato nella mappa
-  const tempMarkerRef = useRef(null)//riferimento marcatore temporaneo
+  const removeTempMarkerRef = useRef(null)//funzione per rimuovere marker temporaneo
 
   // Sincronizzazione routeLayer state con ref per l'hook
   useEffect(() => {
@@ -100,6 +101,19 @@ const RouteSearchForm = forwardRef((props, ref) => {
       setErrorMsg
     }
   )
+
+  // Hook per gestire click sulla mappa
+  useMapClick(map, ORS_KEY, toast, (pointData) => {
+    // Callback chiamata quando un punto viene selezionato sulla mappa
+    setSelectedMapPoint({
+      lat: pointData.lat,
+      lng: pointData.lng,
+      name: pointData.name
+    })
+    // Salvo la funzione per rimuovere il marker temporaneo
+    removeTempMarkerRef.current = pointData.removeTempMarker
+    setShowMapPointSelector(true)
+  })
   
   // useEffect per leggere i dati passati tramite React Router state
   useEffect(() => {
@@ -162,77 +176,6 @@ const RouteSearchForm = forwardRef((props, ref) => {
         loadHikingRoute(preloadedHike)
       }
     }, [preloadedHike, map, loadHikingRoute])
-
-    // Gestione click sulla mappa per selezione punto
-useEffect(() => {
-  if (!map) return
-  
-  const handleMapClick = async (e) => {
-    const { lat, lng } = e.latlng
-    
-    // Mostra marker temporaneo pulsante
-    if (tempMarkerRef.current) {
-      tempMarkerRef.current.remove()
-    }
-    // Creo marcatore temporaneo
-    const tempMarkerDiv = document.createElement('div')
-    tempMarkerDiv.className = 'temp-map-marker fade-in-marker'
-    tempMarkerDiv.style.position = 'absolute'
-    tempMarkerDiv.style.zIndex = '1000'
-    tempMarkerDiv.style.pointerEvents = 'none'
-    tempMarkerDiv.innerHTML = ' '
-    // Posiziono il marcatore
-    const pixel = map.latLngToContainerPoint([lat, lng])
-    tempMarkerDiv.style.left = `${pixel.x}px`
-    tempMarkerDiv.style.top = `${pixel.y}px`
-    tempMarkerDiv.style.transform = 'translate(-50%, -100%)'
-    
-    document.getElementById('map').appendChild(tempMarkerDiv)
-    tempMarkerRef.current = tempMarkerDiv
-    
-    // Aggiorna posizione marcatore con movimenti mappa
-    const updateTempMarker = () => {
-      if (tempMarkerRef.current) {
-        const newPixel = map.latLngToContainerPoint([lat, lng])
-        tempMarkerRef.current.style.left = `${newPixel.x}px`
-        tempMarkerRef.current.style.top = `${newPixel.y}px`
-      }
-    }
-    map.on('move zoom', updateTempMarker)
-    
-    // Mostra loading toast
-    toast.info('Ricerca indirizzo...')
-    
-    try {
-      // Reverse geocoding usando il service
-      const placeName = await reverseGeocode(lat, lng, ORS_KEY)
-      
-      if (placeName) {
-        // Mostra modal di selezione
-        setSelectedMapPoint({
-          lat,
-          lng,
-          name: placeName
-        })
-        setShowMapPointSelector(true)
-      } else {
-        toast.error('Impossibile trovare l\'indirizzo')
-        if (tempMarkerRef.current) tempMarkerRef.current.remove()
-      }
-    } catch (error) {
-      logger.error('Reverse geocoding error:', error)
-      toast.error('Errore nel recupero dell\'indirizzo')
-      if (tempMarkerRef.current) tempMarkerRef.current.remove()
-    }
-  }
-  
-  map.on('click', handleMapClick)
-  
-  return () => {
-    map.off('click', handleMapClick)
-    if (tempMarkerRef.current) tempMarkerRef.current.remove()
-  }
-}, [map, ORS_KEY, toast])
 
 // useEffect per autocomplete partenza con debounce
   useEffect(() => {
@@ -575,8 +518,13 @@ const handleSetAsStart = () => {
     toast.success(' Punto di partenza impostato!')
   }
   setShowMapPointSelector(false)
-  if (tempMarkerRef.current) tempMarkerRef.current.remove()
+  // Rimuovo il marker temporaneo usando la funzione fornita dall'hook
+  if (removeTempMarkerRef.current) {
+    removeTempMarkerRef.current()
+    removeTempMarkerRef.current = null
+  }
 }
+
 // Handler per impostare il punto selezionato come punto di arrivo
 const handleSetAsEnd = () => {
   if (selectedMapPoint) {
@@ -589,8 +537,13 @@ const handleSetAsEnd = () => {
     toast.success(' Punto di arrivo impostato!')
   }
   setShowMapPointSelector(false)
-  if (tempMarkerRef.current) tempMarkerRef.current.remove()
+  // Rimuovo il marker temporaneo usando la funzione fornita dall'hook
+  if (removeTempMarkerRef.current) {
+    removeTempMarkerRef.current()
+    removeTempMarkerRef.current = null
+  }
 }
+
 // Handler per invertire i punti di partenza e arrivo
 const handleSwapPoints = () => {
   if (startPoint && endPoint) {
@@ -606,12 +559,21 @@ const handleSwapPoints = () => {
     toast.success(' Punti invertiti!')
   }
   setShowMapPointSelector(false)
-  if (tempMarkerRef.current) tempMarkerRef.current.remove()
+  // Rimuovo il marker temporaneo usando la funzione fornita dall'hook
+  if (removeTempMarkerRef.current) {
+    removeTempMarkerRef.current()
+    removeTempMarkerRef.current = null
+  }
 }
+
 // Handler per chiudere il selettore di punti sulla mappa senza fare modifiche
 const handleCloseSelector = () => {
   setShowMapPointSelector(false)
-  if (tempMarkerRef.current) tempMarkerRef.current.remove()
+  // Rimuovo il marker temporaneo usando la funzione fornita dall'hook
+  if (removeTempMarkerRef.current) {
+    removeTempMarkerRef.current()
+    removeTempMarkerRef.current = null
+  }
 }
 
     

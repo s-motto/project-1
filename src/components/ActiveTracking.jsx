@@ -35,10 +35,7 @@ import {
 } from '../utils/gpsUtils'
 
 // Componenti tracking
-import TrackingMap from './ActiveTracking/TrackingMap'
-import TrackingStats from './ActiveTracking/TrackingStats'
-import TrackingControls from './ActiveTracking/TrackingControls'
-import WaypointDialog from './ActiveTracking/WaypointDialog'
+import { TrackingStats, TrackingControls, WaypointDialog, TrackingMap } from './ActiveTracking/index.js'
 
 // ==========================================
 // COMPONENTE PRINCIPALE
