@@ -11,6 +11,7 @@ import L from 'leaflet' // importo Leaflet per la gestione della mappa
 import 'leaflet/dist/leaflet.css' // importo stili di Leaflet
 import MapPointSelector from './MapPointSelector' // importo il componente MapPointSelector
 import useDebounce from '../hooks/useDebounce' // importo il custom hook per debounce
+import { useRouteLoader } from '../hooks/useRouteLoader' // importo il custom hook per caricare percorsi
 import { createMapMarker, createMarkersUpdateListener, MarkerType } from '../utils/mapMarkers' // importo il factory dei marker
 import useNavigation from '../contexts/NavigationContext' // importo il contesto di navigazione
 import { useToast } from '../contexts/ToastContext' // importo il contesto delle notifiche
@@ -33,6 +34,7 @@ const RouteSearchForm = forwardRef((props, ref) => {
   const [endPoint, setEndPoint] = useState(null) //latitudine e longitudine
   const [map, setMap] = useState(null) //istanza della mappa
   const [routeLayer, setRouteLayer] = useState(null) //layer del percorso
+  const routeLayerRef = useRef(null) // ref per accedere a routeLayer nelle funzioni dell'hook
   const [startText, setStartText] = useState('') //testo input partenza
   const [endText, setEndText] = useState('') //testo input arrivo
   const debouncedStartText = useDebounce(startText, 300) //debounce per partenza
@@ -69,6 +71,35 @@ const RouteSearchForm = forwardRef((props, ref) => {
   const [showMapPointSelector, setShowMapPointSelector] = useState(false)//mostra selettore punti mappa
   const [selectedMapPoint, setSelectedMapPoint] = useState(null)//punto selezionato nella mappa
   const tempMarkerRef = useRef(null)//riferimento marcatore temporaneo
+
+  // Sincronizzazione routeLayer state con ref per l'hook
+  useEffect(() => {
+    routeLayerRef.current = routeLayer
+  }, [routeLayer])
+
+  // Hook per caricare percorsi salvati e hiking
+  const { loadSavedRoute, loadHikingRoute, cleanupPreviousRoute } = useRouteLoader(
+    map,
+    {
+      routeLayerRef,
+      startMarkerRef,
+      endMarkerRef,
+      updateMarkersListenerRef
+    },
+    {
+      setStartPoint,
+      setEndPoint,
+      setStartText,
+      setEndText,
+      setRouteInfo,
+      setInstructions,
+      setFullRouteData,
+      setIsPreloaded,
+      setRouteSaved,
+      setRouteLayer,
+      setErrorMsg
+    }
+  )
   
   // useEffect per leggere i dati passati tramite React Router state
   useEffect(() => {
@@ -82,12 +113,7 @@ const RouteSearchForm = forwardRef((props, ref) => {
       setPreloadedHike(null)
       // Resetto anche lo stato del form chiamando la logica di reset
       if (map) {
-        if (routeLayer) map.removeLayer(routeLayer)
-        if (startMarkerRef.current) startMarkerRef.current.remove()
-        if (endMarkerRef.current) endMarkerRef.current.remove()
-        if (updateMarkersListenerRef.current) {
-          map.off('move zoom', updateMarkersListenerRef.current)
-        }
+        cleanupPreviousRoute()
         map.setView([45.4642, 9.1900], 13)
       }
       try { stopNavigation() } catch (err) { /* ignore */ }
@@ -103,7 +129,7 @@ const RouteSearchForm = forwardRef((props, ref) => {
       setIsPreloaded(false)
       setErrorMsg('')
     }
-  }, [location])
+  }, [location, map, cleanupPreviousRoute, stopNavigation])
   
     useEffect(() => {
       const mapInstance = L.map('map').setView([45.4642, 9.1900], 13) //Centro su Milano di default
@@ -128,14 +154,14 @@ const RouteSearchForm = forwardRef((props, ref) => {
         if (preloadedRoute && map) {
           loadSavedRoute(preloadedRoute)
         }
-      }, [preloadedRoute, map])
+      }, [preloadedRoute, map, loadSavedRoute])
 
       // useEffect per caricare percorsi hiking
     useEffect(() => {
       if (preloadedHike && map) {
         loadHikingRoute(preloadedHike)
       }
-    }, [preloadedHike, map])
+    }, [preloadedHike, map, loadHikingRoute])
 
     // Gestione click sulla mappa per selezione punto
 useEffect(() => {
@@ -221,7 +247,7 @@ useEffect(() => {
       }
     }
     fetchStartSuggestions()
-  }, [debouncedStartText])
+  }, [debouncedStartText, ORS_KEY])
 
   // useEffect per autocomplete arrivo con debounce
   useEffect(() => {
@@ -236,207 +262,12 @@ useEffect(() => {
       }
     }
     fetchEndSuggestions()
-  }, [debouncedEndText])
+  }, [debouncedEndText, ORS_KEY])
 
       // Espongo la funzione di reset al componente genitore
       useImperativeHandle(ref, () => ({
       reset: handleReset
       }))
-
-  // Funzione per caricare e visualizzare un percorso salvato
-  const loadSavedRoute = (route) => {
-    try {
-      // Pulisco eventuali percorsi precedenti
-      if (routeLayer && map) map.removeLayer(routeLayer)
-      if (startMarkerRef.current) startMarkerRef.current.remove()
-      if (endMarkerRef.current) endMarkerRef.current.remove()
-      if (updateMarkersListenerRef.current && map) {
-        map.off('move zoom', updateMarkersListenerRef.current)
-      }
-
-      // Imposto i punti di partenza e arrivo
-      setStartPoint(route.startPoint)
-      setEndPoint(route.endPoint)
-      setStartText(route.startPoint.name || '')
-      setEndText(route.endPoint.name || '')
-
-      // Imposto le info del percorso
-      setRouteInfo({
-        distance: route.distance,
-        duration: route.duration,
-        ascent: route.ascent,
-        descent: route.descent
-      })
-
-      // Imposto le istruzioni
-      setInstructions(Array.isArray(route.instructions) ? route.instructions : [])
-
-
-      // Creo il GeoJSON dal percorso salvato
-      const geojson = {
-        type: 'Feature',
-        geometry: {
-          type: 'LineString',
-          coordinates: route.coordinates
-        },
-        properties: {}
-      }
-
-      // Disegno il percorso sulla mappa
-      const newRouteLayer = L.geoJSON(geojson, {
-        style: { color: '#2563eb', weight: 4, opacity: 0.8 }
-      }).addTo(map)
-      setRouteLayer(newRouteLayer)
-
-      // Creo marker di partenza e arrivo usando il factory
-      startMarkerRef.current = createMapMarker(
-        map,
-        MarkerType.START,
-        { lat: route.startPoint.lat, lng: route.startPoint.lon }
-      )
-
-      endMarkerRef.current = createMapMarker(
-        map,
-        MarkerType.END,
-        { lat: route.endPoint.lat, lng: route.endPoint.lon }
-      )
-
-      // Creo listener per aggiornare posizioni marker
-      updateMarkersListenerRef.current = createMarkersUpdateListener(
-        map,
-        [
-          { marker: startMarkerRef.current, position: { lat: route.startPoint.lat, lng: route.startPoint.lon } },
-          { marker: endMarkerRef.current, position: { lat: route.endPoint.lat, lng: route.endPoint.lon } }
-        ]
-      )
-      map.on('move zoom', updateMarkersListenerRef.current)
-
-      // Adatto la vista della mappa al percorso
-      map.fitBounds(newRouteLayer.getBounds(), { padding: [50, 50] })
-
-      // Salvo i dati completi del percorso
-      setFullRouteData(route)
-  setIsPreloaded(true) //indico che il percorso è pre-caricato
-      setRouteSaved(true) // this route was loaded from saved routes -> already saved
-
-    } catch (error) {
-      logger.error('Error loading saved route:', error)
-      setErrorMsg('Errore nel caricamento del percorso salvato')
-    }
-  }
-
-  // Funzione per caricare e visualizzare un percorso di hiking da Overpass con elevazione
-const loadHikingRoute = (hike) => {
-  try {
-    logger.log('Loading hike with elevation data:', hike) // Debug
-    
-    // Pulisco eventuali percorsi precedenti
-    if (routeLayer && map) map.removeLayer(routeLayer)
-    if (startMarkerRef.current) startMarkerRef.current.remove()
-    if (endMarkerRef.current) endMarkerRef.current.remove()
-    if (updateMarkersListenerRef.current && map) {
-      map.off('move zoom', updateMarkersListenerRef.current)
-    }
-
-    // Reset degli stati
-    setStartPoint(null)
-    setEndPoint(null)
-    setStartText('')
-    setEndText('')
-    setInstructions([])
-    setIsPreloaded(true)
-
-    // Creo il GeoJSON dal percorso hiking
-    const geojson = {
-      type: 'Feature',
-      geometry: {
-        type: 'LineString',
-        coordinates: hike.coordinates
-      },
-      properties: {
-        name: hike.name
-      }
-    }
-
-    // Disegno il percorso sulla mappa
-    const newRouteLayer = L.geoJSON(geojson, {
-      style: { color: '#10b981', weight: 4, opacity: 0.8 }
-    }).addTo(map)
-    setRouteLayer(newRouteLayer)
-
-    // Usa i dati di elevazione se disponibili, altrimenti calcola distanza
-    let totalDistance = hike.length || 0
-    
-    // Se length non è presente, calcola dalla geometria
-    if (!totalDistance) {
-      for (let i = 0; i < hike.coordinates.length - 1; i++) {
-        const [lon1, lat1] = hike.coordinates[i]
-        const [lon2, lat2] = hike.coordinates[i + 1]
-        totalDistance += calculateDistance(lat1, lon1, lat2, lon2)
-      }
-    }
-
-    //  Usa ascent e descent da NearbyHikes se disponibili
-    setRouteInfo({
-      distance: parseFloat(totalDistance.toFixed(2)),
-      duration: hike.duration || Math.round(totalDistance * 20), // Usa duration se disponibile, altrimenti stima
-      ascent: hike.ascent || 0, 
-      descent: hike.descent || 0 
-    })
-
-    // Marker di inizio e fine
-    const startCoord = hike.coordinates[0]
-    const endCoord = hike.coordinates[hike.coordinates.length - 1]
-
-    // Creo marker usando il factory
-    startMarkerRef.current = createMapMarker(
-      map,
-      MarkerType.START,
-      { lat: startCoord[1], lng: startCoord[0] }
-    )
-
-    endMarkerRef.current = createMapMarker(
-      map,
-      MarkerType.END,
-      { lat: endCoord[1], lng: endCoord[0] }
-    )
-
-    // Creo listener per aggiornare posizioni marker
-    updateMarkersListenerRef.current = createMarkersUpdateListener(
-      map,
-      [
-        { marker: startMarkerRef.current, position: { lat: startCoord[1], lng: startCoord[0] } },
-        { marker: endMarkerRef.current, position: { lat: endCoord[1], lng: endCoord[0] } }
-      ]
-    )
-    map.on('move zoom', updateMarkersListenerRef.current)
-
-    // Adatto la vista della mappa al percorso
-    map.fitBounds(newRouteLayer.getBounds(), { padding: [50, 50] })
-
-    // Salvo i dati completi del percorso per permettere il salvataggio
-    const hikingFullData = {
-      startPoint: { lat: startCoord[1], lon: startCoord[0], name: hike.name || 'Partenza' },
-      endPoint: { lat: endCoord[1], lon: endCoord[0], name: hike.name ? `${hike.name} - Arrivo` : 'Arrivo' },
-      distance: parseFloat(totalDistance.toFixed(2)),
-      duration: hike.duration || Math.round(totalDistance * 20),
-      ascent: hike.ascent || 0,
-      descent: hike.descent || 0,
-      coordinates: hike.coordinates,
-      instructions: Array.isArray(hike.instructions) ? hike.instructions : []
-
-    }
-
-  setFullRouteData(hikingFullData)
-  setRouteSaved(false) // hiking routes are not saved by default
-  
-
-  } catch (error) {
-    logger.error('Error loading hiking route:', error)
-    setErrorMsg('Errore nel caricamento del percorso di hiking')
-  }
-}
-
 
 // Funzione per ottenere la posizione corrente dell'utente
 const getCurrentLocation = () => {
@@ -514,13 +345,9 @@ const getCurrentLocation = () => {
 
 //Resetto tutto il form e la mappa
 const handleReset = () => {
-  // Pulisco la mappa
-  if (routeLayer && map) map.removeLayer(routeLayer)
-  if (startMarkerRef.current) startMarkerRef.current.remove()
-  if (endMarkerRef.current) endMarkerRef.current.remove()
-  if (updateMarkersListenerRef.current && map) {
-    map.off('move zoom', updateMarkersListenerRef.current)
-  }
+  // Pulisco la mappa usando la funzione dell'hook
+  cleanupPreviousRoute()
+  
   // Ensure navigation is stopped and geolocation watch is cleared via context
   try { stopNavigation() } catch (err) { /* ignore */ }
   
@@ -614,7 +441,7 @@ const handleSelectEndSuggestion = (suggestion) => {
 
 // ========== FINE CALLBACK FUNCTIONS ==========
 
-// Funzione per calcolare e visualizzare il percorso (REFACTORED con service)
+// Funzione per calcolare e visualizzare il percorso
 const handleSubmit = async (e) => {
   e.preventDefault()
   setErrorMsg('')
@@ -645,15 +472,10 @@ const handleSubmit = async (e) => {
     return
   }
 
-  // Rimuovo layer e marker precedenti
-  if (routeLayer && map) map.removeLayer(routeLayer)
-  if (startMarkerRef.current) startMarkerRef.current.remove()
-  if (endMarkerRef.current) endMarkerRef.current.remove()
-  if (updateMarkersListenerRef.current && map) {
-    map.off('move zoom', updateMarkersListenerRef.current)
-  }
+  // Pulisco layer e marker precedenti usando la funzione dell'hook
+  cleanupPreviousRoute()
 
-  // === NUOVO: Uso il service per calcolare il percorso ===
+  // Uso il service per calcolare il percorso
   const result = await calculateRoute({
     start: sp,
     end: ep,
