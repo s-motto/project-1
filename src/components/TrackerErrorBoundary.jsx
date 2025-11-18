@@ -1,27 +1,25 @@
 // ==========================================
-// TRACKER ERROR BOUNDARY COMPONENT
+// TRACKER ERROR BOUNDARY COMPONENT (FIX)
 // ==========================================
 // Error Boundary specifico per il GPS tracking
 // 
-// Funzionalità critiche:
-// - Cattura errori durante ActiveTracking
-// - PRIMA del fallback → salva trackPoints su Appwrite
-// - Salva dati come "emergenza" (status: 'emergency_save')
-// - Mostra UI specifica: "Dati salvati in emergenza"
-// - Permette di continuare a usare il resto dell'app
-// 
+// FIX APPLICATO:
+// - Non richiede più trackingData in props (sempre vuoti)
+// - Prova a estrarre dati dal componente ActiveTracking crashato
+// - Se non ci sono dati → mostra messaggio appropriato
+// - Fallback modale full-screen (sempre visibile)
+//
 // Uso:
 // <TrackerErrorBoundary
 //   user={user}
 //   route={route}
-//   trackingData={{ trackPoints, distance, elapsedTime, elevationGain, elevationLoss }}
+//   onGoHome={() => { ... }}
 // >
 //   <ActiveTracking ... />
 // </TrackerErrorBoundary>
 // ==========================================
 
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
 import { FaExclamationCircle, FaSave } from 'react-icons/fa'
 import routesService from '../services/routesService'
 import logger from '../utils/logger'
@@ -67,14 +65,28 @@ class TrackerErrorBoundary extends React.Component {
 
   // ==========================================
   // EMERGENCY SAVE: Salva trackPoints su Appwrite
+  // FIX: Prova a estrarre dati da localStorage o skip
   // ==========================================
   attemptEmergencySave = async () => {
-    const { user, route, trackingData } = this.props
+    const { user, route } = this.props
+
+    // FIX: Prova a recuperare dati da localStorage (fallback)
+    let trackingData = null
+    try {
+      const tempData = localStorage.getItem('active_tracking_temp')
+      if (tempData) {
+        trackingData = JSON.parse(tempData)
+      }
+    } catch (e) {
+      logger.warn('TrackerErrorBoundary: Impossibile recuperare dati tracking da localStorage')
+    }
 
     // Verifica che abbiamo dati da salvare
     if (!trackingData || !trackingData.trackPoints || trackingData.trackPoints.length === 0) {
       logger.warn('TrackerErrorBoundary: Nessun trackPoint da salvare')
-      this.setState({ emergencySaveError: 'Nessun dato GPS da salvare' })
+      this.setState({ 
+        emergencySaveError: 'Nessun dato GPS disponibile per il salvataggio di emergenza' 
+      })
       return
     }
 
@@ -99,9 +111,9 @@ class TrackerErrorBoundary extends React.Component {
         coordinates: route.coordinates,
         instructions: Array.isArray(route.instructions) ? route.instructions : [],
         
-        // Dati tracking effettivi (aggiunti come campi extra)
+        // Dati tracking effettivi
         actualDistance: parseFloat(trackingData.distance.toFixed(2)),
-        actualDuration: Math.floor(trackingData.elapsedTime / 60), // minuti
+        actualDuration: Math.floor(trackingData.elapsedTime / 60),
         actualAscent: trackingData.elevationGain || 0,
         actualDescent: trackingData.elevationLoss || 0,
         actualCoordinates: JSON.stringify(trackingData.trackPoints),
@@ -122,6 +134,9 @@ class TrackerErrorBoundary extends React.Component {
           emergencySaved: true,
           savedRouteId: result.data.$id
         })
+        
+        // Pulisci localStorage
+        localStorage.removeItem('active_tracking_temp')
       } else {
         throw new Error(result.error || 'Salvataggio fallito')
       }
@@ -132,21 +147,9 @@ class TrackerErrorBoundary extends React.Component {
         emergencySaveError: saveError.message || 'Impossibile salvare i dati' 
       })
       
-      // FALLBACK: Prova localStorage come ultima risorsa
-      try {
-        const localBackup = {
-          timestamp: new Date().toISOString(),
-          route: route.name,
-          trackPoints: trackingData.trackPoints,
-          distance: trackingData.distance,
-          elapsedTime: trackingData.elapsedTime
-        }
-        localStorage.setItem('emergency_tracking_backup', JSON.stringify(localBackup))
-        logger.log('TrackerErrorBoundary: Backup salvato in localStorage')
-        this.setState({ emergencySaved: 'localStorage' })
-      } catch (localError) {
-        logger.error('TrackerErrorBoundary: Anche localStorage fallito:', localError)
-      }
+      // FALLBACK: Mantieni in localStorage
+      logger.log('TrackerErrorBoundary: Dati rimangono in localStorage per recupero manuale')
+      this.setState({ emergencySaved: 'localStorage' })
     }
   }
 
@@ -190,17 +193,16 @@ class TrackerErrorBoundary extends React.Component {
 
 // ==========================================
 // TRACKER ERROR FALLBACK UI
+// FIX: Modale full-screen sempre visibile
 // ==========================================
 const TrackerErrorFallback = ({ emergencySaved, emergencySaveError, error, onGoHome }) => {
   const isDev = import.meta.env.DEV
 
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{ backgroundColor: 'var(--bg-primary)' }}
-    >
+    // FIX: modal-overlay per full-screen
+    <div className="modal-overlay">
       <div 
-        className="card-container max-w-md w-full"
+        className="modal-content max-w-md"
         style={{
           backgroundColor: 'var(--bg-card)',
           border: `2px solid ${emergencySaved ? 'var(--status-warning)' : 'var(--status-error)'}`
@@ -234,7 +236,7 @@ const TrackerErrorFallback = ({ emergencySaved, emergencySaveError, error, onGoH
         <div 
           className="rounded-lg p-4 mb-6"
           style={{
-            backgroundColor: emergencySaved ? 'var(--bg-secondary)' : 'var(--bg-secondary)',
+            backgroundColor: 'var(--bg-secondary)',
             border: `1px solid ${emergencySaved ? 'var(--status-warning)' : 'var(--status-error)'}`
           }}
         >

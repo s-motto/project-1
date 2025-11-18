@@ -1,11 +1,14 @@
 // ==========================================
-// ERROR FALLBACK COMPONENT
+// ERROR FALLBACK COMPONENT (FIX)
 // ==========================================
 // UI mostrata all'utente quando ErrorBoundary cattura un errore
 // 
-// Funzionalità:
+// FIX APPLICATO:
+// - Modale full-screen (sempre visibile, non richiede scroll)
 // - Design mobile-first con palette Let's Walk
 // - Supporto dark mode automatico (CSS variables)
+// 
+// Funzionalità:
 // - Testi in italiano
 // - Bottone "Riprova" per reset
 // - Bottone "Torna alla Home" per navigazione
@@ -42,15 +45,13 @@ const ErrorFallback = ({ error, errorInfo, resetErrorBoundary, showHome = true }
   }
 
   // ==========================================
-  // RENDER
+  // RENDER - FIX: Modal full-screen
   // ==========================================
   return (
-    <div 
-      className="min-h-screen flex items-center justify-center p-4"
-      style={{ backgroundColor: 'var(--bg-primary)' }}
-    >
+    // FIX: Usa modal-overlay per full-screen
+    <div className="modal-overlay">
       <div 
-        className="card-container max-w-md w-full"
+        className="modal-content max-w-md"
         style={{
           backgroundColor: 'var(--bg-card)',
           border: '2px solid var(--status-error)'

@@ -12,6 +12,11 @@
 // - Pausa/riprendi tracking
 // - Salvataggio automatico su Appwrite
 // 
+// FIX APPLICATO: Protezione Leaflet "_leaflet_pos" error
+// - isMountedRef per tracciare mount status
+// - Cleanup migliorato con stop GPS e reset flags
+// - Callback GPS protetti con controllo isMounted
+// 
 // Dark mode: Supportato tramite CSS variables (--bg-card, --text-primary, ecc.)
 // Mobile-first: Layout ottimizzato per schermi piccoli
 // ==========================================
@@ -19,7 +24,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import {
   FaTimes,
-  FaMapMarkerAlt
+  FaMapMarkerAlt,
+  FaLayerGroup
 } from 'react-icons/fa'
 
 // Services e utilities
@@ -51,10 +57,13 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   const [isPaused, setIsPaused] = useState(false)
   const [shouldCenterMap, setShouldCenterMap] = useState(true)
 
-  // Refs
+  // ==========================================
+  // REFS - FIX: Aggiunto isMountedRef
+  // ==========================================
   const isTrackingRef = useRef(false)
   const isPausedRef = useRef(false)
   const mapRef = useRef(null)
+  const isMountedRef = useRef(true) // FIX: Flag per tracciare se componente è montato
 
   // Hook timer tracking
   const { elapsedTime } = useTrackingTimer(isTracking, isPaused)
@@ -121,6 +130,20 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   })
 
   // ==========================================
+  // FIX: Wrapper GPS callback con controllo isMounted
+  // ==========================================
+  const handlePositionUpdateSafe = (position) => {
+    // CONTROLLO: Non fare nulla se componente smontato
+    if (!isMountedRef.current) {
+      logger.warn('GPS update ignorato: componente smontato')
+      return
+    }
+    
+    // Procedi normalmente
+    handlePositionUpdate(position)
+  }
+
+  // ==========================================
   // TRACKING CONTROL HANDLERS
   // ==========================================
 
@@ -153,9 +176,9 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
         return
       }
 
-      // Avvia GPS
+      // Avvia GPS con callback protetto
       geolocation.start(
-        handlePositionUpdate,
+        handlePositionUpdateSafe,  // FIX: Usa versione safe
         handlePositionError,
         {
           enableHighAccuracy: true,
@@ -210,14 +233,27 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
 
   /**
    * Annulla tracking senza salvare
+   * FIX: Migliorato con flag e delay
    */
   const handleCancel = () => {
     if (!confirm('Vuoi annullare il tracking? I dati non verranno salvati.')) return
 
+    logger.log('ActiveTracking: Annullamento tracking')
+    
+    // FIX: Segna come smontato per prevenire update
+    isMountedRef.current = false
+    
+    // Ferma GPS
     geolocation.stop()
+    
+    // Reset state
     setIsTracking(false)
     isTrackingRef.current = false
-    onClose()
+    
+    // Chiudi dopo breve delay per permettere cleanup
+    setTimeout(() => {
+      onClose()
+    }, 100)
   }
 
   // ==========================================
@@ -232,10 +268,35 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     }
   }, [])
 
-  // Cleanup: ferma GPS quando unmount
+  // ==========================================
+  // FIX: Cleanup migliorato con isMountedRef
+  // ==========================================
   useEffect(() => {
     return () => {
+      logger.log('ActiveTracking: Cleanup iniziato')
+      
+      // IMPORTANTE: Segna componente come smontato SUBITO
+      isMountedRef.current = false
+      
+      // Ferma GPS
       geolocation.stop()
+      
+      // Ferma tracking
+      setIsTracking(false)
+      isTrackingRef.current = false
+      
+      // Pulisci mappa se esiste
+      if (mapRef.current) {
+        try {
+          mapRef.current.remove()
+          mapRef.current = null
+        } catch (error) {
+          // Ignora errori cleanup mappa
+          logger.warn('Errore cleanup mappa (non critico):', error)
+        }
+      }
+      
+      logger.log('ActiveTracking: Cleanup completato')
     }
   }, [geolocation])
 
@@ -259,11 +320,15 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
 
   const initialCenter = getInitialCenter()
 
-  // Callback mappa pronta
+  // ==========================================
+  // FIX: handleMapReady protetto
+  // ==========================================
   const handleMapReady = (map) => {
+    if (!isMountedRef.current) return // Non salvare ref se smontato
+    
     mapRef.current = map
     setTimeout(() => {
-      if (map) {
+      if (map && isMountedRef.current) { // Doppio controllo
         map.invalidateSize()
       }
     }, 300)
@@ -291,58 +356,69 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
                   {currentRouteData.name || 'Tracking GPS'}
                 </h2>
                 <p className="text-xs text-white/90">
-                  {isTracking ? (isPaused ? 'In pausa' : 'Tracking attivo') : 'Pronto per iniziare'}
+                  {isTracking ? (isPaused ? 'In pausa' : 'Tracking attivo') : 'Pronto'}
                 </p>
               </div>
-              {waypoints.length > 0 && (
-                <div className="ml-4 relative">
-                  <div className="bg-white/20 rounded px-2 py-1">
-                    <button
-                      onClick={() => setShowWaypointsList(!showWaypointsList)}
-                      className="flex items-center text-xs text-white whitespace-nowrap"
-                    >
-                      <span className="mr-1">{waypoints.length} waypoint{waypoints.length > 1 ? 's' : ''}</span>
-                      <span style={{ transform: showWaypointsList ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }}>▼</span>
-                    </button>
-                  </div>
-                  {showWaypointsList && (
+            </div>
+
+            {/* Bottone lista waypoints */}
+            {waypoints.length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowWaypointsList(!showWaypointsList)}
+                  className="relative flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-3 py-2 rounded-md transition-colors"
+                  title="Mostra waypoints"
+                >
+                  <FaLayerGroup className="text-sm" />
+                  <span className="text-sm font-medium">{waypoints.length}</span>
+                </button>
+
+                {/* Dropdown lista waypoints */}
+                {showWaypointsList && (
+                  <div 
+                    className="absolute right-0 top-full mt-2 rounded-lg shadow-xl overflow-hidden z-50 min-w-[200px]"
+                    style={{ 
+                      backgroundColor: 'var(--bg-card)',
+                      border: '1px solid var(--border-color)'
+                    }}
+                  >
                     <div 
-                      className="absolute top-full right-0 mt-1 rounded shadow-lg"
+                      className="px-3 py-2 text-xs font-semibold uppercase tracking-wide"
                       style={{ 
-                        minWidth: '200px',
-                        maxWidth: '280px',
-                        backgroundColor: 'var(--dropdown-bg)',
-                        border: '2px solid var(--dropdown-border)',
-                        zIndex: 2100
+                        backgroundColor: 'var(--bg-secondary)',
+                        color: 'var(--text-secondary)'
                       }}
                     >
-                      <div className="p-2 space-y-1 text-xs" style={{ color: 'var(--text-primary)' }}>
-                        {waypoints.map((wp, idx) => (
-                          <div 
-                            key={idx} 
-                            className="flex items-center justify-between rounded px-2 py-1.5 transition-colors"
-                            style={{ 
-                              backgroundColor: 'var(--dropdown-hover)',
-                              cursor: 'default'
-                            }}
-                          >
-                            <span className="truncate flex-1">{idx + 1}. {wp.name}</span>
-                            <button
-                              onClick={() => handleRemoveWaypoint(idx)}
-                              className="ml-2 flex-shrink-0 hover:opacity-70 transition-opacity"
-                              style={{ color: 'var(--color-orange)' }}
-                              aria-label={`Rimuovi waypoint ${wp.name}`}
-                            >
-                              <FaTimes className="text-xs" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
+                      Waypoints ({waypoints.length}/5)
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
+                    <div className="max-h-64 overflow-y-auto">
+                      {waypoints.map((wp, idx) => (
+                        <div 
+                          key={idx}
+                          className="px-3 py-2 flex items-center justify-between hover:bg-opacity-50 transition-colors"
+                          style={{ 
+                            backgroundColor: idx % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-secondary)'
+                          }}
+                        >
+                          <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
+                            {idx + 1}. {wp.name}
+                          </span>
+                          <button
+                            onClick={() => handleRemoveWaypoint(idx)}
+                            className="ml-2 flex-shrink-0 hover:opacity-70 transition-opacity"
+                            style={{ color: 'var(--color-orange)' }}
+                            aria-label={`Rimuovi waypoint ${wp.name}`}
+                          >
+                            <FaTimes className="text-xs" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
             <button
               onClick={handleCancel}
               className="icon-btn-white"
