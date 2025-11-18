@@ -1,3 +1,17 @@
+// ==========================================
+// ROUTES SERVICE
+// ==========================================
+// Service per gestire i percorsi salvati su Appwrite
+//
+// Funzionalità:
+// - Salvataggio percorsi (nuovi)
+// - Recupero percorsi (tutti, salvati, completati, singolo)
+// - Aggiornamento percorsi (nome, dati generici, completamento)
+// - Eliminazione percorsi
+//
+// IMPORTANTE: Usa logger.error per tutti gli errori (NO console.error)
+// ==========================================
+
 import { databases } from '../appwrite'
 import { ID, Query } from 'appwrite'
 import logger from '../utils/logger'
@@ -7,7 +21,9 @@ const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID || 'hiking_db'
 const ROUTES_COLLECTION_ID = import.meta.env.VITE_APPWRITE_ROUTES_COLLECTION_ID || 'routes'
 
 class RoutesService {
-  // Helper per parsare i documenti dei percorsi
+  // ==========================================
+  // HELPER: Parsa documenti Appwrite
+  // ==========================================
   parseRouteDocument(doc) {
     return {
       ...doc,
@@ -19,7 +35,9 @@ class RoutesService {
     }
   }
 
-  // Salva un nuovo percorso
+  // ==========================================
+  // CREATE: Salva nuovo percorso
+  // ==========================================
   async saveRoute(routeData, userId) {
     try {
       const document = await databases.createDocument(
@@ -38,7 +56,16 @@ class RoutesService {
           coordinates: JSON.stringify(routeData.coordinates),
           instructions: JSON.stringify(routeData.instructions),
           createdAt: new Date().toISOString(),
-          status: 'saved' // saved o completed
+          status: routeData.status || 'saved', // 'saved', 'completed', 'emergency_save'
+          
+          // Campi opzionali per tracking completato o emergenza
+          ...(routeData.completedAt && { completedAt: routeData.completedAt }),
+          ...(routeData.actualDistance !== undefined && { actualDistance: routeData.actualDistance }),
+          ...(routeData.actualDuration !== undefined && { actualDuration: routeData.actualDuration }),
+          ...(routeData.actualAscent !== undefined && { actualAscent: routeData.actualAscent }),
+          ...(routeData.actualDescent !== undefined && { actualDescent: routeData.actualDescent }),
+          ...(routeData.actualCoordinates && { actualCoordinates: routeData.actualCoordinates }),
+          ...(routeData.emergencySavedAt && { emergencySavedAt: routeData.emergencySavedAt })
         }
       )
       return { success: true, data: document }
@@ -48,7 +75,9 @@ class RoutesService {
     }
   }
 
-  // Recupera tutti i percorsi di un utente
+  // ==========================================
+  // READ: Recupera tutti i percorsi di un utente
+  // ==========================================
   async getUserRoutes(userId) {
     try {
       const response = await databases.listDocuments(
@@ -70,7 +99,9 @@ class RoutesService {
     }
   }
 
-  // Recupera solo i percorsi salvati
+  // ==========================================
+  // READ: Recupera solo percorsi salvati (non completati)
+  // ==========================================
   async getSavedRoutes(userId) {
     try {
       const response = await databases.listDocuments(
@@ -93,7 +124,9 @@ class RoutesService {
     }
   }
 
-  // Recupera solo i percorsi completati
+  // ==========================================
+  // READ: Recupera solo percorsi completati
+  // ==========================================
   async getCompletedRoutes(userId) {
     try {
       const response = await databases.listDocuments(
@@ -116,22 +149,9 @@ class RoutesService {
     }
   }
 
-  // Elimina un percorso
-  async deleteRoute(routeId) {
-    try {
-      await databases.deleteDocument(
-        DATABASE_ID,
-        ROUTES_COLLECTION_ID,
-        routeId
-      )
-      return { success: true }
-    } catch (error) {
-      logger.error('Error deleting route:', error)
-      return { success: false, error: error.message }
-    }
-  }
-
-  // Recupera un singolo percorso
+  // ==========================================
+  // READ: Recupera singolo percorso
+  // ==========================================
   async getRoute(routeId) {
     try {
       const document = await databases.getDocument(
@@ -149,7 +169,9 @@ class RoutesService {
     }
   }
 
-  // Aggiorna il nome di un percorso
+  // ==========================================
+  // UPDATE: Aggiorna nome percorso
+  // ==========================================
   async updateRouteName(routeId, newName) {
     try {
       const document = await databases.updateDocument(
@@ -160,11 +182,14 @@ class RoutesService {
       )
       return { success: true, data: document }
     } catch (error) {
-      logger.error('Error updating route:', error)
+      logger.error('Error updating route name:', error)
       return { success: false, error: error.message }
     }
   }
 
+  // ==========================================
+  // UPDATE: Aggiorna percorso (generico)
+  // ==========================================
   async updateRoute(routeId, data) {
     try {
       const document = await databases.updateDocument(
@@ -175,12 +200,15 @@ class RoutesService {
       )
       return { success: true, data: document }
     } catch (error) {
-      console.error('Error updating route:', error)
+      logger.error('Error updating route:', error)
       return { success: false, error: error.message }
     }
   }
 
-  // Segna un percorso come completato
+  // ==========================================
+  // UPDATE: Segna percorso come completato
+  // Copia i dati pianificati nei campi "actual"
+  // ==========================================
   async completeRoute(routeId) {
     try {
       // Recupera il percorso
@@ -191,7 +219,7 @@ class RoutesService {
 
       const route = routeResult.data
 
-      // Aggiorna con dati reali
+      // Aggiorna con dati reali (copia pianificati se non ci sono dati tracking)
       const document = await databases.updateDocument(
         DATABASE_ID,
         ROUTES_COLLECTION_ID,
@@ -211,6 +239,24 @@ class RoutesService {
       return { success: false, error: error.message }
     }
   }
+
+  // ==========================================
+  // DELETE: Elimina percorso
+  // ==========================================
+  async deleteRoute(routeId) {
+    try {
+      await databases.deleteDocument(
+        DATABASE_ID,
+        ROUTES_COLLECTION_ID,
+        routeId
+      )
+      return { success: true }
+    } catch (error) {
+      logger.error('Error deleting route:', error)
+      return { success: false, error: error.message }
+    }
+  }
 }
 
+// Esporto singleton
 export default new RoutesService()
