@@ -16,7 +16,7 @@
 // Mobile-first: Layout ottimizzato per schermi piccoli
 // ==========================================
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   FaTimes,
   FaMapMarkerAlt
@@ -29,12 +29,10 @@ import { useSettings } from '../contexts/SettingsContext'
 import useGeolocation from '../hooks/useGeolocation'
 import useTrackingTimer from '../hooks/useTrackingTimer'
 import useTrackingSave from '../hooks/useTrackingSave'
-import useWaypointManager from '../hooks/useWaypointManager' // ✅ NUOVO HOOK WAYPOINTS
+import useWaypointManager from '../hooks/useWaypointManager'
+import useGPSTracking from '../hooks/useGPSTracking'
 import logger from '../utils/logger'
-import {
-  calculateDistance,
-  calculateSpeed
-} from '../utils/gpsUtils'
+import { calculateSpeed } from '../utils/gpsUtils'
 
 // Componenti tracking
 import { TrackingStats, TrackingControls, WaypointDialog, TrackingMap } from './ActiveTracking/index.js'
@@ -48,35 +46,41 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   const { settings } = useSettings()
   const geolocation = useGeolocation()
 
-  // ========== GPS TRACKING STATE ==========
+  // State locali componente
   const [isTracking, setIsTracking] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
-  const [currentPosition, setCurrentPosition] = useState(null)
-  const [trackPoints, setTrackPoints] = useState([]) // Traccia GPS reale (verde)
-  const [distance, setDistance] = useState(0) // Distanza percorsa (km)
-  // ✅ RIMOSSO: const [elapsedTime, setElapsedTime] = useState(0) - ora viene dall'hook!
-  const [elevationGain, setElevationGain] = useState(0) // Salita accumulata (m)
-  const [elevationLoss, setElevationLoss] = useState(0) // Discesa accumulata (m)
-  const [heading, setHeading] = useState(0) // Direzione movimento (gradi)
-  const [gpsAccuracy, setGpsAccuracy] = useState(null) // Accuratezza GPS (metri)
-  const [waitingForGoodFix, setWaitingForGoodFix] = useState(false)
   const [shouldCenterMap, setShouldCenterMap] = useState(true)
-  // ✅ RIMOSSO: isSaving, savedRouteId - ora sono nell'hook useTrackingSave!
-  // ✅ RIMOSSO: waypoints, tempWaypoint, showWaypointDialog, waypointPreview, loadingPreview, recalculatingRoute - ora nell'hook useWaypointManager!
 
-  // ✅ RIMOSSO: normalizeRoute, normalizedRoute, originalRouteRef, currentRouteData, showWaypointsList - ora nell'hook useWaypointManager!
-
-  // ========== REFS ==========
+  // Refs
   const isTrackingRef = useRef(false)
   const isPausedRef = useRef(false)
-  // ✅ RIMOSSO: startTimeRef, pausedTimeRef, timerRef - ora sono nell'hook!
   const mapRef = useRef(null)
-  const lastElevation = useRef(null)
 
-  // ✅ HOOK TIMER - gestisce tutto automaticamente!
+  // Hook timer tracking
   const { elapsedTime } = useTrackingTimer(isTracking, isPaused)
 
-  // ✅ HOOK SALVATAGGIO - gestisce salvataggio percorso e achievements!
+  // Hook GPS tracking - gestisce posizione, traccia, distanza, elevazione, heading
+  const {
+    currentPosition,
+    trackPoints,
+    distance,
+    elevationGain,
+    elevationLoss,
+    heading,
+    gpsAccuracy,
+    waitingForGoodFix,
+    handlePositionUpdate,
+    handlePositionError
+  } = useGPSTracking({
+    isTracking,
+    isPaused,
+    isTrackingRef,
+    isPausedRef,
+    settings,
+    toast
+  })
+
+  // Hook salvataggio tracking
   const { isSaving, savedRouteId, ensureRouteSaved, saveCompletedTracking } = useTrackingSave({
     route,
     user,
@@ -91,7 +95,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     onComplete
   })
 
-  // ✅ HOOK WAYPOINTS - gestisce tutti i waypoints e il ricalcolo percorso!
+  // Hook gestione waypoints
   const {
     waypoints,
     tempWaypoint,
@@ -117,134 +121,6 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   })
 
   // ==========================================
-  // GPS TRACKING LOGIC
-  // ==========================================
-
-  // ✅ RIMOSSO: Tutte le funzioni waypoint (~290 righe) - ora nell'hook useWaypointManager!
-  // - reverseGeocode
-  // - calculateWaypointPreview
-  // - recalculateRouteWithWaypoints
-  // - handleMapLongPress
-  // - handleConfirmWaypoint
-  // - handleCancelWaypoint
-  // - handleRemoveWaypoint
-  // - formatPreviewDistance
-  // - formatPreviewDuration
-
-  // ==========================================
-  // GPS TRACKING LOGIC
-  // ==========================================
-
-  /**
-   * Gestisce l'aggiornamento della posizione GPS
-   * Calcola distanza, elevazione, direzione
-   */
-  const handlePositionUpdate = useCallback((position) => {
-    const newPoint = {
-      lat: position.coords.latitude,
-      lng: position.coords.longitude,
-      altitude: position.coords.altitude,
-      timestamp: position.timestamp,
-      accuracy: position.coords.accuracy
-    }
-
-    setCurrentPosition(newPoint)
-    setGpsAccuracy(position.coords.accuracy)
-
-    if (position.coords.accuracy <= (settings?.gpsAccuracyMax || 150)) {
-      setWaitingForGoodFix(false)
-    }
-
-    // Se in pausa o non tracking, non registrare punti
-    if (!isTrackingRef.current || isPausedRef.current) {
-      return
-    }
-
-    // Aggiungi punto alla traccia usando functional update
-    setTrackPoints(prevTrackPoints => {
-      // Calcola direzione dal movimento
-      if (prevTrackPoints.length > 0 && !isPausedRef.current && isTrackingRef.current) {
-        const lastPoint = prevTrackPoints[prevTrackPoints.length - 1]
-        const lat1 = lastPoint.lat * Math.PI / 180
-        const lat2 = newPoint.lat * Math.PI / 180
-        const dLon = (newPoint.lng - lastPoint.lng) * Math.PI / 180
-
-        const y = Math.sin(dLon) * Math.cos(lat2)
-        const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon)
-        const bearing = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360
-
-        setHeading(bearing)
-      }
-
-      // Calcola distanza dall'ultimo punto
-      if (prevTrackPoints.length > 0) {
-        const lastPoint = prevTrackPoints[prevTrackPoints.length - 1]
-        const pointDistance = calculateDistance(
-          lastPoint.lat,
-          lastPoint.lng,
-          newPoint.lat,
-          newPoint.lng
-        )
-
-        // Aggiungi solo se movimento significativo (>3m) e accuratezza buona
-        if (pointDistance >= 0.003 && newPoint.accuracy <= (settings?.gpsAccuracyMax || 150)) {
-          // Aggiorna distanza totale
-          setDistance(prev => prev + pointDistance)
-
-          // Calcola elevazione (se disponibile)
-          if (newPoint.altitude && lastElevation.current !== null) {
-            const elevDiff = newPoint.altitude - lastElevation.current
-
-            if (elevDiff > 0) {
-              setElevationGain(prev => prev + elevDiff)
-            } else if (elevDiff < 0) {
-              setElevationLoss(prev => prev + Math.abs(elevDiff))
-            }
-          }
-
-          if (newPoint.altitude) {
-            lastElevation.current = newPoint.altitude
-          }
-
-          return [...prevTrackPoints, newPoint]
-        }
-      } else {
-        // Primo punto
-        if (newPoint.altitude) {
-          lastElevation.current = newPoint.altitude
-        }
-        return [newPoint]
-      }
-
-      return prevTrackPoints
-    })
-  }, [settings])
-
-  /**
-   * Gestisce errori GPS
-   */
-  const handlePositionError = useCallback((error) => {
-    logger.error('GPS error:', error)
-    let message = 'Errore GPS'
-
-    switch (error.code) {
-      case error.PERMISSION_DENIED:
-        message = 'Permesso GPS negato. Attiva la geolocalizzazione nelle impostazioni.'
-        break
-      case error.POSITION_UNAVAILABLE:
-        message = 'Posizione non disponibile. Verifica di essere all\'aperto.'
-        break
-      case error.TIMEOUT:
-        message = 'Timeout GPS. Riprovo...'
-        break
-      default:
-        message = 'Errore GPS sconosciuto'
-    }
-
-    toast.error(message)
-  }, [toast])
-
-  // ==========================================
   // TRACKING CONTROL HANDLERS
   // ==========================================
 
@@ -253,24 +129,22 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
    */
   const handleStart = async () => {
     if (!isTracking) {
-      // ✅ L'hook gestisce il salvataggio iniziale automaticamente!
+      
       if (!savedRouteId) {
         try {
           await ensureRouteSaved()
           toast.info('Percorso salvato automaticamente per il tracking')
         } catch (error) {
           toast.error('Errore nel salvare il percorso: ' + error.message)
-          return // Non avviare tracking se salvataggio fallisce
+          return
         }
       }
 
-      // ✅ SEMPLIFICATO - L'hook gestisce il reset timer automaticamente!
       setIsTracking(true)
       setIsPaused(false)
       isTrackingRef.current = true
       isPausedRef.current = false
       setShouldCenterMap(true)
-      setWaitingForGoodFix(true)
 
       // Verifica permessi GPS
       if (!navigator.geolocation) {
@@ -297,7 +171,6 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
    */
   const handlePause = () => {
     if (!isPaused) {
-      // ✅ SEMPLIFICATO - L'hook gestisce il tempo pausato automaticamente!
       setIsPaused(true)
       isPausedRef.current = true
     }
@@ -316,9 +189,6 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   /**
    * Termina e salva tracking
    */
-  /**
-   * Termina e salva tracking
-   */
   const handleStop = async () => {
     if (!confirm('Vuoi terminare il percorso e salvare i dati?')) return
 
@@ -327,7 +197,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     setIsTracking(false)
     isTrackingRef.current = false
 
-    // ✅ L'hook gestisce TUTTO: salvataggio, achievements, notifiche!
+    // Salva tracking
     const success = await saveCompletedTracking()
 
     // Chiudi modal dopo salvataggio
@@ -362,16 +232,12 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     }
   }, [])
 
-  // ✅ RIMOSSO - Effect del timer ora è dentro l'hook!
-
   // Cleanup: ferma GPS quando unmount
   useEffect(() => {
     return () => {
       geolocation.stop()
     }
   }, [geolocation])
-
-  // ✅ RIMOSSO: Cleanup waypoints - ora gestito automaticamente dall'hook useWaypointManager!
 
   // ==========================================
   // CALCOLI STATISTICHE
