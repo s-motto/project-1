@@ -12,6 +12,11 @@ import { ToastProvider } from './contexts/ToastContext'
 import { SettingsProvider } from './contexts/SettingsContext'
 import logger from './utils/logger'
 
+// ==========================================
+// IMPORTO ERROR BOUNDARY PRINCIPALE
+// ==========================================
+import ErrorBoundary from './components/ErrorBoundary'
+
 // Resetto il tema di default
 if (typeof document !== 'undefined') {
   document.documentElement.classList.remove('theme-dark')
@@ -29,15 +34,33 @@ L.Marker.prototype.options.icon = DefaultIcon
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ToastProvider>
-      <SettingsProvider>
-        <AuthProvider>
-          <NavigationProvider>
-            <App />
-          </NavigationProvider>
-        </AuthProvider>
-      </SettingsProvider>
-    </ToastProvider>
+   
+    {/* ERROR BOUNDARY PRINCIPALE */}
+    {/* Cattura tutti gli errori React dell'app   */}
+    <ErrorBoundary
+      onError={(error, errorInfo) => {
+        // In produzione, qui potremmo inviare a Sentry o altro servizio
+        logger.error('ErrorBoundary Top-Level catturato:', {
+          error: error.toString(),
+          componentStack: errorInfo.componentStack
+        })
+      }}
+      onReset={() => {
+        // Cleanup aggiuntivo se necessario
+        logger.log('ErrorBoundary: Reset completato, clearing cache...')
+        // Es: localStorage.removeItem('temp_data')
+      }}
+    >
+      <ToastProvider>
+        <SettingsProvider>
+          <AuthProvider>
+            <NavigationProvider>
+              <App />
+            </NavigationProvider>
+          </AuthProvider>
+        </SettingsProvider>
+      </ToastProvider>
+    </ErrorBoundary>
   </StrictMode>,
 )
 

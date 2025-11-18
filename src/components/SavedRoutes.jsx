@@ -1,3 +1,4 @@
+import TrackerErrorBoundary from './TrackerErrorBoundary' // importo il componente per la gestione degli errori
 import React, { useState, useEffect } from 'react' // importo React e gli hook necessari
 import { useNavigate } from 'react-router-dom' // importo useNavigate per la navigazione
 import { FaRoute, FaTrash, FaMapMarkedAlt, FaSpinner, FaCheckCircle, FaPlay, FaEdit, FaCheck, FaTimes } from 'react-icons/fa' // importo le icone necessarie
@@ -330,14 +331,30 @@ const handleComplete = async (routeId) => {
         </div>
       </div>
 
-      {/* Modal Tracking GPS */}
-      {activeRoute && (
-        <ActiveTracking
-          route={activeRoute}
-          onClose={handleCloseTracking}
-          onComplete={handleTrackingComplete}
-        />
-      )}
+      {/* Modal Tracking GPS con Error Boundary */}
+{activeRoute && (
+  <TrackerErrorBoundary
+    user={user}
+    route={activeRoute}
+    trackingData={{
+      trackPoints: [],
+      distance: 0,
+      elapsedTime: 0,
+      elevationGain: 0,
+      elevationLoss: 0
+    }}
+    onGoHome={() => {
+      setActiveRoute(null)
+      loadRoutes()
+    }}
+  >
+    <ActiveTracking
+      route={activeRoute}
+      onClose={handleCloseTracking}
+      onComplete={handleTrackingComplete}
+    />
+  </TrackerErrorBoundary>
+)}
     </>
   )
 }

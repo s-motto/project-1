@@ -1,3 +1,4 @@
+import TrackerErrorBoundary from './TrackerErrorBoundary'// importo il componente per la gestione degli errori
 import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react' // importo React e gli hook necessari
 import { useLocation } from 'react-router-dom' // importo useLocation per leggere lo state della navigazione
 import NavigationMode from './NavigationMode' // importo il componente NavigationMode
@@ -562,13 +563,28 @@ const handleSubmit = async (e) => {
   />
 )}
 
-{/* Modal ActiveTracking */}
+{/* Modal ActiveTracking con Error Boundary */}
 {showTracking && fullRouteData && (
-  <ActiveTracking
+  <TrackerErrorBoundary
+    user={user}
     route={fullRouteData}
-    onClose={handleCloseTracking}
-    onComplete={handleTrackingComplete}
-  />
+    trackingData={{
+      trackPoints: [],
+      distance: 0,
+      elapsedTime: 0,
+      elevationGain: 0,
+      elevationLoss: 0
+    }}
+    onGoHome={() => {
+      setShowTracking(false)
+    }}
+  >
+    <ActiveTracking
+      route={fullRouteData}
+      onClose={handleCloseTracking}
+      onComplete={handleTrackingComplete}
+    />
+  </TrackerErrorBoundary>
 )}
 
 <div id="map" className="w-full h-[400px] rounded-lg shadow-md" />
