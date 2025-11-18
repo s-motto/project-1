@@ -331,18 +331,11 @@ const handleComplete = async (routeId) => {
         </div>
       </div>
 
-      {/* Modal Tracking GPS con Error Boundary */}
+     {/* Modal Tracking GPS con Error Boundary */}
 {activeRoute && (
   <TrackerErrorBoundary
     user={user}
     route={activeRoute}
-    trackingData={{
-      trackPoints: [],
-      distance: 0,
-      elapsedTime: 0,
-      elevationGain: 0,
-      elevationLoss: 0
-    }}
     onGoHome={() => {
       setActiveRoute(null)
       loadRoutes()

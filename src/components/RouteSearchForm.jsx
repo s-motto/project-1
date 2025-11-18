@@ -568,13 +568,6 @@ const handleSubmit = async (e) => {
   <TrackerErrorBoundary
     user={user}
     route={fullRouteData}
-    trackingData={{
-      trackPoints: [],
-      distance: 0,
-      elapsedTime: 0,
-      elevationGain: 0,
-      elevationLoss: 0
-    }}
     onGoHome={() => {
       setShowTracking(false)
     }}
