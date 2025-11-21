@@ -14,7 +14,7 @@ export default defineConfig(({ command, mode }) => {
     // ==========================================
     test: {
       globals: true,
-      environment: 'jsdom',
+      environment: 'happy-dom',
       setupFiles: './src/setupTests.js',
       css: true,
       coverage: {
