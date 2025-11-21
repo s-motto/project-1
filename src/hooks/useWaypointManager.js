@@ -1,9 +1,12 @@
-import { useState, useCallback, useRef, useMemo } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import logger from '../utils/logger'
+import { callORS } from '../services/appwriteProxy'
+import { reverseGeocode } from '../services/geocodingService'
 
 /**
  * Custom hook per gestire i waypoints del tracking GPS
  * Gestisce: aggiunta/rimozione waypoints, preview percorso, ricalcolo con OpenRouteService
+ * tramite Appwrite Function proxy
  * 
  * @param {Object} params - Parametri dell'hook
  * @param {Object} params.route - Percorso originale con startPoint, endPoint, coordinates
@@ -12,37 +15,19 @@ import logger from '../utils/logger'
  * @param {Object} params.toast - Sistema notifiche toast
  * @param {Object} params.settings - Impostazioni utente (distanceUnit, elevationUnit)
  * @returns {Object} State e handlers per waypoints
- * 
- * @example
- * const {
- *   waypoints,
- *   currentRouteData,
- *   handleMapLongPress,
- *   handleConfirmWaypoint,
- *   handleRemoveWaypoint
- * } = useWaypointManager({
- *   route,
- *   currentPosition,
- *   isTracking,
- *   toast,
- *   settings
- * })
  */
 export function useWaypointManager({ route, currentPosition, isTracking, toast, settings }) {
   // ========== STATE ==========
-  const [waypoints, setWaypoints] = useState([]) // Array waypoints confermati
-  const [tempWaypoint, setTempWaypoint] = useState(null) // Waypoint temporaneo (durante selezione)
-  const [showWaypointDialog, setShowWaypointDialog] = useState(false) // Mostra dialog conferma
-  const [waypointPreview, setWaypointPreview] = useState(null) // Preview dati percorso
-  const [loadingPreview, setLoadingPreview] = useState(false) // Loading preview
-  const [recalculatingRoute, setRecalculatingRoute] = useState(false) // Loading ricalcolo
-  const [showWaypointsList, setShowWaypointsList] = useState(false) // Mostra lista waypoints nell'header
+  const [waypoints, setWaypoints] = useState([])
+  const [tempWaypoint, setTempWaypoint] = useState(null)
+  const [showWaypointDialog, setShowWaypointDialog] = useState(false)
+  const [waypointPreview, setWaypointPreview] = useState(null)
+  const [loadingPreview, setLoadingPreview] = useState(false)
+  const [recalculatingRoute, setRecalculatingRoute] = useState(false)
+  const [showWaypointsList, setShowWaypointsList] = useState(false)
 
   // ========== REFS ==========
-  // Salva percorso originale per reset
   const originalRouteRef = useRef(normalizeRoute(route))
-
-  // Percorso corrente visualizzato (può cambiare con waypoints)
   const [currentRouteData, setCurrentRouteData] = useState(normalizeRoute(route))
 
   // ==========================================
@@ -51,7 +36,6 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
 
   /**
    * Normalizza coordinate da GeoJSON [lon, lat] a Leaflet [lat, lon]
-   * OpenRouteService restituisce coordinate in formato GeoJSON
    */
   function normalizeRoute(routeData) {
     if (!routeData.coordinates || routeData.coordinates.length === 0) {
@@ -59,7 +43,6 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
     }
 
     const firstCoord = routeData.coordinates[0]
-    // Se primo valore < secondo, sono [lon, lat] e vanno invertite
     const needsConversion = Array.isArray(firstCoord) && firstCoord[0] < firstCoord[1]
 
     if (needsConversion) {
@@ -72,45 +55,18 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
     return routeData
   }
 
-  /**
-   * Reverse Geocoding: ottiene nome luogo da coordinate
-   * Usa OpenRouteService reverse geocoding API
-   */
-  const reverseGeocode = useCallback(async (lat, lng) => {
-    try {
-      const ORS_KEY = import.meta.env.VITE_OPENROUTE_API_KEY
-      const url = `https://api.openrouteservice.org/geocode/reverse?api_key=${ORS_KEY}&point.lon=${lng}&point.lat=${lat}&size=1`
-
-      const response = await fetch(url)
-      if (!response.ok) {
-        return `${lat.toFixed(4)}, ${lng.toFixed(4)}`
-      }
-
-      const data = await response.json()
-
-      if (data.features && data.features.length > 0) {
-        const props = data.features[0].properties
-        return props.name || props.label || `${lat.toFixed(4)}, ${lng.toFixed(4)}`
-      }
-
-      return `${lat.toFixed(4)}, ${lng.toFixed(4)}`
-    } catch (error) {
-      logger.error('Reverse geocoding error:', error)
-      return `${lat.toFixed(4)}, ${lng.toFixed(4)}`
-    }
-  }, [])
+  // ==========================================
+  // API FUNCTIONS
+  // ==========================================
 
   /**
    * Calcola preview del percorso con il nuovo waypoint
-   * Chiama OpenRouteService per ottenere distanza, durata, coordinate
    */
   const calculateWaypointPreview = useCallback(async (newWaypoint) => {
     setLoadingPreview(true)
 
     try {
-      const ORS_KEY = import.meta.env.VITE_OPENROUTE_API_KEY
-
-      // Costruisci array coordinate per API
+      // Costruisci array coordinate
       const coordinates = []
 
       // 1. Start: posizione corrente o start originale
@@ -131,30 +87,14 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
       // 4. End
       coordinates.push([route.endPoint.lon, route.endPoint.lat])
 
-      // Chiamata OpenRouteService
-      const response = await fetch(
-        'https://api.openrouteservice.org/v2/directions/foot-hiking/geojson',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': ORS_KEY,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            coordinates: coordinates,
-            instructions: true,
-            language: 'it',
-            units: 'km',
-            elevation: true
-          })
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error('Errore nel calcolo del percorso')
-      }
-
-      const data = await response.json()
+      // Chiamata OpenRouteService tramite proxy
+      const data = await callORS('v2/directions/foot-hiking/geojson', {
+        coordinates: coordinates,
+        instructions: true,
+        language: 'it',
+        units: 'km',
+        elevation: true
+      })
 
       if (!data.features || data.features.length === 0) {
         throw new Error('Nessun percorso trovato')
@@ -167,10 +107,10 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
       const name = await reverseGeocode(newWaypoint.lat, newWaypoint.lng)
 
       const preview = {
-        distance: props.summary.distance, // km
-        duration: props.summary.duration, // secondi
+        distance: props.summary.distance,
+        duration: props.summary.duration,
         name: name,
-        coordinates: feature.geometry.coordinates, // GeoJSON format [lon, lat]
+        coordinates: feature.geometry.coordinates,
         ascent: props.ascent || 0,
         descent: props.descent || 0
       }
@@ -184,14 +124,12 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
       setLoadingPreview(false)
       return null
     }
-  }, [currentPosition, route, waypoints, reverseGeocode, toast])
+  }, [currentPosition, route, waypoints, toast])
 
   /**
    * Ricalcola percorso completo con tutti i waypoints
-   * Aggiorna currentRouteData
    */
   const recalculateRouteWithWaypoints = useCallback(async (waypointsToUse = waypoints) => {
-    // Se nessun waypoint, usa percorso originale
     if (waypointsToUse.length === 0) {
       setCurrentRouteData(originalRouteRef.current)
       return
@@ -200,8 +138,6 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
     setRecalculatingRoute(true)
 
     try {
-      const ORS_KEY = import.meta.env.VITE_OPENROUTE_API_KEY
-
       // Costruisci coordinate
       const coordinates = []
 
@@ -220,30 +156,14 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
       // End
       coordinates.push([route.endPoint.lon, route.endPoint.lat])
 
-      // API Call
-      const response = await fetch(
-        'https://api.openrouteservice.org/v2/directions/foot-hiking/geojson',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': ORS_KEY,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            coordinates: coordinates,
-            instructions: true,
-            language: 'it',
-            units: 'km',
-            elevation: true
-          })
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error('Errore nel calcolo del percorso')
-      }
-
-      const data = await response.json()
+      // API Call tramite proxy
+      const data = await callORS('v2/directions/foot-hiking/geojson', {
+        coordinates: coordinates,
+        instructions: true,
+        language: 'it',
+        units: 'km',
+        elevation: true
+      })
 
       if (!data.features || data.features.length === 0) {
         throw new Error('Nessun percorso trovato')
@@ -255,9 +175,9 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
       // Aggiorna percorso visualizzato (converti a Leaflet format)
       const newRouteData = {
         ...originalRouteRef.current,
-        coordinates: feature.geometry.coordinates.map(c => [c[1], c[0]]), // [lat, lon]
+        coordinates: feature.geometry.coordinates.map(c => [c[1], c[0]]),
         distance: props.summary.distance,
-        duration: Math.round(props.summary.duration / 60), // minuti
+        duration: Math.round(props.summary.duration / 60),
         ascent: props.ascent || 0,
         descent: props.descent || 0
       }
@@ -280,7 +200,6 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
    * Gestisce long press sulla mappa per aggiungere waypoint
    */
   const handleMapLongPress = useCallback(async (latlng) => {
-    // Validazioni
     if (!isTracking) {
       toast.info('Avvia il tracking per aggiungere waypoints')
       return
@@ -291,18 +210,14 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
       return
     }
 
-    // Salva waypoint temporaneo
     const tempWp = {
       lat: latlng.lat,
       lng: latlng.lng
     }
     setTempWaypoint(tempWp)
-
-    // Mostra dialog
     setShowWaypointDialog(true)
     setWaypointPreview(null)
 
-    // Calcola preview
     await calculateWaypointPreview(tempWp)
   }, [isTracking, waypoints.length, toast, calculateWaypointPreview])
 
@@ -312,7 +227,6 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
   const handleConfirmWaypoint = useCallback(async () => {
     if (!tempWaypoint || !waypointPreview) return
 
-    // Aggiungi waypoint con dati del preview
     const newWaypoint = {
       lat: tempWaypoint.lat,
       lng: tempWaypoint.lng,
@@ -323,19 +237,17 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
     const updatedWaypoints = [...waypoints, newWaypoint]
     setWaypoints(updatedWaypoints)
 
-    // Usa dati preview già calcolati per aggiornare percorso
+    // Usa dati preview già calcolati
     const updatedRoute = {
       ...route,
-      coordinates: waypointPreview.coordinates.map(coord => [coord[1], coord[0]]), // [lat, lon]
+      coordinates: waypointPreview.coordinates.map(coord => [coord[1], coord[0]]),
       distance: waypointPreview.distance,
-      duration: Math.round(waypointPreview.duration / 60), // minuti
+      duration: Math.round(waypointPreview.duration / 60),
       ascent: waypointPreview.ascent || 0,
       descent: waypointPreview.descent || 0
     }
 
     setCurrentRouteData(updatedRoute)
-
-    // Chiudi dialog
     setShowWaypointDialog(false)
     setTempWaypoint(null)
     setWaypointPreview(null)
@@ -362,18 +274,14 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
       return
     }
 
-    // Rimuovi waypoint
     const newWaypoints = waypoints.filter((_, i) => i !== index)
     setWaypoints(newWaypoints)
-
     toast.info('Waypoint rimosso')
 
-    // Se nessun waypoint, ripristina percorso originale
     if (newWaypoints.length === 0) {
       setCurrentRouteData(originalRouteRef.current)
       toast.info('Percorso ripristinato')
     } else {
-      // Ricalcola con waypoints rimanenti
       await recalculateRouteWithWaypoints(newWaypoints)
     }
   }, [waypoints, toast, recalculateRouteWithWaypoints])
@@ -382,9 +290,6 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
   // FORMATTERS
   // ==========================================
 
-  /**
-   * Formatta distanza per preview (con unità utente)
-   */
   const formatPreviewDistance = useCallback((km) => {
     if (!km) return '---'
 
@@ -398,9 +303,6 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
     return `${km.toFixed(2)} km`
   }, [settings])
 
-  /**
-   * Formatta durata per preview (secondi → ore/minuti)
-   */
   const formatPreviewDuration = useCallback((seconds) => {
     if (!seconds) return '---'
 
@@ -420,7 +322,6 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
   // ==========================================
 
   return {
-    // State
     waypoints,
     tempWaypoint,
     showWaypointDialog,
@@ -429,17 +330,11 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
     recalculatingRoute,
     currentRouteData,
     showWaypointsList,
-    
-    // Setters
     setShowWaypointsList,
-    
-    // Handlers
     handleMapLongPress,
     handleConfirmWaypoint,
     handleCancelWaypoint,
     handleRemoveWaypoint,
-    
-    // Formatters
     formatPreviewDistance,
     formatPreviewDuration
   }

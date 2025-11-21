@@ -1,7 +1,9 @@
 import logger from '../utils/logger'
+import { callORS } from './appwriteProxy'
 
 /**
  * Service per il calcolo dei percorsi utilizzando OpenRouteService API
+ * tramite Appwrite Function proxy
  */
 
 /**
@@ -9,37 +11,19 @@ import logger from '../utils/logger'
  * @param {Object} params - Parametri per il calcolo del percorso
  * @param {Object} params.start - Punto di partenza {lat, lon, name}
  * @param {Object} params.end - Punto di arrivo {lat, lon, name}
- * @param {string} params.apiKey - Chiave API OpenRouteService
  * @param {string} params.language - Lingua per le istruzioni (default: 'it')
  * @param {string} params.units - Unità di misura (default: 'km')
  * @returns {Promise<Object>} Dati del percorso calcolato
  */
-export const calculateRoute = async ({ start, end, apiKey, language = 'it', units = 'km' }) => {
+export const calculateRoute = async ({ start, end, language = 'it', units = 'km' }) => {
   try {
-    const response = await fetch(
-      'https://api.openrouteservice.org/v2/directions/foot-hiking/geojson',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': apiKey,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          coordinates: [[start.lon, start.lat], [end.lon, end.lat]],
-          instructions: true,
-          language: language,
-          units: units,
-          elevation: true
-        })
-      }
-    )
-
-    if (!response.ok) {
-      logger.error('OpenRouteService API error:', response.status)
-      throw new Error(`API error: ${response.status}`)
-    }
-
-    const data = await response.json()
+    const data = await callORS('v2/directions/foot-hiking/geojson', {
+      coordinates: [[start.lon, start.lat], [end.lon, end.lat]],
+      instructions: true,
+      language: language,
+      units: units,
+      elevation: true
+    })
 
     if (!data.features || data.features.length === 0) {
       throw new Error('No route found')
@@ -92,12 +76,11 @@ export const calculateRoute = async ({ start, end, apiKey, language = 'it', unit
  * Calcola un percorso con waypoint intermedi
  * @param {Object} params - Parametri per il calcolo del percorso
  * @param {Array<Object>} params.points - Array di punti [{lat, lon, name}]
- * @param {string} params.apiKey - Chiave API OpenRouteService
  * @param {string} params.language - Lingua per le istruzioni (default: 'it')
  * @param {string} params.units - Unità di misura (default: 'km')
  * @returns {Promise<Object>} Dati del percorso calcolato
  */
-export const calculateRouteWithWaypoints = async ({ points, apiKey, language = 'it', units = 'km' }) => {
+export const calculateRouteWithWaypoints = async ({ points, language = 'it', units = 'km' }) => {
   if (!points || points.length < 2) {
     return {
       success: false,
@@ -108,30 +91,13 @@ export const calculateRouteWithWaypoints = async ({ points, apiKey, language = '
   try {
     const coordinates = points.map(p => [p.lon, p.lat])
     
-    const response = await fetch(
-      'https://api.openrouteservice.org/v2/directions/foot-hiking/geojson',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': apiKey,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          coordinates: coordinates,
-          instructions: true,
-          language: language,
-          units: units,
-          elevation: true
-        })
-      }
-    )
-
-    if (!response.ok) {
-      logger.error('OpenRouteService API error:', response.status)
-      throw new Error(`API error: ${response.status}`)
-    }
-
-    const data = await response.json()
+    const data = await callORS('v2/directions/foot-hiking/geojson', {
+      coordinates: coordinates,
+      instructions: true,
+      language: language,
+      units: units,
+      elevation: true
+    })
 
     if (!data.features || data.features.length === 0) {
       throw new Error('No route found')
@@ -159,7 +125,7 @@ export const calculateRouteWithWaypoints = async ({ points, apiKey, language = '
       }
     }
   } catch (error) {
-    logger.error('Route calculation with waypoints error:', error)
+    logger.error('Route with waypoints calculation error:', error)
     return {
       success: false,
       error: error.message || 'Errore nel calcolo del percorso con waypoint'
