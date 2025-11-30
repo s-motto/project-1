@@ -11,7 +11,6 @@
 // - Statistiche in tempo reale (distanza, tempo, velocità, elevazione)
 // - Pausa/riprendi tracking
 // - Salvataggio automatico su Appwrite
-
 // Dark mode: Supportato tramite CSS variables (--bg-card, --text-primary, ecc.)
 // Mobile-first: Layout ottimizzato per schermi piccoli
 // ==========================================
@@ -52,11 +51,13 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   const [isPaused, setIsPaused] = useState(false)
   const [shouldCenterMap, setShouldCenterMap] = useState(true)
 
-  // Ref per stato tracking (per callback GPS)
+  // ==========================================
+  // REFS - FIX: Aggiunto isMountedRef
+  // ==========================================
   const isTrackingRef = useRef(false)
   const isPausedRef = useRef(false)
   const mapRef = useRef(null)
-  const isMountedRef = useRef(true) // Ref per stato montato componente
+  const isMountedRef = useRef(true) // FIX: Flag per tracciare se componente è montato
 
   // Hook timer tracking
   const { elapsedTime } = useTrackingTimer(isTracking, isPaused)
@@ -122,7 +123,9 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     settings
   })
 
- 
+  // ==========================================
+  // FIX: Wrapper GPS callback con controllo isMounted
+  // ==========================================
   const handlePositionUpdateSafe = (position) => {
     // CONTROLLO: Non fare nulla se componente smontato
     if (!isMountedRef.current) {
@@ -169,7 +172,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
 
       // Avvia GPS con callback protetto
       geolocation.start(
-        handlePositionUpdateSafe,  
+        handlePositionUpdateSafe,  // FIX: Usa versione safe
         handlePositionError,
         {
           enableHighAccuracy: true,
@@ -202,14 +205,14 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
 
   /**
    * Termina e salva tracking
-   * FIX: Aggiunto isMountedRef.current = false per prevenire schermata nera
+   * FIX: Rimossa chiamata onClose() perché onComplete già chiude il modal
    */
   const handleStop = async () => {
     if (!confirm('Vuoi terminare il percorso e salvare i dati?')) return
 
     logger.log('ActiveTracking: Stop tracking')
     
-    
+    // FIX: Segna come smontato per prevenire update durante salvataggio
     isMountedRef.current = false
 
     // Ferma GPS
@@ -217,19 +220,16 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     setIsTracking(false)
     isTrackingRef.current = false
 
-    // Salva tracking
-    const success = await saveCompletedTracking()
-
-    // Chiudi modal dopo salvataggio
-    if (success) {
-      setTimeout(() => {
-        onClose()
-      }, 1000)
-    }
+    // Salva tracking - onComplete gestirà la chiusura del modal
+    await saveCompletedTracking()
+    
+    // NON chiamare onClose() qui! 
+    // saveCompletedTracking() chiama onComplete() che già fa setActiveRoute(null)
   }
 
   /**
    * Annulla tracking senza salvare
+   * FIX: Migliorato con flag e delay
    */
   const handleCancel = () => {
     if (!confirm('Vuoi annullare il tracking? I dati non verranno salvati.')) return
