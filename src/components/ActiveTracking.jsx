@@ -288,8 +288,21 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       setIsTracking(false)
       isTrackingRef.current = false
       
-      // FIX: Map cleanup is now handled by TrackingMap component
-      // No need to manually call remove() here
+      // FIX: Cleanup della mappa Leaflet
+      if (mapRef.current) {
+        try {
+          // Rimuovi tutti i layer e controlli prima
+          mapRef.current.eachLayer((layer) => {
+            mapRef.current.removeLayer(layer)
+          })
+          // Rimuovi la mappa
+          mapRef.current.remove()
+          mapRef.current = null
+        } catch (error) {
+          // Ignora errori di cleanup (mappa già rimossa)
+          logger.warn('Errore cleanup mappa (ignorato):', error.message)
+        }
+      }
       
       logger.log('ActiveTracking: Cleanup completato')
     }
