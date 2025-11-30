@@ -11,12 +11,7 @@
 // - Statistiche in tempo reale (distanza, tempo, velocità, elevazione)
 // - Pausa/riprendi tracking
 // - Salvataggio automatico su Appwrite
-// 
-// FIX APPLICATO: Protezione Leaflet "_leaflet_pos" error
-// - isMountedRef per tracciare mount status
-// - Cleanup migliorato con stop GPS e reset flags
-// - Callback GPS protetti con controllo isMounted
-// 
+
 // Dark mode: Supportato tramite CSS variables (--bg-card, --text-primary, ecc.)
 // Mobile-first: Layout ottimizzato per schermi piccoli
 // ==========================================
@@ -57,13 +52,11 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   const [isPaused, setIsPaused] = useState(false)
   const [shouldCenterMap, setShouldCenterMap] = useState(true)
 
-  // ==========================================
-  // REFS - FIX: Aggiunto isMountedRef
-  // ==========================================
+  // Ref per stato tracking (per callback GPS)
   const isTrackingRef = useRef(false)
   const isPausedRef = useRef(false)
   const mapRef = useRef(null)
-  const isMountedRef = useRef(true) // FIX: Flag per tracciare se componente è montato
+  const isMountedRef = useRef(true) // Ref per stato montato componente
 
   // Hook timer tracking
   const { elapsedTime } = useTrackingTimer(isTracking, isPaused)
@@ -129,9 +122,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     settings
   })
 
-  // ==========================================
-  // FIX: Wrapper GPS callback con controllo isMounted
-  // ==========================================
+ 
   const handlePositionUpdateSafe = (position) => {
     // CONTROLLO: Non fare nulla se componente smontato
     if (!isMountedRef.current) {
@@ -178,7 +169,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
 
       // Avvia GPS con callback protetto
       geolocation.start(
-        handlePositionUpdateSafe,  // FIX: Usa versione safe
+        handlePositionUpdateSafe,  
         handlePositionError,
         {
           enableHighAccuracy: true,
@@ -211,9 +202,15 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
 
   /**
    * Termina e salva tracking
+   * FIX: Aggiunto isMountedRef.current = false per prevenire schermata nera
    */
   const handleStop = async () => {
     if (!confirm('Vuoi terminare il percorso e salvare i dati?')) return
+
+    logger.log('ActiveTracking: Stop tracking')
+    
+    
+    isMountedRef.current = false
 
     // Ferma GPS
     geolocation.stop()
@@ -233,7 +230,6 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
 
   /**
    * Annulla tracking senza salvare
-   * FIX: Migliorato con flag e delay
    */
   const handleCancel = () => {
     if (!confirm('Vuoi annullare il tracking? I dati non verranno salvati.')) return
@@ -334,9 +330,14 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     }, 300)
   }
 
-  // Callback ricentra mappa
+  // Callback ricentra mappa (quando utente preme bottone "Centra")
   const handleCenterMap = () => {
     setShouldCenterMap(true)
+  }
+
+  // FIX: Callback per DISABILITARE auto-center quando utente muove mappa
+  const handleDisableCenter = () => {
+    setShouldCenterMap(false)
   }
 
   // ==========================================
@@ -445,6 +446,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
           onMapLongPress={handleMapLongPress}
           onMapReady={handleMapReady}
           onCenterMap={handleCenterMap}
+          onDisableCenter={handleDisableCenter}
         />
 
         {/* ========== STATISTICHE ========== */}
