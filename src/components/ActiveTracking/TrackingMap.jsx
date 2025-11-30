@@ -48,8 +48,20 @@ import MapLongPressHandler from '../MapLongPressHandler'
 const MapCenterController = ({ position, shouldCenter, onMapReady, onDisableCenter }) => {
   const map = useMap()
 
+  // FIX: Pass map reference to parent on mount
   useEffect(() => {
     if (onMapReady) onMapReady(map)
+    
+    // FIX: Cleanup map on unmount
+    return () => {
+      if (map) {
+        try {
+          map.remove()
+        } catch (error) {
+          // Ignore cleanup errors
+        }
+      }
+    }
   }, [map, onMapReady])
 
   // Rileva quando l'utente muove la mappa manualmente
@@ -99,9 +111,13 @@ const TrackingMap = ({
   onCenterMap,
   onDisableCenter
 }) => {
+  // FIX: Add key to force remount when needed
+  const mapKey = useMemo(() => `map-${Date.now()}`, [])
+  
   return (
     <div className="flex-1 relative">
       <MapContainer
+        key={mapKey}
         center={initialCenter}
         zoom={14}
         className="h-full w-full"

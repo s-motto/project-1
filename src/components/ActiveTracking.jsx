@@ -288,16 +288,8 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       setIsTracking(false)
       isTrackingRef.current = false
       
-      // Pulisci mappa se esiste
-      if (mapRef.current) {
-        try {
-          mapRef.current.remove()
-          mapRef.current = null
-        } catch (error) {
-          // Ignora errori cleanup mappa
-          logger.warn('Errore cleanup mappa (non critico):', error)
-        }
-      }
+      // FIX: Map cleanup is now handled by TrackingMap component
+      // No need to manually call remove() here
       
       logger.log('ActiveTracking: Cleanup completato')
     }
