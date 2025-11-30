@@ -5,31 +5,15 @@ import logger from '../utils/logger'
 /**
  * Custom hook per gestire il salvataggio del tracking GPS
  * Gestisce: salvataggio percorso iniziale, salvataggio dati completati, achievements
- * 
+ 
  * @param {Object} params - Parametri dell'hook
  * @param {Object} params.route - Dati del percorso originale
  * @param {Object} params.user - Utente corrente (da AuthContext)
  * @param {Object} params.trackingData - Dati del tracking: {distance, elapsedTime, elevationGain, elevationLoss, trackPoints}
  * @param {Object} params.toast - Sistema notifiche toast
- * @param {Function} params.onComplete - Callback chiamato dopo salvataggio completato
  * @returns {Object} { isSaving, savedRouteId, ensureRouteSaved, saveCompletedTracking }
- * 
- * @example
- * const { isSaving, savedRouteId, ensureRouteSaved, saveCompletedTracking } = useTrackingSave({
- *   route,
- *   user,
- *   trackingData: { distance, elapsedTime, elevationGain, elevationLoss, trackPoints },
- *   toast,
- *   onComplete: () => onClose()
- * })
- * 
- * // All'avvio del tracking
- * await ensureRouteSaved()
- * 
- * // Al termine del tracking
- * await saveCompletedTracking()
  */
-export function useTrackingSave({ route, user, trackingData, toast, onComplete }) {
+export function useTrackingSave({ route, user, trackingData, toast }) {
   // Stati per tracking salvataggio
   const [isSaving, setIsSaving] = useState(false)
   const [savedRouteId, setSavedRouteId] = useState(route.savedId || null)
@@ -80,13 +64,12 @@ export function useTrackingSave({ route, user, trackingData, toast, onComplete }
   /**
    * Salva i dati del tracking completato e aggiorna achievements
    * Chiamato quando l'utente termina il tracking
-   * 
+   
    * Operazioni eseguite:
    * 1. Assicura che il percorso sia salvato
    * 2. Aggiorna il percorso con i dati reali (actualDistance, actualDuration, ecc.)
    * 3. Aggiorna achievements, badges, streaks
    * 4. Mostra notifiche per achievements sbloccati
-   * 5. Chiama callback onComplete
    * 
    * @returns {Promise<boolean>} true se salvataggio riuscito
    */
@@ -125,10 +108,7 @@ export function useTrackingSave({ route, user, trackingData, toast, onComplete }
         logger.error('Error updating achievements:', achievementError)
       }
 
-      // 5. Callback finale
-      if (onComplete) {
-        onComplete(result.data)
-      }
+     
 
       setIsSaving(false)
       return true
@@ -138,7 +118,7 @@ export function useTrackingSave({ route, user, trackingData, toast, onComplete }
       setIsSaving(false)
       return false
     }
-  }, [ensureRouteSaved, trackingData, user, toast, onComplete])
+  }, [ensureRouteSaved, trackingData, user, toast])
 
   return {
     isSaving,

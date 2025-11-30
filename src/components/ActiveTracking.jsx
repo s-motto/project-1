@@ -11,6 +11,7 @@
 // - Statistiche in tempo reale (distanza, tempo, velocità, elevazione)
 // - Pausa/riprendi tracking
 // - Salvataggio automatico su Appwrite
+
 // Dark mode: Supportato tramite CSS variables (--bg-card, --text-primary, ecc.)
 // Mobile-first: Layout ottimizzato per schermi piccoli
 // ==========================================
@@ -84,6 +85,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   })
 
   // Hook salvataggio tracking
+  
   const { isSaving, savedRouteId, ensureRouteSaved, saveCompletedTracking } = useTrackingSave({
     route,
     user,
@@ -94,8 +96,8 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       elevationLoss,
       trackPoints
     },
-    toast,
-    onComplete
+    toast
+    // FIX: onComplete RIMOSSO da qui
   })
 
   // Hook gestione waypoints
@@ -205,26 +207,31 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
 
   /**
    * Termina e salva tracking
-   * FIX: Rimossa chiamata onClose() perché onComplete già chiude il modal
+   * FIX: onComplete chiamato con setTimeout per evitare smontaggio dall'interno dell'hook
    */
   const handleStop = async () => {
     if (!confirm('Vuoi terminare il percorso e salvare i dati?')) return
 
     logger.log('ActiveTracking: Stop tracking')
     
-    // FIX: Segna come smontato per prevenire update durante salvataggio
-    isMountedRef.current = false
-
-    // Ferma GPS
+    // Ferma GPS PRIMA di tutto
     geolocation.stop()
     setIsTracking(false)
     isTrackingRef.current = false
 
-    // Salva tracking - onComplete gestirà la chiusura del modal
-    await saveCompletedTracking()
-    
-    // NON chiamare onClose() qui! 
-    // saveCompletedTracking() chiama onComplete() che già fa setActiveRoute(null)
+    // Salva tracking
+    const success = await saveCompletedTracking()
+
+    // FIX: Segna come smontato DOPO il salvataggio
+    isMountedRef.current = false
+
+    // FIX: Chiama onComplete con setTimeout per uscire dal ciclo di vita dell'hook
+    // Questo evita l'errore "useNavigate() may be used only in the context of a <Router>"
+    if (success && onComplete) {
+      setTimeout(() => {
+        onComplete()
+      }, 100)
+    }
   }
 
   /**

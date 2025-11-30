@@ -4,6 +4,8 @@
 // UI mostrata all'utente quando ErrorBoundary cattura un errore
 // 
 // FIX APPLICATO:
+// - Rimosso useNavigate() che causava errori fuori contesto Router
+// - Usa onGoHome prop se fornita, altrimenti window.location.href come fallback
 // - Modale full-screen (sempre visibile, non richiede scroll)
 // - Design mobile-first con palette Let's Walk
 // - Supporto dark mode automatico (CSS variables)
@@ -11,18 +13,25 @@
 // Funzionalità:
 // - Testi in italiano
 // - Bottone "Riprova" per reset
-// - Bottone "Torna alla Home" per navigazione
+// - Bottone "Torna alla Home" per navigazione (sicuro anche fuori Router)
 // - Stack trace collapsabile in development mode
 // - Dettagli tecnici nascosti in production
 // ==========================================
 
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { FaExclamationTriangle, FaChevronDown, FaChevronUp } from 'react-icons/fa'
 import logger from '../utils/logger'
 
-const ErrorFallback = ({ error, errorInfo, resetErrorBoundary, showHome = true }) => {
-  const navigate = useNavigate()
+/**
+ * ErrorFallback Component
+ * 
+ * @param {Error} error - Oggetto errore catturato
+ * @param {Object} errorInfo - Info aggiuntive (componentStack)
+ * @param {Function} resetErrorBoundary - Callback per resettare l'ErrorBoundary
+ * @param {boolean} showHome - Mostra bottone "Torna alla Home" (default: true)
+ * @param {Function} onGoHome - Callback opzionale per navigazione home (se non fornita usa window.location)
+ */
+const ErrorFallback = ({ error, errorInfo, resetErrorBoundary, showHome = true, onGoHome }) => {
   const [showDetails, setShowDetails] = useState(false)
   const isDev = import.meta.env.DEV
 
@@ -36,12 +45,21 @@ const ErrorFallback = ({ error, errorInfo, resetErrorBoundary, showHome = true }
 
   // ==========================================
   // HANDLER: Torna alla Home
+  // FIX: Non usa più useNavigate(), usa callback o window.location
   // ==========================================
   const handleGoHome = () => {
     logger.log('ErrorFallback: Utente torna alla Home')
+    
     // Reset prima di navigare
     resetErrorBoundary()
-    navigate('/')
+    
+    // FIX: Usa callback se fornita, altrimenti fallback a window.location
+    if (onGoHome) {
+      onGoHome()
+    } else {
+      // Fallback sicuro che funziona sempre, anche fuori dal contesto Router
+      window.location.href = '/'
+    }
   }
 
   // ==========================================
