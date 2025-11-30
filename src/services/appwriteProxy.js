@@ -6,6 +6,7 @@
 // ==========================================
 
 import { Client, Functions } from 'appwrite'
+import logger from '../utils/logger'
 
 const client = new Client()
   .setEndpoint(import.meta.env.VITE_APPWRITE_ENDPOINT)
@@ -13,7 +14,8 @@ const client = new Client()
 
 const functions = new Functions(client)
 
-const FUNCTION_ID = '691cdcc00020e0854bb5'
+// ID della Function Appwrite per il proxy ORS
+const FUNCTION_ID = import.meta.env.VITE_APPWRITE_FUNCTION_ID
 
 /**
  * Chiama OpenRouteService API tramite Appwrite Function
@@ -23,6 +25,13 @@ const FUNCTION_ID = '691cdcc00020e0854bb5'
  * @returns {Promise<Object>} Risposta API
  */
 export async function callORS(endpoint, body) {
+  // Verifica che FUNCTION_ID sia configurato
+  if (!FUNCTION_ID) {
+    const error = new Error('VITE_APPWRITE_FUNCTION_ID non configurato')
+    logger.error('Appwrite Function ID mancante:', error)
+    throw error
+  }
+
   try {
     const execution = await functions.createExecution(
       FUNCTION_ID,
@@ -45,7 +54,7 @@ export async function callORS(endpoint, body) {
 
     return response
   } catch (error) {
-    console.error('Appwrite Function error:', error)
+    logger.error('Appwrite Function error:', error)
     throw error
   }
 }
