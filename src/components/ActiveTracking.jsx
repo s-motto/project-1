@@ -51,6 +51,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   const [isTracking, setIsTracking] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
   const [shouldCenterMap, setShouldCenterMap] = useState(true)
+  const [mapKey] = useState(() => `map-${Date.now()}-${Math.random()}`)
 
   // ==========================================
   // REFS - FIX: Aggiunto isMountedRef
@@ -288,21 +289,9 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
       setIsTracking(false)
       isTrackingRef.current = false
       
-      // FIX: Cleanup della mappa Leaflet
-      if (mapRef.current) {
-        try {
-          // Rimuovi tutti i layer e controlli prima
-          mapRef.current.eachLayer((layer) => {
-            mapRef.current.removeLayer(layer)
-          })
-          // Rimuovi la mappa
-          mapRef.current.remove()
-          mapRef.current = null
-        } catch (error) {
-          // Ignora errori di cleanup (mappa già rimossa)
-          logger.warn('Errore cleanup mappa (ignorato):', error.message)
-        }
-      }
+      // FIX: Con il key prop sul TrackingMap, React gestisce il cleanup automaticamente
+      // Non serve più chiamare map.remove() manualmente
+      mapRef.current = null
       
       logger.log('ActiveTracking: Cleanup completato')
     }
@@ -444,6 +433,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
 
         {/* ========== MAPPA ========== */}
         <TrackingMap
+          key={mapKey}
           initialCenter={initialCenter}
           currentRouteData={currentRouteData}
           trackPoints={trackPoints}
