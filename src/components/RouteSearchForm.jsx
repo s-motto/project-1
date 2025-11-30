@@ -53,7 +53,6 @@ const RouteSearchForm = forwardRef((props, ref) => {
   const [showEndDropdown, setShowEndDropdown] = useState(false) //mostra dropdown arrivo
   const [startLoading, setStartLoading] = useState(false) //caricamento suggerimenti partenza
   const [endLoading, setEndLoading] = useState(false) //caricamento suggerimenti arrivo
-  const ORS_KEY = import.meta.env.VITE_OPENROUTE_API_KEY || '' //chiave API OpenRouteService
   const startInputRef = useRef() //riferimento input partenza
   const endInputRef = useRef() //riferimento input arrivo
   const { toast } = useToast() //sistema di notifiche
@@ -103,8 +102,8 @@ const RouteSearchForm = forwardRef((props, ref) => {
     }
   )
 
-  // Hook per gestire click sulla mappa
-  useMapClick(map, ORS_KEY, toast, (pointData) => {
+  // Hook per gestire click sulla mappa (usa il proxy, non serve API key)
+  useMapClick(map, toast, (pointData) => {
     // Callback chiamata quando un punto viene selezionato sulla mappa
     setSelectedMapPoint({
       lat: pointData.lat,
@@ -116,8 +115,8 @@ const RouteSearchForm = forwardRef((props, ref) => {
     setShowMapPointSelector(true)
   })
 
-  // Hook per geolocalizzazione utente
-  const { getCurrentLocation, gettingLocation, userLocation, locationError } = useUserLocation(map, ORS_KEY)
+  // Hook per geolocalizzazione utente (usa il proxy, non serve API key)
+  const { getCurrentLocation, gettingLocation, userLocation, locationError } = useUserLocation(map)
 
   // Hook per handler MapPointSelector
   const { handleSetAsStart, handleSetAsEnd, handleSwapPoints, handleCloseSelector } = useMapPointHandlers({
@@ -209,7 +208,7 @@ const RouteSearchForm = forwardRef((props, ref) => {
     const fetchStartSuggestions = async () => {
       if (debouncedStartText && debouncedStartText.length > 1) {
         setStartLoading(true)
-        const suggestions = await fetchSuggestions(debouncedStartText, ORS_KEY)
+        const suggestions = await fetchSuggestions(debouncedStartText)
         setStartSuggestions(suggestions)
         setStartLoading(false)
       } else {
@@ -217,14 +216,14 @@ const RouteSearchForm = forwardRef((props, ref) => {
       }
     }
     fetchStartSuggestions()
-  }, [debouncedStartText, ORS_KEY])
+  }, [debouncedStartText])
 
   // useEffect per autocomplete arrivo con debounce
   useEffect(() => {
     const fetchEndSuggestions = async () => {
       if (debouncedEndText && debouncedEndText.length > 1) {
         setEndLoading(true)
-        const suggestions = await fetchSuggestions(debouncedEndText, ORS_KEY)
+        const suggestions = await fetchSuggestions(debouncedEndText)
         setEndSuggestions(suggestions)
         setEndLoading(false)
       } else {
@@ -232,7 +231,7 @@ const RouteSearchForm = forwardRef((props, ref) => {
       }
     }
     fetchEndSuggestions()
-  }, [debouncedEndText, ORS_KEY])
+  }, [debouncedEndText])
 
       // Espongo la funzione di reset al componente genitore
       useImperativeHandle(ref, () => ({
@@ -370,14 +369,14 @@ const handleSubmit = async (e) => {
   let sp = startPoint
   let ep = endPoint
 
-  // Geocodifico se necessario il punto di partenza
+  // Geocodifico se necessario il punto di partenza (usa il proxy)
   if (!sp && startText) {
-    sp = await geocodeText(startText, ORS_KEY)
+    sp = await geocodeText(startText)
     if (sp) setStartPoint(sp)
   }
-  // Geocodifico se necessario il punto di arrivo
+  // Geocodifico se necessario il punto di arrivo (usa il proxy)
   if (!ep && endText) {
-    ep = await geocodeText(endText, ORS_KEY)
+    ep = await geocodeText(endText)
     if (ep) setEndPoint(ep)
   }
   // Controllo che entrambi i punti siano disponibili
@@ -390,11 +389,10 @@ const handleSubmit = async (e) => {
   // Pulisco layer e marker precedenti usando la funzione dell'hook
   cleanupPreviousRoute()
 
-  // Uso il service per calcolare il percorso
+  // Uso il service per calcolare il percorso (usa il proxy)
   const result = await calculateRoute({
     start: sp,
     end: ep,
-    apiKey: ORS_KEY,
     language: 'it',
     units: 'km'
   })

@@ -7,12 +7,11 @@ import logger from '../utils/logger'
  * Gestisce: marker temporaneo, reverse geocoding, modal di selezione
  * 
  * @param {Object} map - Istanza della mappa Leaflet
- * @param {string} apiKey - Chiave API OpenRouteService
  * @param {Object} toast - Sistema di notifiche toast
  * @param {Function} onPointSelected - Callback quando un punto viene selezionato
  * @returns {Object} Oggetto vuoto (logica interna gestita da useEffect)
  */
-export const useMapClick = (map, apiKey, toast, onPointSelected) => {
+export const useMapClick = (map, toast, onPointSelected) => {
   const tempMarkerRef = useRef(null)
 
   useEffect(() => {
@@ -60,8 +59,8 @@ export const useMapClick = (map, apiKey, toast, onPointSelected) => {
       toast.info('Ricerca indirizzo...')
 
       try {
-        // Reverse geocoding usando il service
-        const placeName = await reverseGeocode(lat, lng, apiKey)
+        // Reverse geocoding usando il service (usa il proxy Appwrite)
+        const placeName = await reverseGeocode(lat, lng)
 
         if (placeName) {
           // Callback con i dati del punto selezionato
@@ -108,7 +107,7 @@ export const useMapClick = (map, apiKey, toast, onPointSelected) => {
         tempMarkerRef.current = null
       }
     }
-  }, [map, apiKey, toast, onPointSelected])
+  }, [map, toast, onPointSelected])
 
   // Non ritorno nulla perché tutta la logica è gestita internamente
   return {}

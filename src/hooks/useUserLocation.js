@@ -7,10 +7,9 @@ import logger from '../utils/logger'
  * Gestisce: richiesta posizione GPS, reverse geocoding, centratura mappa, gestione errori
  * 
  * @param {Object} map - Istanza della mappa Leaflet
- * @param {string} apiKey - Chiave API OpenRouteService per reverse geocoding
  * @returns {Object} Oggetto con funzione getCurrentLocation e stati
  */
-export const useUserLocation = (map, apiKey) => {
+export const useUserLocation = (map) => {
   const [gettingLocation, setGettingLocation] = useState(false)
   const [userLocation, setUserLocation] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
@@ -50,9 +49,9 @@ export const useUserLocation = (map, apiKey) => {
         // Salvo la posizione base
         setUserLocation({ lat, lon })
 
-        // Reverse geocoding per ottenere il nome del luogo
+        // Reverse geocoding per ottenere il nome del luogo (usa il proxy Appwrite)
         try {
-          const placeName = await reverseGeocode(lat, lon, apiKey)
+          const placeName = await reverseGeocode(lat, lon)
 
           const locationData = {
             lat,
@@ -118,7 +117,7 @@ export const useUserLocation = (map, apiKey) => {
         maximumAge: 0 // Non usa posizioni in cache
       }
     )
-  }, [map, apiKey])
+  }, [map])
 
   return {
     getCurrentLocation,
