@@ -3,6 +3,7 @@ import { FaHiking, FaTimes, FaSpinner, FaMapMarkerAlt, FaRulerCombined, FaChevro
 import logger from '../utils/logger'  // importo il logger
 import { useSettings } from '../contexts/SettingsContext' // importo il contesto delle impostazioni
 import { formatDistance } from '../utils/gpsUtils'  // importo la funzione per formattare la distanza
+import { callORS } from '../services/appwriteProxy' // importo il proxy per chiamate ORS sicure
 
 // Componente per mostrare i percorsi di hiking nelle vicinanze
 const NearbyHikes = ({ onClose, onSelectHike }) => {
@@ -190,16 +191,9 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
     return length
   }
 
-  // Calcola elevazione usando OpenRouteService
+  // Calcola elevazione usando OpenRouteService tramite proxy Appwrite
   const calculateElevation = async (coordinates) => {
     try {
-      const ORS_KEY = import.meta.env.VITE_OPENROUTE_API_KEY
-      
-      if (!ORS_KEY) {
-        logger.error('OpenRouteService API key non trovata')
-        return { ascent: 0, descent: 0 }
-      }
-
       // OpenRouteService elevation endpoint - max 2000 coordinate
       // Se abbiamo troppi punti, campiona
       let sampledCoords = coordinates
@@ -215,31 +209,15 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
         }
       }
       
-      // Effettua la richiesta all'API di elevazione
-      const response = await fetch(
-        'https://api.openrouteservice.org/elevation/line',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': ORS_KEY,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            format_in: 'geojson',
-            format_out: 'geojson',
-            geometry: {
-              coordinates: sampledCoords,
-              type: 'LineString'
-            }
-          })
+      // Effettua la richiesta tramite proxy Appwrite (chiave API protetta server-side)
+      const data = await callORS('elevation/line', {
+        format_in: 'geojson',
+        format_out: 'geojson',
+        geometry: {
+          coordinates: sampledCoords,
+          type: 'LineString'
         }
-      )
-
-      if (!response.ok) {
-        throw new Error('Errore nel calcolo elevazione')
-      }
-
-      const data = await response.json()
+      })
       
       // Calcola salita e discesa dalle elevazioni
       let ascent = 0
