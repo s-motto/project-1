@@ -13,8 +13,6 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
-    "@geoapify/geocoder-autocomplete": "^2.2.1",
-    "@geoapify/react-geocoder-autocomplete": "^2.2.1",
     "appwrite": "^21.2.1",
     "leaflet": "^1.9.4",
     "react": "^19.1.1",
