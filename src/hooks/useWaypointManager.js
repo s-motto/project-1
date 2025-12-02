@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react'
 import logger from '../utils/logger'
 import { callORS } from '../services/appwriteProxy'
 import { reverseGeocode } from '../services/geocodingService'
+import { MAX_WAYPOINTS } from '../constants/trackingConstants'
 
 /**
  * Custom hook per gestire i waypoints del tracking GPS
@@ -205,8 +206,8 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
       return
     }
 
-    if (waypoints.length >= 5) {
-      toast.warning('Massimo 5 waypoints consentiti')
+    if (waypoints.length >= MAX_WAYPOINTS) {
+      toast.warning(`Massimo ${MAX_WAYPOINTS} waypoints consentiti`)
       return
     }
 

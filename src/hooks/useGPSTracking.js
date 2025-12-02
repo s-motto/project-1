@@ -1,5 +1,9 @@
 import { useState, useRef, useCallback } from 'react'
 import { calculateDistance } from '../utils/gpsUtils'
+import { 
+  DEFAULT_GPS_ACCURACY_MAX, 
+  DEFAULT_MIN_POINT_DISTANCE_METERS 
+} from '../constants/trackingConstants'
 
 /**
  * Custom hook per gestire il tracking GPS in tempo reale
@@ -61,8 +65,11 @@ const useGPSTracking = ({
     setCurrentPosition(newPoint)
     setGpsAccuracy(position.coords.accuracy)
 
+    // Soglia accuratezza GPS (da settings o default)
+    const accuracyThreshold = settings?.gpsAccuracyMax || DEFAULT_GPS_ACCURACY_MAX
+
     // Controlla se accuratezza è sufficiente
-    if (position.coords.accuracy <= (settings?.gpsAccuracyMax || 150)) {
+    if (position.coords.accuracy <= accuracyThreshold) {
       setWaitingForGoodFix(false)
     }
 
@@ -105,11 +112,12 @@ const useGPSTracking = ({
         newPoint.lat, newPoint.lng
       )
 
-      // Distanza minima richiesta tra punti (default 3m -> 0.003km)
-      const minDistance = (settings?.minPointDistanceMeters || 3) / 1000
+      // Distanza minima richiesta tra punti (da settings o default, convertita in km)
+      const minDistanceMeters = settings?.minPointDistanceMeters || DEFAULT_MIN_POINT_DISTANCE_METERS
+      const minDistanceKm = minDistanceMeters / 1000
 
       // Aggiungi punto solo se supera distanza minima
-      if (dist >= minDistance) {
+      if (dist >= minDistanceKm) {
         // Incrementa distanza totale
         setDistance(prev => prev + dist)
 
