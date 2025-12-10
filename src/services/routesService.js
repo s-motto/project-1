@@ -23,15 +23,21 @@ const ROUTES_COLLECTION_ID = import.meta.env.VITE_APPWRITE_ROUTES_COLLECTION_ID 
 class RoutesService {
   // ==========================================
   // HELPER: Parsa documenti Appwrite
+  // Ritorna null se il parsing fallisce (documento corrotto)
   // ==========================================
   parseRouteDocument(doc) {
-    return {
-      ...doc,
-      startPoint: JSON.parse(doc.startPoint),
-      endPoint: JSON.parse(doc.endPoint),
-      coordinates: JSON.parse(doc.coordinates),
-      instructions: JSON.parse(doc.instructions),
-      actualCoordinates: doc.actualCoordinates ? JSON.parse(doc.actualCoordinates) : undefined
+    try {
+      return {
+        ...doc,
+        startPoint: JSON.parse(doc.startPoint),
+        endPoint: JSON.parse(doc.endPoint),
+        coordinates: JSON.parse(doc.coordinates),
+        instructions: JSON.parse(doc.instructions),
+        actualCoordinates: doc.actualCoordinates ? JSON.parse(doc.actualCoordinates) : undefined
+      }
+    } catch (error) {
+      logger.error('Error parsing route document:', { docId: doc.$id, error: error.message })
+      return null
     }
   }
 
@@ -91,7 +97,9 @@ class RoutesService {
       )
       return {
         success: true,
-        data: response.documents.map(doc => this.parseRouteDocument(doc))
+        data: response.documents
+          .map(doc => this.parseRouteDocument(doc))
+          .filter(Boolean) // Rimuove documenti corrotti (null)
       }
     } catch (error) {
       logger.error('Error fetching routes:', error)
@@ -116,7 +124,9 @@ class RoutesService {
       )
       return {
         success: true,
-        data: response.documents.map(doc => this.parseRouteDocument(doc))
+        data: response.documents
+          .map(doc => this.parseRouteDocument(doc))
+          .filter(Boolean) // Rimuove documenti corrotti (null)
       }
     } catch (error) {
       logger.error('Error fetching saved routes:', error)
@@ -141,7 +151,9 @@ class RoutesService {
       )
       return {
         success: true,
-        data: response.documents.map(doc => this.parseRouteDocument(doc))
+        data: response.documents
+          .map(doc => this.parseRouteDocument(doc))
+          .filter(Boolean) // Rimuove documenti corrotti (null)
       }
     } catch (error) {
       logger.error('Error fetching completed routes:', error)
@@ -159,9 +171,13 @@ class RoutesService {
         ROUTES_COLLECTION_ID,
         routeId
       )
+      const parsed = this.parseRouteDocument(document)
+      if (!parsed) {
+        return { success: false, error: 'Documento percorso corrotto' }
+      }
       return {
         success: true,
-        data: this.parseRouteDocument(document)
+        data: parsed
       }
     } catch (error) {
       logger.error('Error fetching route:', error)
