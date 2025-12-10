@@ -40,11 +40,10 @@ export const geocodeText = async (text) => {
 /**
  * Ottiene suggerimenti di autocomplete per un testo
  * @param {string} text - Testo parziale da completare
- * @param {string} apiKey - Non più utilizzato (mantenuto per retrocompatibilità)
  * @param {number} maxResults - Numero massimo di risultati (default: 5)
  * @returns {Promise<Array<{lat: number, lon: number, display_name: string, place_id: string}>>} Lista di suggerimenti
  */
-export const fetchSuggestions = async (text, apiKey, maxResults = 5) => {
+export const fetchSuggestions = async (text, maxResults = 5) => {
   if (!text || text.length < 2) return []
   
   try {

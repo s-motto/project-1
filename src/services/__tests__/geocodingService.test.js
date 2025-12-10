@@ -268,7 +268,7 @@ describe('fetchSuggestions - Autocomplete', () => {
     const mockResponse = { features: [] }
     callORS.mockResolvedValue(mockResponse)
 
-    await fetchSuggestions('Milano', null, 10)
+    await fetchSuggestions('Milano', 10)
 
     expect(callORS).toHaveBeenCalledWith('geocode/search', 
       expect.objectContaining({
@@ -358,7 +358,7 @@ describe('fetchSuggestions - Autocomplete', () => {
 
     callORS.mockResolvedValue(mockResponse)
 
-    const result = await fetchSuggestions('Milano', null, 3)
+    const result = await fetchSuggestions('Milano', 3)
 
     expect(result).toHaveLength(3)
   })
