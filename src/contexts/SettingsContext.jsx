@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import logger from '../utils/logger'
 import {
   DEFAULT_GPS_ACCURACY_MAX,
   DEFAULT_MIN_POINT_DISTANCE_METERS
@@ -31,14 +32,18 @@ export const SettingsProvider = ({ children }) => {
         const parsed = JSON.parse(raw)
         setSettings({ ...DEFAULTS, ...parsed })
       }
-    } catch {}
+    } catch (error) {
+      logger.warn('Failed to load settings from localStorage:', error.message)
+    }
   }, [])
 
   // salvo le impostazioni su localStorage quando cambiano
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
-    } catch {}
+    } catch (error) {
+      logger.warn('Failed to save settings to localStorage:', error.message)
+    }
   }, [settings])
 
   useEffect(() => {
