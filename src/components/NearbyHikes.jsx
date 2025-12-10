@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react' // importo React e gli hook n
 import { FaHiking, FaTimes, FaSpinner, FaMapMarkerAlt, FaRulerCombined, FaChevronRight } from 'react-icons/fa' // importo le icone necessarie
 import logger from '../utils/logger'  // importo il logger
 import { useSettings } from '../contexts/SettingsContext' // importo il contesto delle impostazioni
-import { formatDistance } from '../utils/gpsUtils'  // importo la funzione per formattare la distanza
+import { formatDistance, calculateDistance } from '../utils/gpsUtils'  // importo le funzioni per distanza
 import { callORS } from '../services/appwriteProxy' // importo il proxy per chiamate ORS sicure
 
 // Componente per mostrare i percorsi di hiking nelle vicinanze
@@ -269,20 +269,6 @@ const NearbyHikes = ({ onClose, onSelectHike }) => {
     } finally {
       setLoadingElevation(null)
     }
-  }
-
-  // Funzione per calcolare la distanza tra due coordinate geografiche
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371 // Raggio della Terra in km
-    const dLat = (lat2 - lat1) * Math.PI / 180 // conversione in radianti
-    const dLon = (lon2 - lon1) * Math.PI / 180 // conversione in radianti
-    // Haversine formula
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLon / 2) * Math.sin(dLon / 2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-    return R * c
   }
 
   // Funzione per ottenere l'etichetta della difficoltà
