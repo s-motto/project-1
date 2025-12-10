@@ -1,4 +1,8 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import {
+  DEFAULT_GPS_ACCURACY_MAX,
+  DEFAULT_MIN_POINT_DISTANCE_METERS
+} from '../constants/trackingConstants'
 
 const DEFAULTS = {
   distanceUnit: 'km', // 'km' | 'mi'
@@ -7,8 +11,8 @@ const DEFAULTS = {
   durationFormat: 'hms', // 'hms' | 'short'
   theme: 'system', // 'system' | 'light' | 'dark'
   language: 'auto', // 'auto' | 'en' | 'it' | ...
-  gpsAccuracyMax: 50, // ignora posizioni con accuratezza superiore a questo valore (in metri)
-  minPointDistanceMeters: 5 // distanza minima tra due punti di traccia (in metri)
+  gpsAccuracyMax: DEFAULT_GPS_ACCURACY_MAX, // default: 150m - ignora posizioni con accuratezza superiore
+  minPointDistanceMeters: DEFAULT_MIN_POINT_DISTANCE_METERS // default: 3m - distanza minima tra due punti di traccia
 }
 
 const STORAGE_KEY = 'app_settings_v1' //chiave di storage localStorage per le impostazioni 
