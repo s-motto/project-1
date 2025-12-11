@@ -10,6 +10,7 @@ import { useToast } from '../contexts/ToastContext' // importo il contesto delle
 import { useSettings } from '../contexts/SettingsContext' // importo il contesto delle impostazioni
 import { formatDistance, formatElevation, formatDurationMinutes, formatTimestamp } from '../utils/gpsUtils' // importo le funzioni di formattazione
 import ConfirmModal from './ConfirmModal' // importo il modal di conferma custom
+import logger from '../utils/logger' // importo il logger centralizzato
 
 // Componente SavedRoutes per mostrare e gestire i percorsi salvati
 const SavedRoutes = () => {
@@ -159,7 +160,7 @@ const SavedRoutes = () => {
           }
         }
       } catch (error) {
-        console.error('Error updating achievements:', error)
+        logger.error('Error updating achievements:', error)
       }
     } else {
       toast.error('Errore durante il completamento: ' + result.error)
