@@ -9,6 +9,7 @@ import ActiveTracking from './ActiveTracking' // importo il componente ActiveTra
 import { useToast } from '../contexts/ToastContext' // importo il contesto delle notifiche toast
 import { useSettings } from '../contexts/SettingsContext' // importo il contesto delle impostazioni
 import { formatDistance, formatElevation, formatDurationMinutes, formatTimestamp } from '../utils/gpsUtils' // importo le funzioni di formattazione
+import ConfirmModal from './ConfirmModal' // importo il modal di conferma custom
 
 // Componente SavedRoutes per mostrare e gestire i percorsi salvati
 const SavedRoutes = () => {
@@ -23,6 +24,14 @@ const SavedRoutes = () => {
   const [nameDraft, setNameDraft] = useState('')
   const [savingNameId, setSavingNameId] = useState(null)
 
+  // Stato per i modal di conferma
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    type: null, // 'delete' | 'complete'
+    routeId: null,
+    routeName: ''
+  })
+
   const { toast } = useToast()
   const { settings } = useSettings()
 
@@ -31,6 +40,7 @@ const SavedRoutes = () => {
       loadRoutes()
     }
   }, [user])
+
   // Carica i percorsi salvati dall'utente
   const loadRoutes = async () => {
     setLoading(true)
@@ -40,10 +50,49 @@ const SavedRoutes = () => {
     }
     setLoading(false)
   }
+
+  // Apre il modal di conferma per eliminazione
+  const openDeleteConfirm = (route) => {
+    setConfirmModal({
+      isOpen: true,
+      type: 'delete',
+      routeId: route.$id,
+      routeName: route.name
+    })
+  }
+
+  // Apre il modal di conferma per completamento
+  const openCompleteConfirm = (route) => {
+    setConfirmModal({
+      isOpen: true,
+      type: 'complete',
+      routeId: route.$id,
+      routeName: route.name
+    })
+  }
+
+  // Chiude il modal di conferma
+  const closeConfirmModal = () => {
+    setConfirmModal({
+      isOpen: false,
+      type: null,
+      routeId: null,
+      routeName: ''
+    })
+  }
+
+  // Gestisce la conferma del modal
+  const handleConfirm = async () => {
+    if (confirmModal.type === 'delete') {
+      await executeDelete(confirmModal.routeId)
+    } else if (confirmModal.type === 'complete') {
+      await executeComplete(confirmModal.routeId)
+    }
+    closeConfirmModal()
+  }
+
   // Elimina un percorso salvato
-  const handleDelete = async (routeId) => {
-    if (!confirm('Sei sicuro di voler eliminare questo percorso?')) return
-    
+  const executeDelete = async (routeId) => {
     setDeleting(routeId)
     const result = await routesService.deleteRoute(routeId)
     if (result.success) {
@@ -56,70 +105,68 @@ const SavedRoutes = () => {
   }
 
   // Segna come completato (senza tracking GPS)
-const handleComplete = async (routeId) => {
-  if (!confirm('Vuoi segnare questo percorso come completato? I dati pianificati verranno copiati nelle statistiche.')) return
-  
-  setCompleting(routeId)
-  const result = await routesService.completeRoute(routeId)
-  
-  if (result.success) {
-    setRoutes(routes.filter(r => r.$id !== routeId))
-    toast.success('✅ Percorso segnato come completato! Controlla la Dashboard per le statistiche.')
+  const executeComplete = async (routeId) => {
+    setCompleting(routeId)
+    const result = await routesService.completeRoute(routeId)
     
-    // 🎮 AGGIORNA ACHIEVEMENTS
-    try {
-      // Carica percorsi completati aggiornati
-      const completedRoutes = await routesService.getCompletedRoutes(user.$id)
-      if (completedRoutes.success) {
-        // Calcola nuove statistiche
-        const stats = await import('../services/statsService').then(m => m.default.calculateStats(completedRoutes.data))
-        
-        // Aggiorna achievements
-        const achievementsService = await import('../services/achievementsService').then(m => m.default)
-        const achievementResult = await achievementsService.updateAchievements(user.$id, stats, completedRoutes.data)
-        
-        if (achievementResult.success && achievementResult.data.newBadges.length > 0) {
-          // Mostra toast per ogni badge sbloccato
-          achievementResult.data.newBadges.forEach(badgeId => {
-            const badge = achievementsService.getBadgeInfo(badgeId)
-            toast.success(`🏆 Badge sbloccato: ${badge.name}!`)
-          })
-        }
-        
-        if (achievementResult.success && achievementResult.data.leveledUp) {
-          const levelInfo = achievementsService.getLevelInfo(achievementResult.data.currentLevel)
-          toast.success(`🎉 Sei salito al livello ${levelInfo.level}: ${levelInfo.name}!`)
-        }
+    if (result.success) {
+      setRoutes(routes.filter(r => r.$id !== routeId))
+      toast.success('✅ Percorso segnato come completato! Controlla la Dashboard per le statistiche.')
+      
+      // 🎮 AGGIORNA ACHIEVEMENTS
+      try {
+        // Carica percorsi completati aggiornati
+        const completedRoutes = await routesService.getCompletedRoutes(user.$id)
+        if (completedRoutes.success) {
+          // Calcola nuove statistiche
+          const stats = await import('../services/statsService').then(m => m.default.calculateStats(completedRoutes.data))
+          
+          // Aggiorna achievements
+          const achievementsService = await import('../services/achievementsService').then(m => m.default)
+          const achievementResult = await achievementsService.updateAchievements(user.$id, stats, completedRoutes.data)
+          
+          if (achievementResult.success && achievementResult.data.newBadges.length > 0) {
+            // Mostra toast per ogni badge sbloccato
+            achievementResult.data.newBadges.forEach(badgeId => {
+              const badge = achievementsService.getBadgeInfo(badgeId)
+              toast.success(`🏆 Badge sbloccato: ${badge.name}!`)
+            })
+          }
+          
+          if (achievementResult.success && achievementResult.data.leveledUp) {
+            const levelInfo = achievementsService.getLevelInfo(achievementResult.data.currentLevel)
+            toast.success(`🎉 Sei salito al livello ${levelInfo.level}: ${levelInfo.name}!`)
+          }
 
-        // 🔥 Notifiche Streak
-        if (achievementResult.success) {
-          if (achievementResult.data.streakLost) {
-            toast.error('💔 Streak perso! Riparti da oggi!')
-          } else if (achievementResult.data.newStreak > 1) {
-            toast.success(`🔥 Streak: ${achievementResult.data.newStreak} giorni consecutivi!`)
+          // 🔥 Notifiche Streak
+          if (achievementResult.success) {
+            if (achievementResult.data.streakLost) {
+              toast.error('💔 Streak perso! Riparti da oggi!')
+            } else if (achievementResult.data.newStreak > 1) {
+              toast.success(`🔥 Streak: ${achievementResult.data.newStreak} giorni consecutivi!`)
+            }
+          }
+
+          // 🎯 Notifiche Sfide Completate
+          if (achievementResult.success && achievementResult.data.challengesCompleted?.length > 0) {
+            achievementResult.data.challengesCompleted.forEach(challengeId => {
+              const challenges = achievementsService.getAllChallenges()
+              const challenge = challenges.find(c => c.id === challengeId)
+              if (challenge) {
+                toast.success(`🎯 Sfida completata: ${challenge.name}!`)
+              }
+            })
           }
         }
-
-        // 🎯 Notifiche Sfide Completate
-        if (achievementResult.success && achievementResult.data.challengesCompleted?.length > 0) {
-          achievementResult.data.challengesCompleted.forEach(challengeId => {
-            const challenges = achievementsService.getAllChallenges()
-            const challenge = challenges.find(c => c.id === challengeId)
-            if (challenge) {
-              toast.success(`🎯 Sfida completata: ${challenge.name}!`)
-            }
-          })
-        }
+      } catch (error) {
+        console.error('Error updating achievements:', error)
       }
-    } catch (error) {
-      console.error('Error updating achievements:', error)
+    } else {
+      toast.error('Errore durante il completamento: ' + result.error)
     }
-  } else {
-    toast.error('Errore durante il completamento: ' + result.error)
+    
+    setCompleting(null)
   }
-  
-  setCompleting(null)
-}
 
   // Avvia tracking GPS
   const handleStartTracking = (route) => {
@@ -299,7 +346,7 @@ const handleComplete = async (routeId) => {
                   
                   {/* Bottone Segna come completato (senza GPS) */}
                   <button
-                    onClick={() => handleComplete(route.$id)}
+                    onClick={() => openCompleteConfirm(route)}
                     disabled={completing === route.$id}
                     className="text-green-600 hover:text-green-800 disabled:text-gray-400 p-1 transition-colors"
                     title="Segna come completato (senza GPS)"
@@ -313,7 +360,7 @@ const handleComplete = async (routeId) => {
                   
                   {/* Bottone Elimina */}
                   <button
-                    onClick={() => handleDelete(route.$id)}
+                    onClick={() => openDeleteConfirm(route)}
                     disabled={deleting === route.$id}
                     className="text-red-600 hover:text-red-800 disabled:text-gray-400 p-1 transition-colors"
                     title="Elimina percorso"
@@ -331,23 +378,40 @@ const handleComplete = async (routeId) => {
         </div>
       </div>
 
-     {/* Modal Tracking GPS con Error Boundary */}
-{activeRoute && (
-  <TrackerErrorBoundary
-    user={user}
-    route={activeRoute}
-    onGoHome={() => {
-      setActiveRoute(null)
-      loadRoutes()
-    }}
-  >
-    <ActiveTracking
-      route={activeRoute}
-      onClose={handleCloseTracking}
-      onComplete={handleTrackingComplete}
-    />
-  </TrackerErrorBoundary>
-)}
+      {/* Modal Tracking GPS con Error Boundary */}
+      {activeRoute && (
+        <TrackerErrorBoundary
+          user={user}
+          route={activeRoute}
+          onGoHome={() => {
+            setActiveRoute(null)
+            loadRoutes()
+          }}
+        >
+          <ActiveTracking
+            route={activeRoute}
+            onClose={handleCloseTracking}
+            onComplete={handleTrackingComplete}
+          />
+        </TrackerErrorBoundary>
+      )}
+
+      {/* Modal di conferma per eliminazione/completamento */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.type === 'delete' ? 'Elimina percorso' : 'Segna come completato'}
+        message={
+          confirmModal.type === 'delete'
+            ? `Sei sicuro di voler eliminare "${confirmModal.routeName}"? Questa azione non può essere annullata.`
+            : `Vuoi segnare "${confirmModal.routeName}" come completato? I dati pianificati verranno copiati nelle statistiche.`
+        }
+        confirmText={confirmModal.type === 'delete' ? 'Elimina' : 'Completa'}
+        cancelText="Annulla"
+        variant={confirmModal.type === 'delete' ? 'danger' : 'success'}
+        isLoading={deleting !== null || completing !== null}
+        onConfirm={handleConfirm}
+        onCancel={closeConfirmModal}
+      />
     </>
   )
 }
