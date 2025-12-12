@@ -1,5 +1,5 @@
 import React from 'react'
-import { FaRoute, FaClock, FaWalking, FaPlay, FaLocationArrow } from 'react-icons/fa'
+import { FaRoute, FaClock, FaWalking, FaPlay } from 'react-icons/fa'
 import SaveRouteButton from './SaveRouteButton'
 import { formatDistance, formatElevation } from '../utils/gpsUtils'
 import { useSettings } from '../contexts/SettingsContext'
@@ -13,7 +13,6 @@ import { useSettings } from '../contexts/SettingsContext'
  * @param {boolean} routeSaved - Indica se il percorso è già stato salvato
  * @param {Function} onSaved - Callback quando il percorso viene salvato
  * @param {Function} onStartTracking - Callback per avviare il tracking GPS
- * @param {Function} onStartNavigation - Callback per avviare la navigazione guidata
  */
 const RouteInfo = ({ 
   routeInfo, 
@@ -22,8 +21,7 @@ const RouteInfo = ({
   preloadedHike,
   routeSaved, 
   onSaved, 
-  onStartTracking, 
-  onStartNavigation 
+  onStartTracking
 }) => {
   const { settings } = useSettings()
 
@@ -95,15 +93,6 @@ const RouteInfo = ({
         >
           <FaPlay />
           <span>📊 Tracking GPS con Statistiche</span>
-        </button>
-
-        {/* Bottone Navigazione Guidata */}
-        <button
-          onClick={onStartNavigation}
-          className="route-gps-btn"
-        >
-          <FaLocationArrow />
-          <span>🧭 Navigazione Guidata</span>
         </button>
       </div>
     </div>

@@ -625,26 +625,6 @@
   }
 
   
-  /* ===== NAVIGATION MODE ===== */
-  
-  .nav-status-bar {
-    @apply text-white rounded-lg shadow-lg p-4 w-full max-w-xl;
-    background-color: var(--color-green);
-  }
-  
-  .nav-instruction-card {
-    @apply rounded-lg shadow-lg p-4 w-full max-w-xl;
-    background-color: var(--bg-card);
-    border-left: 4px solid var(--color-green);
-  }
-  
-  .nav-warning {
-    @apply rounded-lg shadow-md p-4 w-full max-w-xl;
-    background-color: rgba(247, 255, 88, 0.2);
-    border-left: 4px solid #F7FF58;
-  }
-
-  
   /* ===== INFO MODAL SECTIONS ===== */
   
   .info-section {

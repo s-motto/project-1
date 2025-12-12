@@ -1,7 +1,6 @@
 import TrackerErrorBoundary from './TrackerErrorBoundary'// importo il componente per la gestione degli errori
 import React, { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react' // importo React e gli hook necessari
 import { useLocation } from 'react-router-dom' // importo useLocation per leggere lo state della navigazione
-import NavigationMode from './NavigationMode' // importo il componente NavigationMode
 import SaveRouteButton from './SaveRouteButton' // importo il componente SaveRouteButton
 import ActiveTracking from './ActiveTracking' // importo il componente ActiveTracking
 import RouteInfo from './RouteInfo' // importo il componente RouteInfo
@@ -17,7 +16,6 @@ import { useMapClick } from '../hooks/useMapClick' // importo il custom hook per
 import { useUserLocation } from '../hooks/useUserLocation' // importo il custom hook per geolocalizzazione
 import { useMapPointHandlers } from '../hooks/useMapPointHandlers' // importo il custom hook per handler MapPointSelector
 import { createMapMarker, createMarkersUpdateListener, MarkerType } from '../utils/mapMarkers' // importo il factory dei marker
-import useNavigation from '../contexts/NavigationContext' // importo il contesto di navigazione
 import { useToast } from '../contexts/ToastContext' // importo il contesto delle notifiche
 import { useAuth } from '../contexts/AuthContext' // importo il contesto di autenticazione
 import { calculateDistance, formatDistance, formatElevation, KM_TO_MI, M_TO_FT, formatDurationSeconds } from '../utils/gpsUtils'  // importo le funzioni di utilità GPS
@@ -64,7 +62,6 @@ const RouteSearchForm = forwardRef((props, ref) => {
   const updateMarkersListenerRef = useRef(null) // riferimento al listener
   
 
-  const { isNavigating, currentPosition, heading, startNavigation, stopNavigation } = useNavigation() //stato di navigazione
   const [fullRouteData, setFullRouteData] = useState(null) // salva tutti i dati del percorso
   const [isPreloaded, setIsPreloaded] = useState(false) //indica se il percorso è pre-caricato
   const [routeSaved, setRouteSaved] = useState(false) //indica se l'utente ha già salvato il percorso
@@ -156,7 +153,6 @@ const RouteSearchForm = forwardRef((props, ref) => {
         cleanupPreviousRoute()
         map.setView([45.4642, 9.1900], 13)
       }
-      try { stopNavigation() } catch (err) { /* ignore */ }
       setStartPoint(null)
       setEndPoint(null)
       setStartText('')
@@ -169,7 +165,7 @@ const RouteSearchForm = forwardRef((props, ref) => {
       setIsPreloaded(false)
       setErrorMsg('')
     }
-  }, [location, map, cleanupPreviousRoute, stopNavigation])
+  }, [location, map, cleanupPreviousRoute])
   
     useEffect(() => {
       const mapInstance = L.map('map').setView([45.4642, 9.1900], 13) //Centro su Milano di default
@@ -206,14 +202,20 @@ const RouteSearchForm = forwardRef((props, ref) => {
 // useEffect per autocomplete partenza con debounce
   useEffect(() => {
     const fetchStartSuggestions = async () => {
-      if (debouncedStartText && debouncedStartText.length > 1) {
-        setStartLoading(true)
+      if (debouncedStartText.length < 3) {
+        setStartSuggestions([])
+        return
+      }
+      setStartLoading(true)
+      try {
+        // Uso il service (che usa il proxy)
         const suggestions = await fetchSuggestions(debouncedStartText)
         setStartSuggestions(suggestions)
-        setStartLoading(false)
-      } else {
+      } catch (error) {
+        logger.error('Errore suggerimenti partenza:', error)
         setStartSuggestions([])
       }
+      setStartLoading(false)
     }
     fetchStartSuggestions()
   }, [debouncedStartText])
@@ -221,164 +223,112 @@ const RouteSearchForm = forwardRef((props, ref) => {
   // useEffect per autocomplete arrivo con debounce
   useEffect(() => {
     const fetchEndSuggestions = async () => {
-      if (debouncedEndText && debouncedEndText.length > 1) {
-        setEndLoading(true)
+      if (debouncedEndText.length < 3) {
+        setEndSuggestions([])
+        return
+      }
+      setEndLoading(true)
+      try {
+        // Uso il service (che usa il proxy)
         const suggestions = await fetchSuggestions(debouncedEndText)
         setEndSuggestions(suggestions)
-        setEndLoading(false)
-      } else {
+      } catch (error) {
+        logger.error('Errore suggerimenti arrivo:', error)
         setEndSuggestions([])
       }
+      setEndLoading(false)
     }
     fetchEndSuggestions()
   }, [debouncedEndText])
 
-      // Espongo la funzione di reset al componente genitore
-      useImperativeHandle(ref, () => ({
-      reset: handleReset
-      }))
-
-// Handler per ottenere posizione corrente (usa l'hook)
-const handleGetCurrentLocation = () => {
-  getCurrentLocation(
-    // Callback success
-    (locationData) => {
-      setStartPoint({
-        lat: locationData.lat,
-        lon: locationData.lon,
-        name: locationData.name
-      })
-      setStartText(locationData.displayText)
-    },
-    // Callback error
-    (error) => {
-      setErrorMsg(error)
-    }
-  )
-}
-
-//Resetto tutto il form e la mappa
-const handleReset = () => {
-  // Pulisco la mappa usando la funzione dell'hook
-  cleanupPreviousRoute()
-  
-  // Ensure navigation is stopped and geolocation watch is cleared via context
-  try { stopNavigation() } catch (err) { /* ignore */ }
-  
-  // Reset degli stati
-  setStartPoint(null)
-  setEndPoint(null)
-  setStartText('')
-  setEndText('')
-  setRouteLayer(null)
-  setRouteInfo(null)
-  setInstructions([])
-  setFullRouteData(null)
-  setRouteSaved(false)
-  setIsPreloaded(false)
-  setErrorMsg('')
-
-  // Resetto la vista della mappa
-  if (map) {
-    map.setView([45.4642, 9.1900], 13)
+  // Handlers per gli input
+  const handleStartTextChange = (e) => {
+    setStartText(e.target.value)
+    setStartPoint(null) // Reset del punto quando l'utente modifica il testo
   }
-}
 
-// ========== CALLBACK FUNCTIONS PER ROUTEINPUTS ==========
+  const handleEndTextChange = (e) => {
+    setEndText(e.target.value)
+    setEndPoint(null) // Reset del punto quando l'utente modifica il testo
+  }
 
-// Gestione cambio testo input partenza
-const handleStartTextChange = (e) => {
-  const val = e.target.value
-  setStartText(val)
-  setStartPoint(null)
-  if (val.length > 1) {
-    setShowStartDropdown(true)
-  } else {
+  const handleStartFocus = () => {
+    if (startSuggestions.length > 0) {
+      setShowStartDropdown(true)
+    }
+  }
+
+  const handleStartBlur = () => {
+    // Delay per permettere click sui suggerimenti
+    setTimeout(() => setShowStartDropdown(false), 200)
+  }
+
+  const handleEndFocus = () => {
+    if (endSuggestions.length > 0) {
+      setShowEndDropdown(true)
+    }
+  }
+
+  const handleEndBlur = () => {
+    // Delay per permettere click sui suggerimenti
+    setTimeout(() => setShowEndDropdown(false), 200)
+  }
+
+  const handleSelectStartSuggestion = (suggestion) => {
+    setStartText(suggestion.label)
+    setStartPoint({ lat: suggestion.lat, lon: suggestion.lon })
     setShowStartDropdown(false)
   }
-}
 
-// Gestione cambio testo input arrivo
-const handleEndTextChange = (e) => {
-  const val = e.target.value
-  setEndText(val)
-  setEndPoint(null)
-  if (val.length > 1) {
-    setShowEndDropdown(true)
-  } else {
+  const handleSelectEndSuggestion = (suggestion) => {
+    setEndText(suggestion.label)
+    setEndPoint({ lat: suggestion.lat, lon: suggestion.lon })
     setShowEndDropdown(false)
   }
-}
 
-// Gestione focus/blur input partenza
-const handleStartFocus = () => {
-  if (startText.length > 1) setShowStartDropdown(true)
-}
-
-const handleStartBlur = () => {
-  setTimeout(() => setShowStartDropdown(false), 150)
-}
-
-// Gestione focus/blur input arrivo
-const handleEndFocus = () => {
-  if (endText.length > 1) setShowEndDropdown(true)
-}
-
-const handleEndBlur = () => {
-  setTimeout(() => setShowEndDropdown(false), 150)
-}
-
-// Handler selezione suggerimenti
-const handleSelectStartSuggestion = (suggestion) => {
-  setStartText(suggestion.display_name)
-  setStartPoint({
-    lat: suggestion.lat,
-    lon: suggestion.lon,
-    name: suggestion.display_name,
-  })
-  setShowStartDropdown(false)
-  setStartSuggestions([])
-  startInputRef.current.blur()
-}
-
-const handleSelectEndSuggestion = (suggestion) => {
-  setEndText(suggestion.display_name)
-  setEndPoint({
-    lat: suggestion.lat,
-    lon: suggestion.lon,
-    name: suggestion.display_name,
-  })
-  setShowEndDropdown(false)
-  setEndSuggestions([])
-  endInputRef.current.blur()
-}
-
-// ========== FINE CALLBACK FUNCTIONS ==========
-
-// Funzione per calcolare e visualizzare il percorso
-const handleSubmit = async (e) => {
-  e.preventDefault()
-  setErrorMsg('')
-  setLoading(true)
-  setRouteInfo(null)
-  setInstructions([])
-  setFullRouteData(null)
-  setIsPreloaded(false)
-
-  // Ottengo coordinate se non già fornite
-  let sp = startPoint
-  let ep = endPoint
-
-  // Geocodifico se necessario il punto di partenza (usa il proxy)
-  if (!sp && startText) {
-    sp = await geocodeText(startText)
-    if (sp) setStartPoint(sp)
+  // Handler per geolocalizzazione
+  const handleGetCurrentLocation = async () => {
+    const location = await getCurrentLocation()
+    if (location) {
+      setStartPoint({ lat: location.lat, lon: location.lon })
+      setStartText(location.name)
+    }
   }
-  // Geocodifico se necessario il punto di arrivo (usa il proxy)
-  if (!ep && endText) {
-    ep = await geocodeText(endText)
-    if (ep) setEndPoint(ep)
-  }
+
+  // Handler per submit del form
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setLoading(true)
+    setErrorMsg('')
+
+    // Geocoding per partenza se necessario
+    let sp = startPoint
+    if (!sp && startText) {
+      try {
+        const result = await geocodeText(startText)
+        if (result) {
+          sp = { lat: result.lat, lon: result.lon }
+          setStartPoint(sp)
+        }
+      } catch (error) {
+        logger.error('Errore geocoding partenza:', error)
+      }
+    }
+
+    // Geocoding per arrivo se necessario
+    let ep = endPoint
+    if (!ep && endText) {
+      try {
+        const result = await geocodeText(endText)
+        if (result) {
+          ep = { lat: result.lat, lon: result.lon }
+          setEndPoint(ep)
+        }
+      } catch (error) {
+        logger.error('Errore geocoding arrivo:', error)
+      }
+    }
+
   // Controllo che entrambi i punti siano disponibili
   if (!sp || !ep) {
     setLoading(false)
@@ -478,107 +428,92 @@ const handleSubmit = async (e) => {
 
   return (
     <div className="flex flex-col space-y-4">
-  {!isNavigating ? (
-        <>
-          {/* Form di ricerca percorso */}
-          <RouteInputs
-            startText={startText}
-            endText={endText}
-            startSuggestions={startSuggestions}
-            endSuggestions={endSuggestions}
-            startLoading={startLoading}
-            endLoading={endLoading}
-            showStartDropdown={showStartDropdown}
-            showEndDropdown={showEndDropdown}
-            isPreloaded={isPreloaded}
-            gettingLocation={gettingLocation}
-            loading={loading}
-            errorMsg={errorMsg}
-            startInputRef={startInputRef}
-            endInputRef={endInputRef}
-            onStartTextChange={handleStartTextChange}
-            onEndTextChange={handleEndTextChange}
-            onStartFocus={handleStartFocus}
-            onStartBlur={handleStartBlur}
-            onEndFocus={handleEndFocus}
-            onEndBlur={handleEndBlur}
-            onSelectStartSuggestion={handleSelectStartSuggestion}
-            onSelectEndSuggestion={handleSelectEndSuggestion}
-            onGetCurrentLocation={handleGetCurrentLocation}
-            onSubmit={handleSubmit}
+      {/* Form di ricerca percorso */}
+      <RouteInputs
+        startText={startText}
+        endText={endText}
+        startSuggestions={startSuggestions}
+        endSuggestions={endSuggestions}
+        startLoading={startLoading}
+        endLoading={endLoading}
+        showStartDropdown={showStartDropdown}
+        showEndDropdown={showEndDropdown}
+        isPreloaded={isPreloaded}
+        gettingLocation={gettingLocation}
+        loading={loading}
+        errorMsg={errorMsg}
+        startInputRef={startInputRef}
+        endInputRef={endInputRef}
+        onStartTextChange={handleStartTextChange}
+        onEndTextChange={handleEndTextChange}
+        onStartFocus={handleStartFocus}
+        onStartBlur={handleStartBlur}
+        onEndFocus={handleEndFocus}
+        onEndBlur={handleEndBlur}
+        onSelectStartSuggestion={handleSelectStartSuggestion}
+        onSelectEndSuggestion={handleSelectEndSuggestion}
+        onGetCurrentLocation={handleGetCurrentLocation}
+        onSubmit={handleSubmit}
+      />
+
+      {/* Modal Selezione Punto Mappa */}
+      {showMapPointSelector && selectedMapPoint && (
+        <MapPointSelector
+          location={selectedMapPoint}
+          onSetStart={handleSetAsStart}
+          onSetEnd={handleSetAsEnd}
+          onSwap={startPoint && endPoint ? handleSwapPoints : null}
+          onClose={handleCloseSelector}
+        />
+      )}
+
+      {/* Indicatore visuale gps */}
+      {userLocation && startPoint && startPoint.lat === userLocation.lat && (
+        <div className="flex items-center space-x-2 px-4 py-2 bg-green-50 rounded-lg text-sm text-green-700">
+          <FaLocationArrow className="text-green-600" />
+          <span>Partenza impostata sulla tua posizione attuale</span>
+        </div>
+      )}
+
+      {/* Route Information Card */}
+      {routeInfo && (
+        <RouteInfo
+          routeInfo={routeInfo}
+          fullRouteData={fullRouteData}
+          isPreloaded={isPreloaded}
+          preloadedHike={preloadedHike}
+          routeSaved={routeSaved}
+          onSaved={(savedId) => {
+            setRouteSaved(true)
+            if (savedId) {
+              setFullRouteData((prev) => ({ ...(prev || {}), savedId }))
+            }
+          }}
+          onStartTracking={handleStartTracking}
+        />
+      )}
+
+      {/* Turn-by-turn Instructions */}
+      <RouteInstructions instructions={instructions} />
+
+      {/* Modal ActiveTracking con Error Boundary */}
+      {showTracking && fullRouteData && (
+        <TrackerErrorBoundary
+          user={user}
+          route={fullRouteData}
+          onGoHome={() => {
+            setShowTracking(false)
+          }}
+        >
+          <ActiveTracking
+            route={fullRouteData}
+            onClose={handleCloseTracking}
+            onComplete={handleTrackingComplete}
           />
+        </TrackerErrorBoundary>
+      )}
 
-{/* Modal Selezione Punto Mappa */}
-{showMapPointSelector && selectedMapPoint && (
-  <MapPointSelector
-    location={selectedMapPoint}
-    onSetStart={handleSetAsStart}
-    onSetEnd={handleSetAsEnd}
-    onSwap={startPoint && endPoint ? handleSwapPoints : null}
-    onClose={handleCloseSelector}
-  />
-)}
-          {/* Indicatore visuale gps */}
-{userLocation && startPoint && startPoint.lat === userLocation.lat && (
-  <div className="flex items-center space-x-2 px-4 py-2 bg-green-50 rounded-lg text-sm text-green-700">
-    <FaLocationArrow className="text-green-600" />
-    <span>Partenza impostata sulla tua posizione attuale</span>
-  </div>
-)}
-
-          {/* Route Information Card */}
-          {routeInfo && (
-            <RouteInfo
-              routeInfo={routeInfo}
-              fullRouteData={fullRouteData}
-              isPreloaded={isPreloaded}
-              preloadedHike={preloadedHike}
-              routeSaved={routeSaved}
-              onSaved={(savedId) => {
-                setRouteSaved(true)
-                if (savedId) {
-                  setFullRouteData((prev) => ({ ...(prev || {}), savedId }))
-                }
-              }}
-              onStartTracking={handleStartTracking}
-              onStartNavigation={() => startNavigation()}
-            />
-          )}
-
-
-          {/* Turn-by-turn Instructions */}
-          <RouteInstructions instructions={instructions} />
-        </>
-      ) : (
-  <NavigationMode
-    map={map}
-    routeLayer={routeLayer}
-    instructions={instructions}
-    endPoint={endPoint}
-    currentPosition={currentPosition}
-    heading={heading}
-    onStop={() => stopNavigation()}
-  />
-)}
-
-{/* Modal ActiveTracking con Error Boundary */}
-{showTracking && fullRouteData && (
-  <TrackerErrorBoundary
-    user={user}
-    route={fullRouteData}
-    onGoHome={() => {
-      setShowTracking(false)
-    }}
-  >
-    <ActiveTracking
-      route={fullRouteData}
-      onClose={handleCloseTracking}
-      onComplete={handleTrackingComplete}
-    />
-  </TrackerErrorBoundary>
-)}
-
-<div id="map" className="w-full h-[400px] rounded-lg shadow-md" />
+      <div id="map" className="w-full h-[400px] rounded-lg shadow-md" />
     </div>
   )
 })
