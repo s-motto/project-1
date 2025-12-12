@@ -27,6 +27,10 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
   const [recalculatingRoute, setRecalculatingRoute] = useState(false)
   const [showWaypointsList, setShowWaypointsList] = useState(false)
 
+  // Stato per modal conferma rimozione waypoint
+  // Contiene {index, waypoint} quando aperto, null quando chiuso
+  const [waypointToRemove, setWaypointToRemove] = useState(null)
+
   // ========== REFS ==========
   const originalRouteRef = useRef(normalizeRoute(route))
   const [currentRouteData, setCurrentRouteData] = useState(normalizeRoute(route))
@@ -266,17 +270,32 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
   }, [])
 
   /**
-   * Rimuove waypoint dalla lista
+   * Apre il dialog di conferma per rimuovere un waypoint
+   * NON rimuove direttamente - aspetta conferma dal componente padre
    */
-  const handleRemoveWaypoint = useCallback(async (index) => {
-    const waypointToRemove = waypoints[index]
-    
-    if (!confirm(`Rimuovere il waypoint "${waypointToRemove.name}"?`)) {
-      return
-    }
+  const handleRemoveWaypoint = useCallback((index) => {
+    const waypoint = waypoints[index]
+    setWaypointToRemove({ index, waypoint })
+  }, [waypoints])
 
+  /**
+   * Annulla la rimozione del waypoint (chiude il modal)
+   */
+  const cancelRemoveWaypoint = useCallback(() => {
+    setWaypointToRemove(null)
+  }, [])
+
+  /**
+   * Esegue la rimozione del waypoint dopo conferma
+   */
+  const executeRemoveWaypoint = useCallback(async () => {
+    if (!waypointToRemove) return
+
+    const { index } = waypointToRemove
     const newWaypoints = waypoints.filter((_, i) => i !== index)
+    
     setWaypoints(newWaypoints)
+    setWaypointToRemove(null)
     toast.info('Waypoint rimosso')
 
     if (newWaypoints.length === 0) {
@@ -285,7 +304,7 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
     } else {
       await recalculateRouteWithWaypoints(newWaypoints)
     }
-  }, [waypoints, toast, recalculateRouteWithWaypoints])
+  }, [waypointToRemove, waypoints, toast, recalculateRouteWithWaypoints])
 
   // ==========================================
   // FORMATTERS
@@ -323,6 +342,7 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
   // ==========================================
 
   return {
+    // State waypoints
     waypoints,
     tempWaypoint,
     showWaypointDialog,
@@ -332,10 +352,20 @@ export function useWaypointManager({ route, currentPosition, isTracking, toast, 
     currentRouteData,
     showWaypointsList,
     setShowWaypointsList,
+    
+    // Handlers aggiunta waypoint
     handleMapLongPress,
     handleConfirmWaypoint,
     handleCancelWaypoint,
+    
+    // Rimozione waypoint - con pattern modal
+    // handleRemoveWaypoint apre il modal, executeRemoveWaypoint conferma
     handleRemoveWaypoint,
+    waypointToRemove,
+    cancelRemoveWaypoint,
+    executeRemoveWaypoint,
+    
+    // Formatters
     formatPreviewDistance,
     formatPreviewDuration
   }

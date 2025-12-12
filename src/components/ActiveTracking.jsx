@@ -37,6 +37,7 @@ import { calculateSpeed } from '../utils/gpsUtils'
 
 // Componenti tracking
 import { TrackingStats, TrackingControls, WaypointDialog, TrackingMap } from './ActiveTracking/index.js'
+import ConfirmModal from './ConfirmModal'
 
 // ==========================================
 // COMPONENTE PRINCIPALE
@@ -52,6 +53,12 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   const [isPaused, setIsPaused] = useState(false)
   const [shouldCenterMap, setShouldCenterMap] = useState(true)
   const [mapKey] = useState(() => `map-${Date.now()}-${Math.random()}`)
+
+  // State per ConfirmModal (stop e cancel)
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    type: null // 'stop' | 'cancel'
+  })
 
   // ==========================================
   // REFS - FIX: Aggiunto isMountedRef
@@ -116,6 +123,9 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     handleConfirmWaypoint,
     handleCancelWaypoint,
     handleRemoveWaypoint,
+    waypointToRemove,
+    cancelRemoveWaypoint,
+    executeRemoveWaypoint,
     formatPreviewDistance,
     formatPreviewDuration
   } = useWaypointManager({
@@ -207,11 +217,18 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   }
 
   /**
-   * Termina e salva tracking
+   * Apre il modal di conferma per terminare il tracking
+   */
+  const handleStop = () => {
+    setConfirmModal({ isOpen: true, type: 'stop' })
+  }
+
+  /**
+   * Esegue la terminazione e salvataggio dopo conferma
    * FIX: onComplete chiamato con setTimeout per evitare smontaggio dall'interno dell'hook
    */
-  const handleStop = async () => {
-    if (!confirm('Vuoi terminare il percorso e salvare i dati?')) return
+  const executeStop = async () => {
+    setConfirmModal({ isOpen: false, type: null })
 
     logger.log('ActiveTracking: Stop tracking')
     
@@ -236,11 +253,18 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   }
 
   /**
-   * Annulla tracking senza salvare
-   * FIX: Migliorato con flag e delay
+   * Apre il modal di conferma per annullare il tracking
    */
   const handleCancel = () => {
-    if (!confirm('Vuoi annullare il tracking? I dati non verranno salvati.')) return
+    setConfirmModal({ isOpen: true, type: 'cancel' })
+  }
+
+  /**
+   * Esegue l'annullamento dopo conferma
+   * FIX: Migliorato con flag e delay
+   */
+  const executeCancel = () => {
+    setConfirmModal({ isOpen: false, type: null })
 
     logger.log('ActiveTracking: Annullamento tracking')
     
@@ -258,6 +282,24 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     setTimeout(() => {
       onClose()
     }, 100)
+  }
+
+  /**
+   * Chiude il modal di conferma senza azione
+   */
+  const closeConfirmModal = () => {
+    setConfirmModal({ isOpen: false, type: null })
+  }
+
+  /**
+   * Handler per conferma nel modal (dispatcha all'azione corretta)
+   */
+  const handleConfirmAction = () => {
+    if (confirmModal.type === 'stop') {
+      executeStop()
+    } else if (confirmModal.type === 'cancel') {
+      executeCancel()
+    }
   }
 
   // ==========================================
@@ -340,6 +382,31 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   const handleDisableCenter = () => {
     setShouldCenterMap(false)
   }
+
+  // ==========================================
+  // CONFIG MODAL CONFERMA
+  // ==========================================
+  const getConfirmModalConfig = () => {
+    if (confirmModal.type === 'stop') {
+      return {
+        title: 'Termina percorso',
+        message: 'Vuoi terminare il percorso e salvare i dati?',
+        confirmText: 'Termina e salva',
+        variant: 'success'
+      }
+    }
+    if (confirmModal.type === 'cancel') {
+      return {
+        title: 'Annulla tracking',
+        message: 'Vuoi annullare il tracking? I dati non verranno salvati.',
+        confirmText: 'Annulla tracking',
+        variant: 'danger'
+      }
+    }
+    return {}
+  }
+
+  const modalConfig = getConfirmModalConfig()
 
   // ==========================================
   // RENDER
@@ -485,6 +552,31 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
         onCancel={handleCancelWaypoint}
         formatPreviewDistance={formatPreviewDistance}
         formatPreviewDuration={formatPreviewDuration}
+      />
+
+      {/* ========== MODAL CONFERMA STOP/CANCEL ========== */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        confirmText={modalConfig.confirmText}
+        cancelText="Indietro"
+        variant={modalConfig.variant}
+        isLoading={isSaving}
+        onConfirm={handleConfirmAction}
+        onCancel={closeConfirmModal}
+      />
+
+      {/* ========== MODAL CONFERMA RIMOZIONE WAYPOINT ========== */}
+      <ConfirmModal
+        isOpen={!!waypointToRemove}
+        title="Rimuovi waypoint"
+        message={waypointToRemove ? `Rimuovere il waypoint "${waypointToRemove.waypoint.name}"?` : ''}
+        confirmText="Rimuovi"
+        cancelText="Annulla"
+        variant="warning"
+        onConfirm={executeRemoveWaypoint}
+        onCancel={cancelRemoveWaypoint}
       />
     </div>
   )
