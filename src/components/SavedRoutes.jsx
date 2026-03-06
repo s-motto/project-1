@@ -30,7 +30,9 @@ const SavedRoutes = () => {
     isOpen: false,
     type: null, // 'delete' | 'complete'
     routeId: null,
-    routeName: ''
+    routeName: '',
+    routeDistance: 0,
+    routeDuration: 0
   })
 
   const { toast } = useToast()
@@ -58,7 +60,9 @@ const SavedRoutes = () => {
       isOpen: true,
       type: 'delete',
       routeId: route.$id,
-      routeName: route.name
+      routeName: route.name,
+      routeDistance: 0,
+      routeDuration: 0
     })
   }
 
@@ -68,7 +72,9 @@ const SavedRoutes = () => {
       isOpen: true,
       type: 'complete',
       routeId: route.$id,
-      routeName: route.name
+      routeName: route.name,
+      routeDistance: route.distance,
+      routeDuration: route.duration
     })
   }
 
@@ -78,7 +84,9 @@ const SavedRoutes = () => {
       isOpen: false,
       type: null,
       routeId: null,
-      routeName: ''
+      routeName: '',
+      routeDistance: 0,
+      routeDuration: 0
     })
   }
 
@@ -201,20 +209,57 @@ const SavedRoutes = () => {
       setEditingId(null)
       setNameDraft('')
     } else {
-      toast.error('Errore durante la rinomina: ' + res.error)
+      toast.error('Errore: ' + res.error)
     }
     setSavingNameId(null)
   }
 
-  // Chiudi tracking
+  // Chiude tracking e ricarica percorsi
   const handleCloseTracking = () => {
     setActiveRoute(null)
+    loadRoutes()
   }
 
   // Tracking completato
   const handleTrackingComplete = () => {
-    loadRoutes() // Ricarica la lista
     setActiveRoute(null)
+    loadRoutes()
+  }
+
+  // Genera il messaggio per il modal di completamento
+  const getCompleteModalMessage = () => {
+    const distanceFormatted = formatDistance(confirmModal.routeDistance, settings?.distanceUnit || 'km')
+    const durationFormatted = formatDurationMinutes(confirmModal.routeDuration, settings?.durationFormat || 'hms')
+    
+    return (
+      <div className="space-y-3">
+        <p>Hai davvero percorso <strong>"{confirmModal.routeName}"</strong>?</p>
+        
+        <div className="rounded-lg p-3 text-sm" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+          <div className="flex items-center gap-4">
+            <span>📏 {distanceFormatted}</span>
+            <span>⏱️ {durationFormatted}</span>
+          </div>
+        </div>
+        
+        <div className="rounded-lg p-3 text-sm" style={{ 
+          backgroundColor: 'rgba(255, 147, 79, 0.1)', 
+          border: '1px solid var(--color-orange)' 
+        }}>
+          <p className="font-medium" style={{ color: 'var(--color-orange)' }}>
+            ⚠️ Attenzione
+          </p>
+          <p className="mt-1" style={{ color: 'var(--text-primary)' }}>
+            I <strong>{distanceFormatted}</strong> pianificati verranno aggiunti alle tue statistiche mensili. 
+            Senza tracking GPS non possiamo verificare la distanza reale.
+          </p>
+        </div>
+        
+        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+          💡 Per statistiche più accurate, usa il tracking GPS con il pulsante ▶️
+        </p>
+      </div>
+    )
   }
 
   // Stati di caricamento e vuoti
@@ -397,19 +442,28 @@ const SavedRoutes = () => {
         </TrackerErrorBoundary>
       )}
 
-      {/* Modal di conferma per eliminazione/completamento */}
+      {/* Modal di conferma per eliminazione */}
       <ConfirmModal
-        isOpen={confirmModal.isOpen}
-        title={confirmModal.type === 'delete' ? 'Elimina percorso' : 'Segna come completato'}
-        message={
-          confirmModal.type === 'delete'
-            ? `Sei sicuro di voler eliminare "${confirmModal.routeName}"? Questa azione non può essere annullata.`
-            : `Vuoi segnare "${confirmModal.routeName}" come completato? I dati pianificati verranno copiati nelle statistiche.`
-        }
-        confirmText={confirmModal.type === 'delete' ? 'Elimina' : 'Completa'}
+        isOpen={confirmModal.isOpen && confirmModal.type === 'delete'}
+        title="Elimina percorso"
+        message={`Sei sicuro di voler eliminare "${confirmModal.routeName}"? Questa azione non può essere annullata.`}
+        confirmText="Elimina"
         cancelText="Annulla"
-        variant={confirmModal.type === 'delete' ? 'danger' : 'success'}
-        isLoading={deleting !== null || completing !== null}
+        variant="danger"
+        isLoading={deleting !== null}
+        onConfirm={handleConfirm}
+        onCancel={closeConfirmModal}
+      />
+
+      {/* Modal di conferma per completamento - CON MESSAGGIO MIGLIORATO */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen && confirmModal.type === 'complete'}
+        title="Segna come completato"
+        message={getCompleteModalMessage()}
+        confirmText="Sì, l'ho completato"
+        cancelText="Annulla"
+        variant="warning"
+        isLoading={completing !== null}
         onConfirm={handleConfirm}
         onCancel={closeConfirmModal}
       />
