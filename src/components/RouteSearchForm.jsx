@@ -287,13 +287,17 @@ const RouteSearchForm = forwardRef((props, ref) => {
   }
 
   // Handler per geolocalizzazione
-  const handleGetCurrentLocation = async () => {
-    const location = await getCurrentLocation()
-    if (location) {
-      setStartPoint({ lat: location.lat, lon: location.lon })
-      setStartText(location.name)
+  const handleGetCurrentLocation = () => {
+  getCurrentLocation(
+    (locationData) => {
+      setStartPoint({ lat: locationData.lat, lon: locationData.lon })
+      setStartText(locationData.name)
+    },
+    (error) => {
+      setErrorMsg(error)
     }
-  }
+  )
+}
 
   // Handler per submit del form
   const handleSubmit = async (e) => {
