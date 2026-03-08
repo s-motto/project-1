@@ -17,6 +17,7 @@
     "@capacitor/cli": "^8.2.0",
     "@capacitor/core": "^8.2.0",
     "@capacitor/geolocation": "^8.1.0",
+    "@capacitor/status-bar": "^8.0.1",
     "appwrite": "^21.2.1",
     "leaflet": "^1.9.4",
     "react": "^19.1.1",
