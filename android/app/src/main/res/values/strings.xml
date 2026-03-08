@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Let\'s Walk</string>
+    <string name="title_activity_main">Let\'s Walk</string>
+    <string name="package_name">com.brina.letswalk</string>
+    <string name="custom_url_scheme">com.brina.letswalk</string>
+</resources>

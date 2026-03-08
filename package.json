@@ -13,6 +13,9 @@
     "test:coverage": "vitest --coverage"
   },
   "dependencies": {
+    "@capacitor/android": "^8.2.0",
+    "@capacitor/cli": "^8.2.0",
+    "@capacitor/core": "^8.2.0",
     "appwrite": "^21.2.1",
     "leaflet": "^1.9.4",
     "react": "^19.1.1",
