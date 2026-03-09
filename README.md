@@ -4,6 +4,10 @@ A personal project born out of my love for hiking and my desire to learn React. 
 
 ---
 
+https://github.com/user-attachments/assets/25f54abb-e63a-47e7-a376-31660a736e5e
+
+---
+
 ## Features
 
 - **Route Planning** — Search for hiking routes by start and end point using OpenRouteService
