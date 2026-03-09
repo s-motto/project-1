@@ -2,7 +2,7 @@
 
 A personal project born out of my love for hiking and my desire to learn React. Are there thousands of similar apps? Yes. Does it feel good to have my own when I go out on a trail? Also yes.
 
----
+
 
 https://github.com/user-attachments/assets/25f54abb-e63a-47e7-a376-31660a736e5e
 
