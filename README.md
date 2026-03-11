@@ -107,3 +107,5 @@ This project is under active development — and probably always will be, becaus
 - [Leaflet](https://leafletjs.com/) for the interactive map
 - [Appwrite](https://appwrite.io/) for backend services
 - [MapTiler](https://www.maptiler.com/) for static map imagery
+
+-Built with a lot of trial and error, and a helping hand from Claude for when, after 30 minutes of staring at my own code, I was ready to throw my laptop out the window.
