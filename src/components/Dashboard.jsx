@@ -23,7 +23,6 @@ import achievementsService from "../services/achievementsService";
 import { useSettings } from "../contexts/SettingsContext";
 import {
   formatDistance,
-  formatElevation,
   KM_TO_MI,
   formatDurationMinutes,
   formatTimestamp,
@@ -34,7 +33,25 @@ import { generateGpxFromTrack } from "../utils/gpx";
 import { trackToPng } from "../utils/trackImage";
 import Achievements from "./Achievements";
 import StreakWidget from "./StreakWidget";
-import DailyChallengesWidget from "./DailyChallengesWidget"; // 🎯 NUOVO IMPORT
+import DailyChallengesWidget from "./DailyChallengesWidget";
+
+// Estrae i punti GPS da un percorso, preferendo le coordinate reali (actualCoordinates)
+// a quelle pianificate (coordinates), normalizzando i formati array e oggetto
+const getRoutePoints = (route) => {
+  if (
+    Array.isArray(route.actualCoordinates) &&
+    route.actualCoordinates.length > 0
+  ) {
+    return route.actualCoordinates;
+  }
+  if (Array.isArray(route.coordinates)) {
+    return route.coordinates.map((c) => {
+      if (Array.isArray(c)) return { lat: c[1], lng: c[0] };
+      return { lat: c.lat, lng: c.lng };
+    });
+  }
+  return [];
+};
 
 const Dashboard = ({ onClose }) => {
   const { user } = useAuth();
@@ -47,20 +64,7 @@ const Dashboard = ({ onClose }) => {
 
   const handleExportGpx = (route) => {
     const name = route.name || "Percorso";
-    let points = [];
-    if (
-      Array.isArray(route.actualCoordinates) &&
-      route.actualCoordinates.length > 0
-    ) {
-      points = route.actualCoordinates;
-    } else if (Array.isArray(route.coordinates)) {
-      points = route.coordinates.map((c) => {
-        if (Array.isArray(c)) {
-          return { lat: c[1], lng: c[0] };
-        }
-        return { lat: c.lat, lng: c.lng };
-      });
-    }
+    const points = getRoutePoints(route);
     const gpx = generateGpxFromTrack(name, points);
     const blob = new Blob([gpx], { type: "application/gpx+xml" });
     const url = URL.createObjectURL(blob);
@@ -79,20 +83,7 @@ const Dashboard = ({ onClose }) => {
 
   const handleExportImage = async (route) => {
     const name = route.name || "Percorso";
-    let points = [];
-    if (
-      Array.isArray(route.actualCoordinates) &&
-      route.actualCoordinates.length > 0
-    ) {
-      points = route.actualCoordinates;
-    } else if (Array.isArray(route.coordinates)) {
-      points = route.coordinates.map((c) => {
-        if (Array.isArray(c)) {
-          return { lat: c[1], lng: c[0] };
-        }
-        return { lat: c.lat, lng: c.lng };
-      });
-    }
+    const points = getRoutePoints(route);
     const basemapKey = import.meta.env.VITE_MAPTILER_KEY;
     const staticTileUrl =
       import.meta.env.VITE_STATIC_TILE_URL ||
@@ -129,7 +120,6 @@ const Dashboard = ({ onClose }) => {
 
   const loadAchievements = useCallback(async () => {
     if (!user) return;
-
     const result = await achievementsService.getAchievements(user.$id);
     if (result.success) {
       setAchievements(result.data);
@@ -143,14 +133,11 @@ const Dashboard = ({ onClose }) => {
     if (result.success) {
       const completedRoutes = result.data;
       setRoutes(completedRoutes);
-
       const calculatedStats = statsService.calculateStats(completedRoutes);
       setStats(calculatedStats);
     }
 
-    // Carica achievements
     await loadAchievements();
-
     setLoading(false);
   }, [user, loadAchievements]);
 
@@ -255,18 +242,14 @@ const Dashboard = ({ onClose }) => {
             </div>
           ) : (
             <>
-              {/* 🔥 SEZIONE GAMIFICATION - WIDGETS */}
+              {/* Sezione gamification */}
               {achievements && (
                 <div className="space-y-4 mb-6">
-                  {/* Grid 2 colonne su desktop, 1 su mobile */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Streak Widget */}
                     <StreakWidget
                       achievements={achievements}
                       onClick={() => setShowAchievements(true)}
                     />
-
-                    {/* Daily Challenges Widget */}
                     <DailyChallengesWidget achievements={achievements} />
                   </div>
                 </div>
@@ -452,7 +435,7 @@ const Dashboard = ({ onClose }) => {
                 </div>
               </div>
 
-              {/* Footer con info */}
+              {/* Footer */}
               <div className="dashboard-footer">
                 <p
                   className="text-xs text-center"
