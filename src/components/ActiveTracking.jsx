@@ -29,6 +29,7 @@ import useTrackingSave from "../hooks/useTrackingSave";
 import useWaypointManager from "../hooks/useWaypointManager";
 import useGPSTracking from "../hooks/useGPSTracking";
 import useModalBodyClass from "../hooks/useModalBodyClass";
+import useConfirmModal from "../hooks/useConfirmModal";
 import logger from "../utils/logger";
 import { calculateSpeed } from "../utils/gpsUtils";
 
@@ -56,11 +57,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   const [shouldCenterMap, setShouldCenterMap] = useState(true);
   const [mapKey] = useState(() => `map-${Date.now()}-${Math.random()}`);
 
-  // State per ConfirmModal (stop e cancel)
-  const [confirmModal, setConfirmModal] = useState({
-    isOpen: false,
-    type: null, // 'stop' | 'cancel'
-  });
+  const { confirmModal, openConfirm, closeConfirm } = useConfirmModal();
 
   // ==========================================
   // REFS
@@ -200,13 +197,13 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   };
 
   const handleStop = () => {
-    setConfirmModal({ isOpen: true, type: "stop" });
+    openConfirm("stop");
   };
 
   // Esegue la terminazione e salvataggio dopo conferma
   // onComplete chiamato con setTimeout per evitare smontaggio dall'interno dell'hook
   const executeStop = async () => {
-    setConfirmModal({ isOpen: false, type: null });
+    closeConfirm();
 
     logger.log("ActiveTracking: Stop tracking");
 
@@ -226,11 +223,11 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   };
 
   const handleCancel = () => {
-    setConfirmModal({ isOpen: true, type: "cancel" });
+    openConfirm("cancel");
   };
 
   const executeCancel = () => {
-    setConfirmModal({ isOpen: false, type: null });
+    closeConfirm();
 
     logger.log("ActiveTracking: Annullamento tracking");
 
@@ -244,10 +241,6 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     setTimeout(() => {
       onClose();
     }, 100);
-  };
-
-  const closeConfirmModal = () => {
-    setConfirmModal({ isOpen: false, type: null });
   };
 
   const handleConfirmAction = () => {
@@ -508,7 +501,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
         variant={modalConfig.variant}
         isLoading={isSaving}
         onConfirm={handleConfirmAction}
-        onCancel={closeConfirmModal}
+        onCancel={closeConfirm}
       />
 
       {/* MODAL CONFERMA RIMOZIONE WAYPOINT */}
