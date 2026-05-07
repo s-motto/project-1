@@ -1,99 +1,101 @@
-import React, { useState, useEffect } from 'react' // importo React e gli hook necessari
-import { FaUser, FaLock, FaEnvelope, FaSpinner, FaHiking } from 'react-icons/fa' // importo le icone necessarie
-import { useAuth } from '../contexts/AuthContext' // importo il contesto di autenticazione
-// Componente AuthPage per login e registrazione
+import React, { useState } from "react";
+import {
+  FaUser,
+  FaLock,
+  FaEnvelope,
+  FaSpinner,
+  FaHiking,
+} from "react-icons/fa";
+import { useAuth } from "../contexts/AuthContext";
+import useModalBodyClass from "../hooks/useModalBodyClass";
+
 const AuthPage = ({ onClose }) => {
-  const { login, register } = useAuth()
-  const [isLogin, setIsLogin] = useState(true)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  // Stato per i dati del form
+  const { login, register } = useAuth();
+  const [isLogin, setIsLogin] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  })
-// Effetto per gestire la classe del body quando il modal è aperto
-  useEffect(() => {
-    document.body.classList.add('modal-open')
-    return () => {
-      document.body.classList.remove('modal-open')
-    }
-  }, [])
-// Gestore del cambiamento nei campi del form
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+
+  useModalBodyClass();
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
-    })
-    setError('')
-  }
-// Funzione di validazione del form
+      [e.target.name]: e.target.value,
+    });
+    setError("");
+  };
+
   const validateForm = () => {
     if (!formData.email || !formData.password) {
-      setError('Email e password sono obbligatori')
-      return false
+      setError("Email e password sono obbligatori");
+      return false;
     }
-// Validazioni aggiuntive per la registrazione
     if (!isLogin) {
       if (!formData.name) {
-        setError('Il nome è obbligatorio')
-        return false
+        setError("Il nome è obbligatorio");
+        return false;
       }
       if (formData.password !== formData.confirmPassword) {
-        setError('Le password non corrispondono')
-        return false
+        setError("Le password non corrispondono");
+        return false;
       }
       if (formData.password.length < 8) {
-        setError('La password deve essere di almeno 8 caratteri')
-        return false
+        setError("La password deve essere di almeno 8 caratteri");
+        return false;
       }
     }
+    return true;
+  };
 
-    return true
-  }
-// Gestore del submit del form
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!validateForm()) return
+    e.preventDefault();
+    if (!validateForm()) return;
 
-    setLoading(true) // Avvio caricamento
-    setError('')// Reset errore
-    // Chiamata alle funzioni di login o registrazione
+    setLoading(true);
+    setError("");
     try {
-      let result
+      let result;
       if (isLogin) {
-        result = await login(formData.email, formData.password)
+        result = await login(formData.email, formData.password);
       } else {
-        result = await register(formData.email, formData.password, formData.name)
+        result = await register(
+          formData.email,
+          formData.password,
+          formData.name,
+        );
       }
 
       if (result.success) {
-        if (onClose) onClose()
+        if (onClose) onClose();
       } else {
-        setError(result.error || 'Errore durante l\'autenticazione')
+        setError(result.error || "Errore durante l'autenticazione");
       }
-    } catch (err) {
-      setError('Si è verificato un errore imprevisto')
+    } catch {
+      setError("Si è verificato un errore imprevisto");
     }
 
-    setLoading(false)
-  }
-  // Funzione per il toggle tra login e registrazione
+    setLoading(false);
+  };
+
   const toggleMode = () => {
-    setIsLogin(!isLogin)
-    setError('')
+    setIsLogin(!isLogin);
+    setError("");
     setFormData({
-      name: '',
-      email: '',
-      password: '',
-      confirmPassword: ''
-    })
-  }
-  // Render del componente
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    });
+  };
+
   return (
-    <div className="modal-overlay" style={{isolation: 'isolate'}}>
+    <div className="modal-overlay" style={{ isolation: "isolate" }}>
       <div className="modal-content max-w-md">
         {/* Header */}
         <div className="modal-header-primary">
@@ -101,10 +103,12 @@ const AuthPage = ({ onClose }) => {
             <FaHiking className="text-4xl" />
           </div>
           <h2 className="text-2xl font-bold text-center">
-            {isLogin ? 'Bentornato!' : 'Crea Account'}
+            {isLogin ? "Bentornato!" : "Crea Account"}
           </h2>
           <p className="text-center text-blue-100 text-sm mt-1">
-            {isLogin ? 'Accedi per salvare i tuoi percorsi' : 'Registrati per iniziare'}
+            {isLogin
+              ? "Accedi per salvare i tuoi percorsi"
+              : "Registrati per iniziare"}
           </p>
         </div>
 
@@ -179,11 +183,7 @@ const AuthPage = ({ onClose }) => {
           )}
 
           {/* Messaggio di errore */}
-          {error && (
-            <div className="alert-error">
-              {error}
-            </div>
-          )}
+          {error && <div className="alert-error">{error}</div>}
 
           {/* Button submit */}
           <button
@@ -197,19 +197,15 @@ const AuthPage = ({ onClose }) => {
                 <span>Caricamento...</span>
               </>
             ) : (
-              <span>{isLogin ? 'Accedi' : 'Registrati'}</span>
+              <span>{isLogin ? "Accedi" : "Registrati"}</span>
             )}
           </button>
 
           {/* Toggle login/registrazione */}
           <div className="text-center">
-            <button
-              type="button"
-              onClick={toggleMode}
-              className="text-link"
-            >
-              {isLogin 
-                ? "Non hai un account? Registrati" 
+            <button type="button" onClick={toggleMode} className="text-link">
+              {isLogin
+                ? "Non hai un account? Registrati"
                 : "Hai già un account? Accedi"}
             </button>
           </div>
@@ -227,7 +223,7 @@ const AuthPage = ({ onClose }) => {
         </form>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default AuthPage
+export default AuthPage;

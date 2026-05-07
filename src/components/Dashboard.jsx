@@ -21,6 +21,7 @@ import routesService from "../services/routesService";
 import statsService from "../services/statsService";
 import achievementsService from "../services/achievementsService";
 import { useSettings } from "../contexts/SettingsContext";
+import useModalBodyClass from "../hooks/useModalBodyClass";
 import {
   formatDistance,
   KM_TO_MI,
@@ -111,12 +112,7 @@ const Dashboard = ({ onClose }) => {
     URL.revokeObjectURL(url);
   };
 
-  useEffect(() => {
-    document.body.classList.add("modal-open");
-    return () => {
-      document.body.classList.remove("modal-open");
-    };
-  }, []);
+  useModalBodyClass();
 
   const loadAchievements = useCallback(async () => {
     if (!user) return;

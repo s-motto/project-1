@@ -2,7 +2,7 @@
 // ACTIVE TRACKING COMPONENT
 // ==========================================
 // Componente per il tracking GPS in tempo reale con supporto waypoints
-// 
+//
 // Funzionalità principali:
 // - Tracking GPS continuo con traccia verde
 // - Percorso pianificato visualizzato in blu tratteggiato
@@ -16,60 +16,65 @@
 // Mobile-first: Layout ottimizzato per schermi piccoli
 // ==========================================
 
-import React, { useState, useEffect, useRef } from 'react'
-import {
-  FaTimes,
-  FaMapMarkerAlt,
-  FaLayerGroup
-} from 'react-icons/fa'
+import React, { useState, useEffect, useRef } from "react";
+import { FaTimes, FaMapMarkerAlt, FaLayerGroup } from "react-icons/fa";
 
 // Services e utilities
-import { useAuth } from '../contexts/AuthContext'
-import { useToast } from '../contexts/ToastContext'
-import { useSettings } from '../contexts/SettingsContext'
-import useGeolocation from '../hooks/useGeolocation'
-import useTrackingTimer from '../hooks/useTrackingTimer'
-import useTrackingSave from '../hooks/useTrackingSave'
-import useWaypointManager from '../hooks/useWaypointManager'
-import useGPSTracking from '../hooks/useGPSTracking'
-import logger from '../utils/logger'
-import { calculateSpeed } from '../utils/gpsUtils'
+import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../contexts/ToastContext";
+import { useSettings } from "../contexts/SettingsContext";
+import useGeolocation from "../hooks/useGeolocation";
+import useTrackingTimer from "../hooks/useTrackingTimer";
+import useTrackingSave from "../hooks/useTrackingSave";
+import useWaypointManager from "../hooks/useWaypointManager";
+import useGPSTracking from "../hooks/useGPSTracking";
+import useModalBodyClass from "../hooks/useModalBodyClass";
+import logger from "../utils/logger";
+import { calculateSpeed } from "../utils/gpsUtils";
 
 // Componenti tracking
-import { TrackingStats, TrackingControls, WaypointDialog, TrackingMap } from './ActiveTracking/index.js'
-import ConfirmModal from './ConfirmModal'
+import {
+  TrackingStats,
+  TrackingControls,
+  WaypointDialog,
+  TrackingMap,
+} from "./ActiveTracking/index.js";
+import ConfirmModal from "./ConfirmModal";
 
 // ==========================================
 // COMPONENTE PRINCIPALE
 // ==========================================
 const ActiveTracking = ({ route, onClose, onComplete }) => {
-  const { user } = useAuth()
-  const { toast } = useToast()
-  const { settings } = useSettings()
-  const geolocation = useGeolocation()
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { settings } = useSettings();
+  const geolocation = useGeolocation();
 
   // State locali componente
-  const [isTracking, setIsTracking] = useState(false)
-  const [isPaused, setIsPaused] = useState(false)
-  const [shouldCenterMap, setShouldCenterMap] = useState(true)
-  const [mapKey] = useState(() => `map-${Date.now()}-${Math.random()}`)
+  const [isTracking, setIsTracking] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [shouldCenterMap, setShouldCenterMap] = useState(true);
+  const [mapKey] = useState(() => `map-${Date.now()}-${Math.random()}`);
 
   // State per ConfirmModal (stop e cancel)
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
-    type: null // 'stop' | 'cancel'
-  })
+    type: null, // 'stop' | 'cancel'
+  });
 
   // ==========================================
-  // REFS - FIX: Aggiunto isMountedRef
+  // REFS
   // ==========================================
-  const isTrackingRef = useRef(false)
-  const isPausedRef = useRef(false)
-  const mapRef = useRef(null)
-  const isMountedRef = useRef(true) // FIX: Flag per tracciare se componente è montato
+  const isTrackingRef = useRef(false);
+  const isPausedRef = useRef(false);
+  const mapRef = useRef(null);
+  const isMountedRef = useRef(true); // Flag per tracciare se componente è montato
+
+  // Blocca scroll body per tutta la durata del componente
+  useModalBodyClass();
 
   // Hook timer tracking
-  const { elapsedTime } = useTrackingTimer(isTracking, isPaused)
+  const { elapsedTime } = useTrackingTimer(isTracking, isPaused);
 
   // Hook GPS tracking - gestisce posizione, traccia, distanza, elevazione, heading
   const {
@@ -79,34 +84,31 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     elevationGain,
     elevationLoss,
     heading,
-    gpsAccuracy,
-    waitingForGoodFix,
     handlePositionUpdate,
-    handlePositionError
+    handlePositionError,
   } = useGPSTracking({
     isTracking,
     isPaused,
     isTrackingRef,
     isPausedRef,
     settings,
-    toast
-  })
+    toast,
+  });
 
   // Hook salvataggio tracking
-  
-  const { isSaving, savedRouteId, ensureRouteSaved, saveCompletedTracking } = useTrackingSave({
-    route,
-    user,
-    trackingData: {
-      distance,
-      elapsedTime,
-      elevationGain,
-      elevationLoss,
-      trackPoints
-    },
-    toast
-    // FIX: onComplete RIMOSSO da qui
-  })
+  const { isSaving, savedRouteId, ensureRouteSaved, saveCompletedTracking } =
+    useTrackingSave({
+      route,
+      user,
+      trackingData: {
+        distance,
+        elapsedTime,
+        elevationGain,
+        elevationLoss,
+        trackPoints,
+      },
+      toast,
+    });
 
   // Hook gestione waypoints
   const {
@@ -127,286 +129,217 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
     cancelRemoveWaypoint,
     executeRemoveWaypoint,
     formatPreviewDistance,
-    formatPreviewDuration
+    formatPreviewDuration,
   } = useWaypointManager({
     route,
     currentPosition,
     isTracking,
     toast,
-    settings
-  })
+    settings,
+  });
 
   // ==========================================
-  // FIX: Wrapper GPS callback con controllo isMounted
+  // Wrapper GPS callback con controllo isMounted
   // ==========================================
   const handlePositionUpdateSafe = (position) => {
-    // CONTROLLO: Non fare nulla se componente smontato
     if (!isMountedRef.current) {
-      logger.warn('GPS update ignorato: componente smontato')
-      return
+      logger.warn("GPS update ignorato: componente smontato");
+      return;
     }
-    
-    // Procedi normalmente
-    handlePositionUpdate(position)
-  }
+    handlePositionUpdate(position);
+  };
 
   // ==========================================
   // TRACKING CONTROL HANDLERS
   // ==========================================
 
-  /**
-   * Avvia tracking
-   */
   const handleStart = async () => {
     if (!isTracking) {
-      
       if (!savedRouteId) {
         try {
-          await ensureRouteSaved()
-          toast.info('Percorso salvato automaticamente per il tracking')
+          await ensureRouteSaved();
+          toast.info("Percorso salvato automaticamente per il tracking");
         } catch (error) {
-          toast.error('Errore nel salvare il percorso: ' + error.message)
-          return
+          toast.error("Errore nel salvare il percorso: " + error.message);
+          return;
         }
       }
 
-      setIsTracking(true)
-      setIsPaused(false)
-      isTrackingRef.current = true
-      isPausedRef.current = false
-      setShouldCenterMap(true)
+      setIsTracking(true);
+      setIsPaused(false);
+      isTrackingRef.current = true;
+      isPausedRef.current = false;
+      setShouldCenterMap(true);
 
-      // Verifica permessi GPS
       if (!navigator.geolocation) {
-        logger.error('Geolocation non supportato')
-        toast.error('GPS non disponibile su questo dispositivo')
-        return
+        logger.error("Geolocation non supportato");
+        toast.error("GPS non disponibile su questo dispositivo");
+        return;
       }
 
-      // Avvia GPS con callback protetto
-      geolocation.start(
-        handlePositionUpdateSafe,  // FIX: Usa versione safe
-        handlePositionError,
-        {
-          enableHighAccuracy: true,
-          timeout: 30000,
-          maximumAge: 0
-        }
-      )
+      geolocation.start(handlePositionUpdateSafe, handlePositionError, {
+        enableHighAccuracy: true,
+        timeout: 30000,
+        maximumAge: 0,
+      });
     }
-  }
+  };
 
-  /**
-   * Pausa tracking
-   */
   const handlePause = () => {
     if (!isPaused) {
-      setIsPaused(true)
-      isPausedRef.current = true
+      setIsPaused(true);
+      isPausedRef.current = true;
     }
-  }
+  };
 
-  /**
-   * Riprendi tracking
-   */
   const handleResume = () => {
     if (isPaused) {
-      setIsPaused(false)
-      isPausedRef.current = false
+      setIsPaused(false);
+      isPausedRef.current = false;
     }
-  }
+  };
 
-  /**
-   * Apre il modal di conferma per terminare il tracking
-   */
   const handleStop = () => {
-    setConfirmModal({ isOpen: true, type: 'stop' })
-  }
+    setConfirmModal({ isOpen: true, type: "stop" });
+  };
 
-  /**
-   * Esegue la terminazione e salvataggio dopo conferma
-   * FIX: onComplete chiamato con setTimeout per evitare smontaggio dall'interno dell'hook
-   */
+  // Esegue la terminazione e salvataggio dopo conferma
+  // onComplete chiamato con setTimeout per evitare smontaggio dall'interno dell'hook
   const executeStop = async () => {
-    setConfirmModal({ isOpen: false, type: null })
+    setConfirmModal({ isOpen: false, type: null });
 
-    logger.log('ActiveTracking: Stop tracking')
-    
-    // Ferma GPS PRIMA di tutto
-    geolocation.stop()
-    setIsTracking(false)
-    isTrackingRef.current = false
+    logger.log("ActiveTracking: Stop tracking");
 
-    // Salva tracking
-    const success = await saveCompletedTracking()
+    geolocation.stop();
+    setIsTracking(false);
+    isTrackingRef.current = false;
 
-    // FIX: Segna come smontato DOPO il salvataggio
-    isMountedRef.current = false
+    const success = await saveCompletedTracking();
 
-    // FIX: Chiama onComplete con setTimeout per uscire dal ciclo di vita dell'hook
-    // Questo evita l'errore "useNavigate() may be used only in the context of a <Router>"
+    isMountedRef.current = false;
+
     if (success && onComplete) {
       setTimeout(() => {
-        onComplete()
-      }, 100)
+        onComplete();
+      }, 100);
     }
-  }
+  };
 
-  /**
-   * Apre il modal di conferma per annullare il tracking
-   */
   const handleCancel = () => {
-    setConfirmModal({ isOpen: true, type: 'cancel' })
-  }
+    setConfirmModal({ isOpen: true, type: "cancel" });
+  };
 
-  /**
-   * Esegue l'annullamento dopo conferma
-   * FIX: Migliorato con flag e delay
-   */
   const executeCancel = () => {
-    setConfirmModal({ isOpen: false, type: null })
+    setConfirmModal({ isOpen: false, type: null });
 
-    logger.log('ActiveTracking: Annullamento tracking')
-    
-    // FIX: Segna come smontato per prevenire update
-    isMountedRef.current = false
-    
-    // Ferma GPS
-    geolocation.stop()
-    
-    // Reset state
-    setIsTracking(false)
-    isTrackingRef.current = false
-    
-    // Chiudi dopo breve delay per permettere cleanup
+    logger.log("ActiveTracking: Annullamento tracking");
+
+    isMountedRef.current = false;
+
+    geolocation.stop();
+
+    setIsTracking(false);
+    isTrackingRef.current = false;
+
     setTimeout(() => {
-      onClose()
-    }, 100)
-  }
+      onClose();
+    }, 100);
+  };
 
-  /**
-   * Chiude il modal di conferma senza azione
-   */
   const closeConfirmModal = () => {
-    setConfirmModal({ isOpen: false, type: null })
-  }
+    setConfirmModal({ isOpen: false, type: null });
+  };
 
-  /**
-   * Handler per conferma nel modal (dispatcha all'azione corretta)
-   */
   const handleConfirmAction = () => {
-    if (confirmModal.type === 'stop') {
-      executeStop()
-    } else if (confirmModal.type === 'cancel') {
-      executeCancel()
+    if (confirmModal.type === "stop") {
+      executeStop();
+    } else if (confirmModal.type === "cancel") {
+      executeCancel();
     }
-  }
+  };
 
   // ==========================================
   // EFFECTS
   // ==========================================
 
-  // Blocca scroll body quando modal è aperto
+  // Cleanup GPS e state al unmount
   useEffect(() => {
-    document.body.classList.add('modal-open')
     return () => {
-      document.body.classList.remove('modal-open')
-    }
-  }, [])
+      logger.log("ActiveTracking: Cleanup iniziato");
 
-  // ==========================================
-  // FIX: Cleanup migliorato con isMountedRef
-  // ==========================================
-  useEffect(() => {
-    return () => {
-      logger.log('ActiveTracking: Cleanup iniziato')
-      
-      // IMPORTANTE: Segna componente come smontato SUBITO
-      isMountedRef.current = false
-      
-      // Ferma GPS
-      geolocation.stop()
-      
-      // Ferma tracking
-      setIsTracking(false)
-      isTrackingRef.current = false
-      
-      // FIX: Con il key prop sul TrackingMap, React gestisce il cleanup automaticamente
-      // Non serve più chiamare map.remove() manualmente
-      mapRef.current = null
-      
-      logger.log('ActiveTracking: Cleanup completato')
-    }
-  }, [geolocation])
+      isMountedRef.current = false;
+
+      geolocation.stop();
+
+      setIsTracking(false);
+      isTrackingRef.current = false;
+
+      mapRef.current = null;
+
+      logger.log("ActiveTracking: Cleanup completato");
+    };
+  }, [geolocation]);
 
   // ==========================================
   // CALCOLI STATISTICHE
   // ==========================================
-  const avgSpeed = calculateSpeed(distance, elapsedTime)
+  const avgSpeed = calculateSpeed(distance, elapsedTime);
 
-  // Centro iniziale mappa
   const getInitialCenter = () => {
     if (currentPosition) {
-      return [currentPosition.lat, currentPosition.lng]
+      return [currentPosition.lat, currentPosition.lng];
     }
-
     if (route.startPoint) {
-      return [route.startPoint.lat, route.startPoint.lon]
+      return [route.startPoint.lat, route.startPoint.lon];
     }
+    return [44.102, 9.824]; // La Spezia default
+  };
 
-    return [44.102, 9.824] // La Spezia default
-  }
+  const initialCenter = getInitialCenter();
 
-  const initialCenter = getInitialCenter()
-
-  // ==========================================
-  // FIX: handleMapReady protetto
-  // ==========================================
   const handleMapReady = (map) => {
-    if (!isMountedRef.current) return // Non salvare ref se smontato
-    
-    mapRef.current = map
+    if (!isMountedRef.current) return;
+
+    mapRef.current = map;
     setTimeout(() => {
-      if (map && isMountedRef.current) { // Doppio controllo
-        map.invalidateSize()
+      if (map && isMountedRef.current) {
+        map.invalidateSize();
       }
-    }, 300)
-  }
+    }, 300);
+  };
 
-  // Callback ricentra mappa (quando utente preme bottone "Centra")
   const handleCenterMap = () => {
-    setShouldCenterMap(true)
-  }
+    setShouldCenterMap(true);
+  };
 
-  // FIX: Callback per DISABILITARE auto-center quando utente muove mappa
   const handleDisableCenter = () => {
-    setShouldCenterMap(false)
-  }
+    setShouldCenterMap(false);
+  };
 
   // ==========================================
   // CONFIG MODAL CONFERMA
   // ==========================================
   const getConfirmModalConfig = () => {
-    if (confirmModal.type === 'stop') {
+    if (confirmModal.type === "stop") {
       return {
-        title: 'Termina percorso',
-        message: 'Vuoi terminare il percorso e salvare i dati?',
-        confirmText: 'Termina e salva',
-        variant: 'success'
-      }
+        title: "Termina percorso",
+        message: "Vuoi terminare il percorso e salvare i dati?",
+        confirmText: "Termina e salva",
+        variant: "success",
+      };
     }
-    if (confirmModal.type === 'cancel') {
+    if (confirmModal.type === "cancel") {
       return {
-        title: 'Annulla tracking',
-        message: 'Vuoi annullare il tracking? I dati non verranno salvati.',
-        confirmText: 'Annulla tracking',
-        variant: 'danger'
-      }
+        title: "Annulla tracking",
+        message: "Vuoi annullare il tracking? I dati non verranno salvati.",
+        confirmText: "Annulla tracking",
+        variant: "danger",
+      };
     }
-    return {}
-  }
+    return {};
+  };
 
-  const modalConfig = getConfirmModalConfig()
+  const modalConfig = getConfirmModalConfig();
 
   // ==========================================
   // RENDER
@@ -414,18 +347,21 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
   return (
     <div className="modal-overlay">
       <div className="modal-content w-full-max-4xl h-[100vh] flex flex-col">
-
-        {/* ========== HEADER ========== */}
+        {/* HEADER */}
         <div className="modal-header-primary">
           <div className="flex-between">
             <div className="space-x-3-items">
               <FaMapMarkerAlt className="text-2xl" />
               <div>
                 <h2 className="text-xl font-bold">
-                  {currentRouteData.name || 'Tracking GPS'}
+                  {currentRouteData.name || "Tracking GPS"}
                 </h2>
                 <p className="text-xs text-white/90">
-                  {isTracking ? (isPaused ? 'In pausa' : 'Tracking attivo') : 'Pronto'}
+                  {isTracking
+                    ? isPaused
+                      ? "In pausa"
+                      : "Tracking attivo"
+                    : "Pronto"}
                 </p>
               </div>
             </div>
@@ -439,43 +375,51 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
                   title="Mostra waypoints"
                 >
                   <FaLayerGroup className="text-sm" />
-                  <span className="text-sm font-medium">{waypoints.length}</span>
+                  <span className="text-sm font-medium">
+                    {waypoints.length}
+                  </span>
                 </button>
 
                 {/* Dropdown lista waypoints */}
                 {showWaypointsList && (
-                  <div 
+                  <div
                     className="absolute right-0 top-full mt-2 rounded-lg shadow-xl overflow-hidden z-50 min-w-[200px]"
-                    style={{ 
-                      backgroundColor: 'var(--bg-card)',
-                      border: '1px solid var(--border-color)'
+                    style={{
+                      backgroundColor: "var(--bg-card)",
+                      border: "1px solid var(--border-color)",
                     }}
                   >
-                    <div 
+                    <div
                       className="px-3 py-2 text-xs font-semibold uppercase tracking-wide"
-                      style={{ 
-                        backgroundColor: 'var(--bg-secondary)',
-                        color: 'var(--text-secondary)'
+                      style={{
+                        backgroundColor: "var(--bg-secondary)",
+                        color: "var(--text-secondary)",
                       }}
                     >
                       Waypoints ({waypoints.length}/5)
                     </div>
                     <div className="max-h-64 overflow-y-auto">
                       {waypoints.map((wp, idx) => (
-                        <div 
+                        <div
                           key={idx}
                           className="px-3 py-2 flex items-center justify-between hover:bg-opacity-50 transition-colors"
-                          style={{ 
-                            backgroundColor: idx % 2 === 0 ? 'var(--bg-card)' : 'var(--bg-secondary)'
+                          style={{
+                            backgroundColor:
+                              idx % 2 === 0
+                                ? "var(--bg-card)"
+                                : "var(--bg-secondary)",
                           }}
                         >
-                          <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
+                          <span
+                            className="text-sm"
+                            style={{ color: "var(--text-primary)" }}
+                          >
                             {idx + 1}. {wp.name}
                           </span>
                           <button
                             onClick={() => handleRemoveWaypoint(idx)}
                             className="ml-2 flex-shrink-0 hover:opacity-70 transition-opacity"
-                            style={{ color: 'var(--color-orange)' }}
+                            style={{ color: "var(--color-orange)" }}
                             aria-label={`Rimuovi waypoint ${wp.name}`}
                           >
                             <FaTimes className="text-xs" />
@@ -487,7 +431,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
                 )}
               </div>
             )}
-            
+
             <button
               onClick={handleCancel}
               className="icon-btn-white"
@@ -498,7 +442,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
           </div>
         </div>
 
-        {/* ========== MAPPA ========== */}
+        {/* MAPPA */}
         <TrackingMap
           key={mapKey}
           initialCenter={initialCenter}
@@ -518,7 +462,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
           onDisableCenter={handleDisableCenter}
         />
 
-        {/* ========== STATISTICHE ========== */}
+        {/* STATISTICHE */}
         <TrackingStats
           distance={distance}
           elapsedTime={elapsedTime}
@@ -530,7 +474,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
           currentRouteData={currentRouteData}
         />
 
-        {/* ========== CONTROLLI ========== */}
+        {/* CONTROLLI */}
         <TrackingControls
           isTracking={isTracking}
           isPaused={isPaused}
@@ -543,7 +487,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
         />
       </div>
 
-      {/* ========== DIALOG WAYPOINT ========== */}
+      {/* DIALOG WAYPOINT */}
       <WaypointDialog
         showWaypointDialog={showWaypointDialog}
         loadingPreview={loadingPreview}
@@ -554,7 +498,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
         formatPreviewDuration={formatPreviewDuration}
       />
 
-      {/* ========== MODAL CONFERMA STOP/CANCEL ========== */}
+      {/* MODAL CONFERMA STOP/CANCEL */}
       <ConfirmModal
         isOpen={confirmModal.isOpen}
         title={modalConfig.title}
@@ -567,11 +511,15 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
         onCancel={closeConfirmModal}
       />
 
-      {/* ========== MODAL CONFERMA RIMOZIONE WAYPOINT ========== */}
+      {/* MODAL CONFERMA RIMOZIONE WAYPOINT */}
       <ConfirmModal
         isOpen={!!waypointToRemove}
         title="Rimuovi waypoint"
-        message={waypointToRemove ? `Rimuovere il waypoint "${waypointToRemove.waypoint.name}"?` : ''}
+        message={
+          waypointToRemove
+            ? `Rimuovere il waypoint "${waypointToRemove.waypoint.name}"?`
+            : ""
+        }
         confirmText="Rimuovi"
         cancelText="Annulla"
         variant="warning"
@@ -579,7 +527,7 @@ const ActiveTracking = ({ route, onClose, onComplete }) => {
         onCancel={cancelRemoveWaypoint}
       />
     </div>
-  )
-}
+  );
+};
 
-export default ActiveTracking
+export default ActiveTracking;
