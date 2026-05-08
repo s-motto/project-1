@@ -1,10 +1,17 @@
 import { useEffect } from "react";
 
+let openCount = 0;
+
 const useModalBodyClass = () => {
   useEffect(() => {
+    openCount++;
     document.body.classList.add("modal-open");
+
     return () => {
-      document.body.classList.remove("modal-open");
+      openCount--;
+      if (openCount === 0) {
+        document.body.classList.remove("modal-open");
+      }
     };
   }, []);
 };
