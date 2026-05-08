@@ -104,7 +104,8 @@ export const AuthProvider = ({ children }) => {
     [],
   );
 
-  // Chiama la Function server-side che elimina tutti i dati e l'account Appwrite
+  // Chiama la Function server-side che elimina tutti i dati e l'account.
+  // La Function elimina anche la sessione, quindi non serve chiamare deleteSession.
   const deleteAccount = useCallback(async () => {
     if (!user) return { success: false, error: "Utente non autenticato" };
     try {
@@ -120,8 +121,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error(response.error || "Errore eliminazione account");
       }
 
-      // Logout locale dopo eliminazione account riuscita
-      await account.deleteSession("current");
+      // L'account è stato eliminato server-side, resettiamo solo lo stato locale
       setUser(null);
       return { success: true };
     } catch (error) {
