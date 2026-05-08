@@ -9,6 +9,7 @@ import {
 } from "react-icons/fa";
 import { useSettings } from "../contexts/SettingsContext";
 import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../contexts/ToastContext";
 import routesService from "../services/routesService";
 import achievementsService from "../services/achievementsService";
 import useModalBodyClass from "../hooks/useModalBodyClass";
@@ -66,6 +67,7 @@ const CustomSelect = ({ value, options, onChange }) => {
 const SettingsModal = ({ onClose }) => {
   const { settings, setSettings } = useSettings();
   const { user, deleteAccount } = useAuth();
+  const { toast } = useToast();
   const [busy, setBusy] = useState(false);
   const [showDeleteRoutesDialog, setShowDeleteRoutesDialog] = useState(false);
   const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
@@ -123,29 +125,27 @@ const SettingsModal = ({ onClose }) => {
     }
   };
 
-  // Elimina tutti i dati dell'utente e poi l'account
   const handleDeleteAccount = async () => {
     if (!user || !confirmAccountDelete) return;
     setBusy(true);
     try {
-      // Elimina tutti i percorsi
       const res = await routesService.getUserRoutes(user.$id);
       if (res.success) {
         for (const r of res.data) {
           await routesService.deleteRoute(r.$id);
         }
       }
-      // Elimina achievements
       await achievementsService.resetAchievements(user.$id);
-      // Elimina account Appwrite (include logout automatico)
       const result = await deleteAccount();
       if (!result.success) {
         throw new Error(result.error);
       }
-      // Chiudi tutto — l'utente è ora sloggato
+      toast.success(
+        "Account eliminato con successo. Ci dispiace vederti andare!",
+      );
       onClose();
     } catch (error) {
-      // In caso di errore mostriamo il messaggio ma non blocchiamo
+      toast.error("Errore durante la cancellazione. Riprova.");
       console.error("Errore durante la cancellazione account:", error);
       setBusy(false);
     }
