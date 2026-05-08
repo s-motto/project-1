@@ -104,6 +104,19 @@ export const AuthProvider = ({ children }) => {
     [],
   );
 
+  // Elimina definitivamente l'account Appwrite e resetta lo stato utente
+  const deleteAccount = useCallback(async () => {
+    try {
+      await account.deleteSession("current");
+      await account.delete();
+      setUser(null);
+      return { success: true };
+    } catch (error) {
+      logger.error("Delete account error:", error);
+      return { success: false, error: error.message };
+    }
+  }, []);
+
   const value = useMemo(
     () => ({
       user,
@@ -114,6 +127,7 @@ export const AuthProvider = ({ children }) => {
       checkUser,
       requestPasswordRecovery,
       confirmPasswordRecovery,
+      deleteAccount,
     }),
     [
       user,
@@ -124,6 +138,7 @@ export const AuthProvider = ({ children }) => {
       checkUser,
       requestPasswordRecovery,
       confirmPasswordRecovery,
+      deleteAccount,
     ],
   );
 

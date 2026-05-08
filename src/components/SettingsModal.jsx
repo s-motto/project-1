@@ -5,6 +5,7 @@ import {
   FaDownload,
   FaInfoCircle,
   FaSpinner,
+  FaExclamationTriangle,
 } from "react-icons/fa";
 import { useSettings } from "../contexts/SettingsContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -12,7 +13,6 @@ import routesService from "../services/routesService";
 import achievementsService from "../services/achievementsService";
 import useModalBodyClass from "../hooks/useModalBodyClass";
 
-// Componente CustomSelect per selezioni personalizzate
 const CustomSelect = ({ value, options, onChange }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -65,10 +65,12 @@ const CustomSelect = ({ value, options, onChange }) => {
 
 const SettingsModal = ({ onClose }) => {
   const { settings, setSettings } = useSettings();
-  const { user } = useAuth();
+  const { user, deleteAccount } = useAuth();
   const [busy, setBusy] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showDeleteRoutesDialog, setShowDeleteRoutesDialog] = useState(false);
+  const [showDeleteAccountDialog, setShowDeleteAccountDialog] = useState(false);
   const [resetAchievementsToo, setResetAchievementsToo] = useState(false);
+  const [confirmAccountDelete, setConfirmAccountDelete] = useState(false);
 
   useModalBodyClass();
 
@@ -114,9 +116,37 @@ const SettingsModal = ({ onClose }) => {
       if (resetAchievementsToo) {
         await achievementsService.resetAchievements(user.$id);
       }
-      setShowDeleteDialog(false);
+      setShowDeleteRoutesDialog(false);
       setResetAchievementsToo(false);
     } finally {
+      setBusy(false);
+    }
+  };
+
+  // Elimina tutti i dati dell'utente e poi l'account
+  const handleDeleteAccount = async () => {
+    if (!user || !confirmAccountDelete) return;
+    setBusy(true);
+    try {
+      // Elimina tutti i percorsi
+      const res = await routesService.getUserRoutes(user.$id);
+      if (res.success) {
+        for (const r of res.data) {
+          await routesService.deleteRoute(r.$id);
+        }
+      }
+      // Elimina achievements
+      await achievementsService.resetAchievements(user.$id);
+      // Elimina account Appwrite (include logout automatico)
+      const result = await deleteAccount();
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      // Chiudi tutto — l'utente è ora sloggato
+      onClose();
+    } catch (error) {
+      // In caso di errore mostriamo il messaggio ma non blocchiamo
+      console.error("Errore durante la cancellazione account:", error);
       setBusy(false);
     }
   };
@@ -189,7 +219,7 @@ const SettingsModal = ({ onClose }) => {
             </div>
           </section>
 
-          {/* Formato ora e tema */}
+          {/* Aspetto */}
           <section>
             <h3 className="info-section-title">🖌️ Aspetto</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -312,16 +342,23 @@ const SettingsModal = ({ onClose }) => {
                 <FaDownload /> Esporta i miei dati
               </button>
               <button
-                onClick={() => setShowDeleteDialog(true)}
+                onClick={() => setShowDeleteRoutesDialog(true)}
                 disabled={busy || !user}
                 className="btn-danger flex items-center gap-2"
               >
                 <FaTrash /> Elimina tutti i percorsi
               </button>
+              <button
+                onClick={() => setShowDeleteAccountDialog(true)}
+                disabled={busy || !user}
+                className="btn-danger flex items-center gap-2"
+              >
+                <FaExclamationTriangle /> Elimina account
+              </button>
             </div>
           </section>
 
-          {/* Link legali */}
+          {/* Documenti */}
           <section>
             <h3 className="info-section-title">📄 Documenti</h3>
             <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
@@ -331,8 +368,8 @@ const SettingsModal = ({ onClose }) => {
         </div>
       </div>
 
-      {/* Dialog Conferma Eliminazione */}
-      {showDeleteDialog && (
+      {/* Dialog Elimina Percorsi */}
+      {showDeleteRoutesDialog && (
         <div className="modal-overlay" style={{ zIndex: 3000 }}>
           <div className="modal-content max-w-md">
             <div className="modal-header-primary">
@@ -342,7 +379,7 @@ const SettingsModal = ({ onClose }) => {
                 </h3>
                 <button
                   onClick={() => {
-                    setShowDeleteDialog(false);
+                    setShowDeleteRoutesDialog(false);
                     setResetAchievementsToo(false);
                   }}
                   className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
@@ -388,7 +425,7 @@ const SettingsModal = ({ onClose }) => {
               <div className="flex gap-3 mt-6">
                 <button
                   onClick={() => {
-                    setShowDeleteDialog(false);
+                    setShowDeleteRoutesDialog(false);
                     setResetAchievementsToo(false);
                   }}
                   className="button-secondary flex-1"
@@ -410,6 +447,116 @@ const SettingsModal = ({ onClose }) => {
                     <>
                       <FaTrash />
                       Elimina Tutto
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dialog Elimina Account */}
+      {showDeleteAccountDialog && (
+        <div className="modal-overlay" style={{ zIndex: 3000 }}>
+          <div className="modal-content max-w-md">
+            <div
+              className="modal-header-primary"
+              style={{
+                background: "linear-gradient(135deg, #c0392b, #e74c3c)",
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <FaExclamationTriangle /> Elimina Account
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowDeleteAccountDialog(false);
+                    setConfirmAccountDelete(false);
+                  }}
+                  className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+                >
+                  <FaTimes />
+                </button>
+              </div>
+            </div>
+
+            <div className="modal-body space-y-4">
+              <p style={{ color: "var(--text-primary)" }}>
+                Questa operazione eliminerà <strong>definitivamente</strong> il
+                tuo account e tutti i dati associati:
+              </p>
+
+              <ul
+                className="text-sm space-y-1 list-disc list-inside"
+                style={{ color: "var(--text-secondary)" }}
+              >
+                <li>Tutti i percorsi salvati e completati</li>
+                <li>Statistiche e progressi</li>
+                <li>Badge, livelli e streak</li>
+                <li>Il tuo account di accesso</li>
+              </ul>
+
+              <div
+                className="rounded-lg p-3"
+                style={{
+                  backgroundColor: "rgba(192, 57, 43, 0.1)",
+                  border: "1px solid #c0392b",
+                }}
+              >
+                <p className="text-sm font-medium" style={{ color: "#c0392b" }}>
+                  ⚠️ Questa azione è irreversibile. Non potrai recuperare i tuoi
+                  dati.
+                </p>
+              </div>
+
+              <label
+                className="flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors"
+                style={{ backgroundColor: "var(--bg-secondary)" }}
+              >
+                <input
+                  type="checkbox"
+                  checked={confirmAccountDelete}
+                  onChange={(e) => setConfirmAccountDelete(e.target.checked)}
+                  className="mt-1 w-4 h-4 rounded border-gray-300 text-red-600 focus:ring-red-500"
+                />
+                <div className="flex-1">
+                  <div
+                    className="font-medium text-sm"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    Ho capito, voglio eliminare definitivamente il mio account e
+                    tutti i miei dati
+                  </div>
+                </div>
+              </label>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  onClick={() => {
+                    setShowDeleteAccountDialog(false);
+                    setConfirmAccountDelete(false);
+                  }}
+                  className="button-secondary flex-1"
+                  disabled={busy}
+                >
+                  Annulla
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  className="btn-danger flex-1 flex items-center justify-center gap-2"
+                  disabled={busy || !confirmAccountDelete}
+                >
+                  {busy ? (
+                    <>
+                      <FaSpinner className="spinner" />
+                      Eliminazione...
+                    </>
+                  ) : (
+                    <>
+                      <FaExclamationTriangle />
+                      Elimina Account
                     </>
                   )}
                 </button>
