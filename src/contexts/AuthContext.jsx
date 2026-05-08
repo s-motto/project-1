@@ -6,7 +6,7 @@ import React, {
   useMemo,
   useCallback,
 } from "react";
-import { account } from "../appwrite";
+import { account, functions } from "../appwrite";
 import { ID } from "appwrite";
 import logger from "../utils/logger";
 
@@ -104,18 +104,31 @@ export const AuthProvider = ({ children }) => {
     [],
   );
 
-  // Elimina definitivamente l'account Appwrite e resetta lo stato utente
+  // Chiama la Function server-side che elimina tutti i dati e l'account Appwrite
   const deleteAccount = useCallback(async () => {
+    if (!user) return { success: false, error: "Utente non autenticato" };
     try {
+      const functionId = import.meta.env.VITE_DELETE_ACCOUNT_FUNCTION_ID;
+      const result = await functions.createExecution(
+        functionId,
+        JSON.stringify({ userId: user.$id }),
+        false,
+      );
+
+      const response = JSON.parse(result.responseBody);
+      if (!response.success) {
+        throw new Error(response.error || "Errore eliminazione account");
+      }
+
+      // Logout locale dopo eliminazione account riuscita
       await account.deleteSession("current");
-      await account.delete();
       setUser(null);
       return { success: true };
     } catch (error) {
       logger.error("Delete account error:", error);
       return { success: false, error: error.message };
     }
-  }, []);
+  }, [user]);
 
   const value = useMemo(
     () => ({
